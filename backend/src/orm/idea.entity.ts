@@ -7,7 +7,7 @@ import {
     OneToMany,
   } from 'typeorm';   
   import { User } from './user.entity';
-  import { Competence, StatusIdea } from 'src/common/types'; 
+  import { Competence, StatusIdea } from '../common/types'; 
   import { Comments } from './comment.entity';
   
   @Entity()

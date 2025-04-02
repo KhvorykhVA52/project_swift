@@ -9,7 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Team } from './team.entity';
-import { Role, UserAccountStatus, SecuredUser, Competence } from 'src/common/types';
+import { Role, UserAccountStatus, SecuredUser, Competence } from '../common/types';
 import { Idea } from './idea.entity';
 import { Portfolio } from './portfolio.entity';
 import { Comments } from './comment.entity';
@@ -46,47 +46,47 @@ export class User {
   status: UserAccountStatus;
 
   @Column({ type: 'varchar', array: true, default: [] })
-  competence: Competence[];
+  competence?: Competence[];
 
   @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+  createdAt?: Date;
 
   // Связи с командами
   @OneToOne(() => Team, (team) => team.leader)
   @JoinColumn()
-  ledTeam: Team;
+  ledTeam?: Team;
 
   @OneToMany(() => Team, (team) => team.owner)
-  ownedTeams: Team[];
+  ownedTeams?: Team[];
 
   @ManyToOne(() => Team, (team) => team.members, { onDelete: 'SET NULL' })
-  team: Team;
+  team?: Team;
 
   // Связи с проектами
   @OneToMany(() => Project, (project) => project.owner)
-  ownedProjects: Project[];
+  ownedProjects?: Project[];
 
   // Связи с задачами
   @OneToMany(() => Task, (task) => task.author)
-  createdTasks: Task[];
+  createdTasks?: Task[];
 
   @OneToMany(() => Task, (task) => task.assignee)
-  assignedTasks: Task[];
+  assignedTasks?: Task[];
 
   // Портфолио
   @OneToMany(() => Portfolio, (portfolio) => portfolio.user)
-  portfolios: Portfolio[];
+  portfolios?: Portfolio[];
 
   // Связи с идеями
   @OneToMany(() => Idea, (idea) => idea.initiator)
-  initiatedIdeas: Idea[];
+  initiatedIdeas?: Idea[];
 
   @OneToMany(() => Idea, (idea) => idea.customer)
-  customerIdeas: Idea[];
+  customerIdeas?: Idea[];
 
   // Комментарии
   @OneToMany(() => Comments, (comment) => comment.author)
-  comments: Comments[];
+  comments?: Comments[];
 
   // Метод для безопасного возврата данных
   getSecuredDto(): SecuredUser {

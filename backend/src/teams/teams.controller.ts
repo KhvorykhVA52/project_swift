@@ -1,26 +1,26 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { TeamsService } from './teams.service';
-import { CreateTeamDto } from './dto/create-team.dto';
 import { Team } from '../orm/team.entity';
 import { User } from '../orm/user.entity';
+import { CreateTeamDto } from '../common/dto/create-team.dto';
 
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
-  @Post()
-  async create(@Body() createTeamDto: CreateTeamDto): Promise<Team> {
-    return this.teamsService.create(createTeamDto);
+  @Post(':id')
+  async create(@Param('id') id: number, @Body() newData: CreateTeamDto): Promise<Team | string> {
+    return this.teamsService.create(id, newData);
   }
 
   @Get()
-  async findAll(): Promise<Team[]> {
+  async findAll(): Promise<Team[] | string> {
     return this.teamsService.findAll();
   }
 
-  @Post('GetByOwner')
-  async GetByOwner(@Body() body) {
-    return this.teamsService.GetByOwner(body.value);
+  @Get('GetByOwner/:id')
+  async GetByOwner(@Param('id') id) {
+    return this.teamsService.GetByOwner(id);
   }
 
   @Post('AddInByOne')

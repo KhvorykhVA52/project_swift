@@ -23,14 +23,14 @@ export class Team {
 
   @OneToOne(() => User, (user) => user.ledTeam)
   @JoinColumn()
-  leader: User;
+  leader?: User;
 
   @ManyToOne(() => User, (user) => user.ownedTeams)
-  owner: User;
+  owner!: User;
 
   @OneToMany(() => User, (user) => user.team)
-  members: User[];
+  members?: User[];
 
   @OneToMany(() => Project, (project) => project.team)
-  projects: Project[];
+  projects?: Project[];
 }

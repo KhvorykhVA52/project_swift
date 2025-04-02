@@ -5,7 +5,9 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,       
-    "types": ["pinia", "quasar"]
+    "types": ["pinia", "quasar"],
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false
   },
   "include": ["src/**/*"],
   "exclude": [
