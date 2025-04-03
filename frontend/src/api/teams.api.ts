@@ -35,11 +35,12 @@ export async function create(
 
 export async function AddInByOne(
 
-  id: number[]
+  ownerId: number,
+  newMemberId: number
 
 ): Promise<string> {
 
-  const response = await api.post('/teams/AddInByOne', id);
+  const response = await api.post('/teams/AddInByOne', {ownerId, newMemberId});
 
   if (response.status  == 201){
     return response.data;

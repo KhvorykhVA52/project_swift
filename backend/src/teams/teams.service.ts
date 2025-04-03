@@ -18,7 +18,7 @@ export class TeamsService {
 
   async create(id: number, newData: CreateTeamDto): Promise<Team|string> {
     class createTeam {
-      user: User;
+      owner: User;
       name: string;
       description: string;
     }
@@ -30,7 +30,7 @@ export class TeamsService {
       return 'Error: create() - did not found by id';
     }
 
-    newTeamData.user = gotUser;
+    newTeamData.owner = gotUser;
     newTeamData.name = newData.name;
     newTeamData.description = newData.description;
 
@@ -51,39 +51,26 @@ export class TeamsService {
     return this.teamsRepository.findOneBy({owner: gotUser});
   }
 
-  async AddInByOne(id: number[]): Promise<string> {
-    let userId = id[1];
-    const isMember = await this.teamsRepository
-      .createQueryBuilder('team')
-      .leftJoin('team.members', 'member')
-      .where('member.id = :userId', { userId })
-      .getOne();
+  async AddInByOne(ownerId: number, newMemberId: number): Promise<string> {
 
-    if (isMember) {
-      return 'Error: Already in some team';
-    }
-
-    let gotOwner = await this.userRepository.findOneById(id[0]);
+    let gotOwner = await this.userRepository.findOneById(ownerId);
 
     if (gotOwner == null) {
-      return 'Error: AddInByOne() - did not found by id[0]';
+      return 'Error: AddInByOne() - did not found by ownerId';
     }
 
     const team = await this.teamsRepository.findOneBy({owner: gotOwner});
     
     if (team) {
-      const gotUser = await this.userRepository.findOneById(id[1]);
+      let gotUser = await this.userRepository.findOneById(newMemberId);
 
       if (gotUser == null) {
-        return 'Error: AddInByOne() - did not found by id[1]';
-      }
-      if (team.members) {
-        team.members.push(gotUser);
-      } else {
-        team.members = [gotUser];
+        return 'Error: AddInByOne() - did not found by newMemberId';
       }
 
-      const ans = await this.teamsRepository.save(team);
+      gotUser.team = team;
+
+      const ans = await this.userRepository.save(gotUser);
       if (ans) {
         return 'OK';
       }

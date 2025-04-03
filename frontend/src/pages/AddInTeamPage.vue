@@ -24,7 +24,6 @@
 <script>
 import { ref } from 'vue';
 import * as api from '../api/teams.api';
-import { CreateTeamDto } from '../../../backend/src/common/dto/create-team.dto';
 
 
 export default {
@@ -38,10 +37,10 @@ export default {
         message.value = 'Пожалуйста, введите ID владельца';
         return;
      }
-     const newTeam = ref<CreateTeamDto>({
+     const newTeam = {
        name: 'TestName',
        description: 'TestDescrtiption',
-     });
+     }
 
      const response = await api.create(ownerId.value, newTeam);
       
@@ -55,7 +54,7 @@ export default {
         return;
       }
 
-      const response = await api.AddInByOne([ownerId.value, memberId.value]);
+      const response = await api.AddInByOne(ownerId.value, memberId.value);
       
       console.log(response.data);
 

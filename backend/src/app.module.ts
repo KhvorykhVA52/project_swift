@@ -21,6 +21,7 @@ import { TeamsModule } from './teams/teams.module';
     AuthModule,
     UsersModule,
     ProjectModule,
+    TeamsModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

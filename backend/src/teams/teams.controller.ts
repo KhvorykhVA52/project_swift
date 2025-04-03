@@ -10,8 +10,7 @@ export class TeamsController {
 
   @Post(':id')
   async create(@Param('id') id: number, @Body() newData: CreateTeamDto): Promise<Team | string> {
-    return 'id: '+id;
-    //return this.teamsService.create(id, newData);
+    return this.teamsService.create(id, newData);
   }
 
   @Get()
@@ -25,7 +24,8 @@ export class TeamsController {
   }
 
   @Post('AddInByOne')
-  async AddInByOne(@Body() body) {
-    return this.teamsService.AddInByOne(body.value);
+  async AddInByOne(@Body() body: { ownerId: number; newMemberId: number }) {
+    const { ownerId, newMemberId } = body;
+    return this.teamsService.AddInByOne(ownerId, newMemberId);
   }
 }
