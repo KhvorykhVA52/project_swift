@@ -9,6 +9,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'users', component: () => import('pages/UsersPage.vue') }, 
       { path: 'users/:id', component: () => import('pages/UserEditPage.vue') },
       { path: 'ideas', component: () => import('pages/TasksPage.vue') },
+      { path: 'addinteam', component: () => import('pages/AddInTeamPage.vue') },
     ],
   },
   {

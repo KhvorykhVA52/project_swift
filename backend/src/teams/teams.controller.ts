@@ -10,7 +10,8 @@ export class TeamsController {
 
   @Post(':id')
   async create(@Param('id') id: number, @Body() newData: CreateTeamDto): Promise<Team | string> {
-    return this.teamsService.create(id, newData);
+    return 'id: '+id;
+    //return this.teamsService.create(id, newData);
   }
 
   @Get()

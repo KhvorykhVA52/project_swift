@@ -22,7 +22,7 @@ export async function create(
   newteam: CreateTeamDto
 
 ): Promise<string> {
-
+  console.log('/teams/' + id);
   const response = await api.post('/teams/' + id, newteam);
 
   if (response.status  == 201){
