@@ -1,17 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from '../orm/team.entity';
 import { CreateTeamDto } from '../common/dto/create-team.dto';
 import { User } from '../orm/user.entity';
 import { UsersService } from '../users/users.service';
+import { AddToTeamDto } from '../common/dto/add-to-team.dto';
 
 @Injectable()
 
 export class TeamsService {
   constructor(
     @InjectRepository(Team)
-    private teamsRepository: Repository<Team>,
+    private teamRepository: Repository<Team>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -23,8 +24,8 @@ export class TeamsService {
       description: string;
     }
 
-    let newTeamData = new createTeam;
-    const gotUser = await this.userRepository.findOneById(id);
+    const newTeamData = new Team();
+    const gotUser = await this.userRepository.findOne({ where: { id: id } })
 
     if (gotUser == null) {
       return 'Error: create() - did not found by id';
@@ -34,48 +35,42 @@ export class TeamsService {
     newTeamData.name = newData.name;
     newTeamData.description = newData.description;
 
-    const team = this.teamsRepository.create(newTeamData);
-    return await this.teamsRepository.save(team);
+    return await this.teamRepository.save(newTeamData);
   }
 
   async findAll(): Promise<Team[]> {
-    return await this.teamsRepository.find();
+    return await this.teamRepository.find();
   }
 
-  async GetByOwner(id: number): Promise<Team | any> {
-    const gotUser = await this.userRepository.findOneById(id);
+  async AddInByOne(data: AddToTeamDto): Promise<void> {
+    //const teamRepository = getRepository(Team);
+  //const userRepository = getRepository(User);
 
-    if (gotUser == null) {
-      return 'Error: GetByOwner() - did not found by id';
-    }
-    return this.teamsRepository.findOneBy({owner: gotUser});
+  const team = await this.teamRepository.findOne({
+        where: { id: data.teamId },
+        relations: ['members'],
+      }); // Загружаем команду и ее участников
+  const user = await this.userRepository.findOne({ where: { id: data.userId} });
+
+  if (!team) {
+    throw new Error('Команда с указанным ID не найдена.');
   }
 
-  async AddInByOne(ownerId: number, newMemberId: number): Promise<string> {
+  if (!user) {
+    throw new Error('Пользователь с указанным ID не найден.');
+  }
 
-    let gotOwner = await this.userRepository.findOneById(ownerId);
+  // Устанавливаем связь пользователя с командой (важно для правильной работы @ManyToOne)
+  user.team = team;
+  await this.userRepository.save(user);  // Сохраняем изменения в сущности User
 
-    if (gotOwner == null) {
-      return 'Error: AddInByOne() - did not found by ownerId';
-    }
+  // Обновляем массив участников команды (необязательно, но может быть полезно)
+  if (!team.members) {
+    team.members = [];
+  }
+  team.members.push(user);
+  await this.teamRepository.save(team);
 
-    const team = await this.teamsRepository.findOneBy({owner: gotOwner});
-    
-    if (team) {
-      let gotUser = await this.userRepository.findOneById(newMemberId);
-
-      if (gotUser == null) {
-        return 'Error: AddInByOne() - did not found by newMemberId';
-      }
-
-      gotUser.team = team;
-
-      const ans = await this.userRepository.save(gotUser);
-      if (ans) {
-        return 'OK';
-      }
-    }
-
-    return 'Error: team not found';
+  console.log(`Пользователь ${user.firstname} добавлен в команду ${team.name}`);
   }
 }

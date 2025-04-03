@@ -55,12 +55,7 @@ export default {
       }
 
       const response = await api.AddInByOne(ownerId.value, memberId.value);
-      
-      console.log(response.data);
-
-      message.value = `Запрос отправлен: Владелец ${ownerId.value} добавляет участника ${memberId.value} в команду.`;
-
-      // Сброс полей после отправки
+      console.log(response.status);
       memberId.value = null;
     };
 

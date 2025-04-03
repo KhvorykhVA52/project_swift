@@ -26,7 +26,7 @@ export class Team {
   leader: User;
 
   @ManyToOne(() => User, (user) => user.ownedTeams)
-  owner!: User;
+  owner: User;
 
   @OneToMany(() => User, (user) => user.team)
   members: User[];

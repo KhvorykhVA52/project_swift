@@ -3,12 +3,13 @@ import { TeamsService } from './teams.service';
 import { Team } from '../orm/team.entity';
 import { User } from '../orm/user.entity';
 import { CreateTeamDto } from '../common/dto/create-team.dto';
+import { AddToTeamDto } from '../common/dto/add-to-team.dto';
 
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
-  @Post(':id')
+  @Post('create/:id')
   async create(@Param('id') id: number, @Body() newData: CreateTeamDto): Promise<Team | string> {
     return this.teamsService.create(id, newData);
   }
@@ -18,14 +19,8 @@ export class TeamsController {
     return this.teamsService.findAll();
   }
 
-  @Get('GetByOwner/:id')
-  async GetByOwner(@Param('id') id) {
-    return this.teamsService.GetByOwner(id);
-  }
-
-  @Post('AddInByOne')
-  async AddInByOne(@Body() body: { ownerId: number; newMemberId: number }) {
-    const { ownerId, newMemberId } = body;
-    return this.teamsService.AddInByOne(ownerId, newMemberId);
+  @Post('addinbyone')
+  async AddInByOne(@Body() body: AddToTeamDto) {
+    return this.teamsService.AddInByOne(body);
   }
 }
