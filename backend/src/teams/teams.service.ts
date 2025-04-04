@@ -1,76 +1,184 @@
-import { Injectable, NotFoundException, BadRequestException} from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from '../orm/team.entity';
-import { CreateTeamDto } from '../common/dto/create-team.dto';
 import { User } from '../orm/user.entity';
-import { UsersService } from '../users/users.service';
-import { AddToTeamDto } from '../common/dto/add-to-team.dto';
+import { TeamInvite, InviteStatus } from '../orm/team-invite.entity';
+import { UserTeamInvite } from '../orm/user-team-invite.entity';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { CreateInviteDto } from './dto/create-invite.dto';
 
 @Injectable()
-
 export class TeamsService {
   constructor(
     @InjectRepository(Team)
-    private teamRepository: Repository<Team>,
+    private teamsRepository: Repository<Team>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private userRepository: Repository<User>,
+    @InjectRepository(TeamInvite)
+    private inviteRepository: Repository<TeamInvite>,
+    @InjectRepository(UserTeamInvite)
+    private userTeamInviteRepository: Repository<UserTeamInvite>,
   ) {}
 
-  async create(id: number, newData: CreateTeamDto): Promise<Team|string> {
-    class createTeam {
-      owner: User;
-      name: string;
-      description: string;
+  async createTeam(ownerId: number, createTeamDto: CreateTeamDto): Promise<Team> {
+    const owner = await this.userRepository.findOne({
+      where: { id: ownerId },
+      relations: ['ownedTeams']
+    });
+    if (!owner) throw new NotFoundException('Owner not found');
+	
+	console.log(createTeamDto.name);
+
+    const team = this.teamsRepository.create({
+      ...createTeamDto,
+      owner,
+      members: [owner]
+    });
+
+    const savedTeam = await this.teamsRepository.save(team);
+
+    // Обновляем связь у владельца
+    owner.ownedTeams.push(savedTeam);
+    await this.userRepository.save(owner);
+
+    return savedTeam;
+  }
+
+  async createInvite(inviterId: number, dto: CreateInviteDto): Promise<{
+    teamInvite: TeamInvite,
+    userTeamInvite: UserTeamInvite
+  }> {
+    try {
+      const [inviter, invitee, team] = await Promise.all([
+        this.userRepository.findOneBy({ id: inviterId }),
+        this.userRepository.findOneBy({ id: dto.inviteeId }),
+        this.teamsRepository.findOne({
+          where: { id: dto.teamId },
+          relations: ['members']
+        }),
+      ]);
+
+      if (!inviter || !invitee || !team) {
+        throw new NotFoundException('User or team not found');
+      }
+
+      // Проверка что пользователь уже не в команде
+      if (team.members.some(m => m.id === dto.inviteeId)) {
+        throw new Error('User already in team');
+      }
+
+      // Проверка существующих приглашений
+      const existingInvite = await this.inviteRepository.findOne({
+        where: {
+          invitee: { id: dto.inviteeId },
+          team: { id: dto.teamId },
+          status: InviteStatus.PENDING
+        }
+      });
+
+      if (existingInvite) {
+        throw new Error('Pending invite already exists');
+      }
+
+      // Создаем основное приглашение
+      const teamInvite = await this.inviteRepository.save(
+        this.inviteRepository.create({
+          inviter,
+          invitee,
+          team,
+          status: InviteStatus.PENDING
+        })
+      );
+
+      // Создаем запись в истории
+      const userTeamInvite = await this.userTeamInviteRepository.save(
+        this.userTeamInviteRepository.create({
+          inviter,
+          invitee,
+          team,
+          status: 'pending'
+        })
+      );
+
+      return { teamInvite, userTeamInvite };
+    } catch (error) {
+      console.error('Error creating invite:', error);
+      throw new InternalServerErrorException('Error creating invite');
     }
+  }
 
-    const newTeamData = new Team();
-    const gotUser = await this.userRepository.findOne({ where: { id: id } })
+  async respondToInvite(inviteId: number, userId: number, accept: boolean): Promise<Team> {
+    try {
+      const teamInvite = await this.inviteRepository.findOne({
+        where: { id: inviteId, invitee: { id: userId } },
+        relations: ['team', 'invitee', 'team.members']
+      });
 
-    if (gotUser == null) {
-      return 'Error: create() - did not found by id';
+      if (!teamInvite) {
+        throw new NotFoundException('Invite not found');
+      }
+
+      const userTeamInvite = await this.userTeamInviteRepository.findOne({
+        where: { invitee: { id: userId }, team: { id: teamInvite.team.id } }
+      });
+
+      if (!userTeamInvite) {
+        throw new NotFoundException('User team invite not found');
+      }
+
+      if (accept) {
+        // Добавляем пользователя в команду
+        if (!teamInvite.team.members.some(m => m.id === userId)) {
+          teamInvite.team.members.push(teamInvite.invitee);
+          await this.teamsRepository.save(teamInvite.team);
+        }
+
+        // Устанавливаем команду пользователю
+        teamInvite.invitee.team = teamInvite.team;
+        await this.userRepository.save(teamInvite.invitee);
+      }
+
+      // Обновляем статусы
+      teamInvite.status = accept ? InviteStatus.ACCEPTED : InviteStatus.REJECTED;
+      userTeamInvite.status = accept ? 'accepted' : 'rejected';
+
+      await Promise.all([
+        this.inviteRepository.save(teamInvite),
+        this.userTeamInviteRepository.save(userTeamInvite)
+      ]);
+
+      return teamInvite.team;
+    } catch (error) {
+      console.error('Error responding to invite:', error);
+      throw new InternalServerErrorException('Error responding to invite');
     }
-
-    newTeamData.owner = gotUser;
-    newTeamData.name = newData.name;
-    newTeamData.description = newData.description;
-
-    return await this.teamRepository.save(newTeamData);
   }
 
-  async findAll(): Promise<Team[]> {
-    return await this.teamRepository.find();
+  async getUserInvites(userId: number): Promise<TeamInvite[]> {
+    return this.inviteRepository.find({
+      where: { invitee: { id: userId }, status: InviteStatus.PENDING },
+      relations: ['team', 'inviter']
+    });
   }
 
-  async AddInByOne(data: AddToTeamDto): Promise<void> {
-    //const teamRepository = getRepository(Team);
-  //const userRepository = getRepository(User);
-
-  const team = await this.teamRepository.findOne({
-        where: { id: data.teamId },
-        relations: ['members'],
-      }); // Загружаем команду и ее участников
-  const user = await this.userRepository.findOne({ where: { id: data.userId} });
-
-  if (!team) {
-    throw new Error('Команда с указанным ID не найдена.');
+  async getUserTeamInvites(userId: number): Promise<UserTeamInvite[]> {
+    return this.userTeamInviteRepository.find({
+      where: { invitee: { id: userId }, status: 'pending' },
+      relations: ['team', 'inviter']
+    });
   }
 
-  if (!user) {
-    throw new Error('Пользователь с указанным ID не найден.');
-  }
-
-  // Устанавливаем связь пользователя с командой (важно для правильной работы @ManyToOne)
-  user.team = team;
-  await this.userRepository.save(user);  // Сохраняем изменения в сущности User
-
-  // Обновляем массив участников команды (необязательно, но может быть полезно)
-  if (!team.members) {
-    team.members = [];
-  }
-  team.members.push(user);
-  await this.teamRepository.save(team);
-
-  console.log(`Пользователь ${user.firstname} добавлен в команду ${team.name}`);
+  async getTeamMembers(teamId: number): Promise<User[]> {
+    try {
+      const team = await this.teamsRepository.findOne({
+        where: { id: teamId },
+        relations: ['members']
+      });
+      return team?.members || [];
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      throw new InternalServerErrorException('Error fetching team members');
+    }
   }
 }

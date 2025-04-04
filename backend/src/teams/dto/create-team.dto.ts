@@ -1,4 +1,11 @@
+import { IsString, Length } from 'class-validator';
+
 export class CreateTeamDto {
-    name: string;
-    description: string;
-  }
+  @IsString()
+  @Length(3, 50)
+  name: string;
+
+  @IsString()
+  @Length(0, 500)
+  description?: string;
+}

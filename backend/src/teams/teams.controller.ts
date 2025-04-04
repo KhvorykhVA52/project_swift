@@ -1,26 +1,57 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put } from '@nestjs/common';
 import { TeamsService } from './teams.service';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { CreateInviteDto } from './dto/create-invite.dto';
+import { RespondInviteDto } from './dto/respond-invite.dto';
 import { Team } from '../orm/team.entity';
-import { User } from '../orm/user.entity';
-import { CreateTeamDto } from '../common/dto/create-team.dto';
-import { AddToTeamDto } from '../common/dto/add-to-team.dto';
+import { TeamInvite } from '../orm/team-invite.entity';
+import { UserTeamInvite } from '../orm/user-team-invite.entity';
+import { User } from '../orm/user.entity'; // Импортируем User
 
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
-  @Post('create/:id')
-  async create(@Param('id') id: number, @Body() newData: CreateTeamDto): Promise<Team | string> {
-    return this.teamsService.create(id, newData);
+  @Post()
+  createTeam(
+    @Body('ownerId') ownerId: number,
+    @Body() createTeamDto: CreateTeamDto
+  ): Promise<Team> {
+    return this.teamsService.createTeam(ownerId, createTeamDto);
   }
 
-  @Get()
-  async findAll(): Promise<Team[] | string> {
-    return this.teamsService.findAll();
+  @Post('invite')
+  createInvite(
+    @Body('inviterId') inviterId: number,
+    @Body() dto: CreateInviteDto
+  ): Promise<{teamInvite: TeamInvite, userTeamInvite: UserTeamInvite}> {
+    return this.teamsService.createInvite(inviterId, dto);
   }
 
-  @Post('addinbyone')
-  async AddInByOne(@Body() body: AddToTeamDto) {
-    return this.teamsService.AddInByOne(body);
+  @Put('invite/respond/:id')
+  respondToInvite(
+    @Param('id') inviteId: string,
+    @Body() dto: RespondInviteDto
+  ): Promise<Team> {
+    return this.teamsService.respondToInvite(
+      +inviteId,
+      dto.userId,
+      dto.accept
+    );
+  }
+
+  @Get('user/invites/:userId')
+  getUserInvites(@Param('userId') userId: string): Promise<TeamInvite[]> {
+    return this.teamsService.getUserInvites(+userId);
+  }
+
+  @Get('user/team-invites/:userId')
+  getUserTeamInvites(@Param('userId') userId: string): Promise<UserTeamInvite[]> {
+    return this.teamsService.getUserTeamInvites(+userId);
+  }
+
+  @Get(':teamId/members')
+  getTeamMembers(@Param('teamId') teamId: string): Promise<User[]> {
+    return this.teamsService.getTeamMembers(+teamId);
   }
 }

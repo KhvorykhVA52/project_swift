@@ -8,12 +8,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ProjectModule } from './tasks/project.module';
 import { User } from './orm/user.entity';
 import { Team } from './orm/team.entity';
+import { TeamInvite } from './orm/team-invite.entity';
+import { UserTeamInvite } from './orm/user-team-invite.entity';
 import { Idea } from './orm/idea.entity';
 import { Portfolio } from './orm/portfolio.entity';
 import { Project } from './orm/project.entity';
 import { Comments } from './orm/comment.entity';
-import { Task } from './orm/task.entity'; // Добавлен импорт Task
-import { ProjectsModule } from './projects/projects.module';
+import { Task } from './orm/task.entity';
 import { TeamsModule } from './teams/teams.module';
 
 @Module({
@@ -35,17 +36,18 @@ import { TeamsModule } from './teams/teams.module';
         entities: [
           User,
           Team,
+          TeamInvite,
+          UserTeamInvite,
           Comments,
           Idea,
           Portfolio,
           Project,
-          Task // Добавлена сущность Task
+          Task
         ],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
-    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
