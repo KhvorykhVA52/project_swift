@@ -6,7 +6,8 @@ import { RespondInviteDto } from './dto/respond-invite.dto';
 import { Team } from '../orm/team.entity';
 import { TeamInvite } from '../orm/team-invite.entity';
 import { UserTeamInvite } from '../orm/user-team-invite.entity';
-import { User } from '../orm/user.entity'; // Импортируем User
+import { User } from '../orm/user.entity';
+import { InviteCancelDto } from './dto/invite-cancel.dto';
 
 @Controller('teams')
 export class TeamsController {
@@ -53,5 +54,10 @@ export class TeamsController {
   @Get('members/:teamId')
   getTeamMembers(@Param('teamId') teamId: string): Promise<User[]> {
     return this.teamsService.getTeamMembers(+teamId);
+  }
+
+  @Post('invite/cancel')
+  inviteCancel(@Body() body: InviteCancelDto) {
+    return this.teamsService.inviteCancel(body);
   }
 }

@@ -7,12 +7,13 @@ import { TeamInvite, InviteStatus } from '../orm/team-invite.entity';
 import { UserTeamInvite } from '../orm/user-team-invite.entity';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateInviteDto } from './dto/create-invite.dto';
+import { InviteCancelDto } from './dto/invite-cancel.dto';
 
 @Injectable()
 export class TeamsService {
   constructor(
     @InjectRepository(Team)
-    private teamsRepository: Repository<Team>,
+    private teamRepository: Repository<Team>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
     @InjectRepository(TeamInvite)
@@ -28,13 +29,13 @@ export class TeamsService {
     });
     if (!owner) throw new NotFoundException('Owner not found');
 
-    const team = this.teamsRepository.create({
+    const team = this.teamRepository.create({
       ...createTeamDto,
       owner,
       members: [owner]
     });
 
-    const savedTeam = await this.teamsRepository.save(team);
+    const savedTeam = await this.teamRepository.save(team);
 
     // Обновляем связь у владельца
     owner.ownedTeams.push(savedTeam);
@@ -51,7 +52,7 @@ export class TeamsService {
       const [inviter, invitee, team] = await Promise.all([
         this.userRepository.findOneBy({ id: inviterId }),
         this.userRepository.findOneBy({ id: dto.inviteeId }),
-        this.teamsRepository.findOne({
+        this.teamRepository.findOne({
           where: { id: dto.teamId },
           relations: ['members']
         }),
@@ -108,6 +109,7 @@ export class TeamsService {
 
   async respondToInvite(inviteId: number, userId: number, accept: boolean): Promise<Team> {
     try {
+
       const teamInvite = await this.inviteRepository.findOne({
         where: { id: inviteId, invitee: { id: userId } },
         relations: ['team', 'invitee', 'team.members']
@@ -129,7 +131,7 @@ export class TeamsService {
         // Добавляем пользователя в команду
         if (!teamInvite.team.members.some(m => m.id === userId)) {
           teamInvite.team.members.push(teamInvite.invitee);
-          await this.teamsRepository.save(teamInvite.team);
+          await this.teamRepository.save(teamInvite.team);
         }
 
         // Устанавливаем команду пользователю
@@ -169,7 +171,7 @@ export class TeamsService {
 
   async getTeamMembers(teamId: number): Promise<User[]> {
     try {
-      const team = await this.teamsRepository.findOne({
+      const team = await this.teamRepository.findOne({
         where: { id: teamId },
         relations: ['members']
       });
@@ -178,5 +180,41 @@ export class TeamsService {
       console.error('Error fetching team members:', error);
       throw new InternalServerErrorException('Error fetching team members');
     }
+  }
+
+  async inviteCancel(input: InviteCancelDto) {
+    console.log(`Removed TeamInvite and UserTeamInvite. inviterId: ${input.inviterId}; inviteeId: ${input.inviteeId}; teamId: ${input.teamId}`);
+
+    const teamInvite = await this.inviteRepository.findOne({
+      where: {
+        inviter: { id: input.inviterId },
+        invitee: { id: input.inviteeId },
+        team: { id: input.teamId },
+      },
+      relations: ['inviter', 'invitee', 'team'],
+    });
+
+    if (!teamInvite) {
+      throw new NotFoundException('Invite not found');
+    }
+
+    const userTeamInvite = await this.userTeamInviteRepository.findOne({
+      where: {
+        inviter: { id: input.inviterId },
+        invitee: { id: input.inviteeId },
+        team: { id: input.teamId },
+      },
+      relations: ['inviter', 'invitee', 'team'],
+    });
+
+    if (!userTeamInvite) {
+      throw new NotFoundException('User team invite not found');
+    }
+
+    await this.inviteRepository.remove(teamInvite);
+    await this.userTeamInviteRepository.remove(userTeamInvite);
+
+    console.log(`Removed TeamInvite and UserTeamInvite. inviterId: ${input.inviterId}; inviteeId: ${input.inviteeId}; teamId: ${input.teamId}`);
+
   }
 }
