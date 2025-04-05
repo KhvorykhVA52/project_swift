@@ -52,9 +52,9 @@ export class User {
   createdAt: Date;
 
   // Связи с командами
-  @OneToOne(() => Team, (team) => team.leader)
+  @OneToOne(() => Team, (team) => team.leader, { nullable: true})
   @JoinColumn()
-  ledTeam: Team;
+  ledTeam: Team | null;
 
   @OneToMany(() => Team, (team) => team.owner)
   ownedTeams: Team[];

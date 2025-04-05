@@ -9,6 +9,7 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { InviteCancelDto } from './dto/invite-cancel.dto';
 import { MemberRemoveDto } from './dto/member-remove.dto';
+import { ChangeTeamleaderDto } from './dto/change-teamleader.dto';
 
 @Injectable()
 export class TeamsService {
@@ -246,5 +247,65 @@ export class TeamsService {
     await this.userRepository.save(user);
 
     console.log(`Remove User: User.id = ${input.memberId} from Team: Team.id = ${input.teamId}`);
+  }
+
+  async changeTeamleader(input: ChangeTeamleaderDto) {
+    // 1. Находим команду по ID.
+    const team = await this.teamRepository.findOne({
+      where: { id: input.teamId },
+      relations: ['leader'], // Загружаем текущего лидера (если есть)
+    });
+
+    if (!team) {
+      throw new Error(`Команда с id = ${input.teamId} не найдена`);
+    }
+
+    // 2. Обрабатываем случай удаления текущего лидера.
+    if (input.memberId === -1) {
+      if (team.leader) {
+        // Сбрасываем ledTeam у текущего лидера
+        const oldLeader = team.leader;
+        oldLeader.ledTeam = null;
+        await this.userRepository.save(oldLeader);
+
+        team.leader = null; // Удаляем лидера у команды
+      }
+    } else {
+      // 3. Находим нового лидера по ID.
+      const newLeader = await this.userRepository.findOne({
+        where: { id: input.memberId },
+      });
+
+      if (!newLeader) {
+        throw new Error(`User с id = ${input.memberId} не найден`);
+      }
+
+      // 4. Проверяем, не является ли этот пользователь уже лидером другой команды.
+      if (newLeader.ledTeam) {
+        throw new Error(`User с id = ${input.memberId} уже является лидером другой команды`);
+      }
+            
+      // 5.  Если у команды уже есть лидер, сбрасываем его.
+      if (team.leader) {
+        const oldLeader = team.leader;
+        oldLeader.ledTeam = null;
+        await this.userRepository.save(oldLeader);
+      }
+
+      // 6. Назначаем нового лидера.
+      team.leader = newLeader;
+      newLeader.ledTeam = team;
+
+      await this.userRepository.save(newLeader);  //Сохраняем нового лидера, чтобы обновить связь ledTeam
+    }
+
+    // 7. Сохраняем изменения в команде.
+    await this.teamRepository.save(team);
+
+    if (input.teamId == -1) {
+      console.log(`Изменён leader в Team где Team.id = ${input.teamId} на null (Больше нет leader)`);
+    } else {
+      console.log(`Изменён leader в Team где Team.id = ${input.teamId} на User с User.id = ${input.memberId}`);
+    }
   }
 }
