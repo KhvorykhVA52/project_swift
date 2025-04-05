@@ -1,7 +1,9 @@
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, IsNumber } from 'class-validator';
 
 export class RespondInviteDto {
+  @IsNumber()
   userId: number;
+
+  @IsBoolean()
   accept: boolean;
 }
-

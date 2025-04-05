@@ -22,15 +22,15 @@ export class TeamInvite {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', eager: true })
   @JoinColumn({ name: 'inviter_id' })
   inviter: User;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', eager: true })
   @JoinColumn({ name: 'invitee_id' })
   invitee: User;
 
-  @ManyToOne(() => Team, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Team, { onDelete: 'CASCADE', eager: true }) // Оставляем eager
   @JoinColumn({ name: 'team_id' })
   team: Team;
 

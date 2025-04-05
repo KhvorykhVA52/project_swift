@@ -22,7 +22,7 @@ export class UserTeamInvite {
   @JoinColumn({ name: 'invitee_id' })
   invitee: User;
 
-  @ManyToOne(() => Team, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Team, { onDelete: 'CASCADE' }) // Убрали eager
   @JoinColumn({ name: 'team_id' })
   team: Team;
 

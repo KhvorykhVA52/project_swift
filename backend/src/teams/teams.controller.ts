@@ -32,8 +32,8 @@ export class TeamsController {
     return this.teamsService.createInvite(inviterId, dto);
   }
 
-  @Put('invite/respond/:id')
-  respondToInvite(
+  @Put('invite/respond/:id') 
+    respondToInvite(
     @Param('id') inviteId: string,
     @Body() dto: RespondInviteDto
   ): Promise<Team> {
