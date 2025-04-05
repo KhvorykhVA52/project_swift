@@ -59,8 +59,8 @@ export class User {
   @OneToMany(() => Team, (team) => team.owner)
   ownedTeams: Team[];
 
-  @ManyToOne(() => Team, (team) => team.members, { onDelete: 'SET NULL' })
-  team: Team;
+  @ManyToOne(() => Team, (team) => team.members, { onDelete: 'SET NULL', nullable: true } )
+  team: Team | null;
 
   // Связи с проектами
   @OneToMany(() => Project, (project) => project.owner)

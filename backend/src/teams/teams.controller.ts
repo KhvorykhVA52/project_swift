@@ -8,6 +8,7 @@ import { TeamInvite } from '../orm/team-invite.entity';
 import { UserTeamInvite } from '../orm/user-team-invite.entity';
 import { User } from '../orm/user.entity';
 import { InviteCancelDto } from './dto/invite-cancel.dto';
+import { MemberRemoveDto } from './dto/member-remove.dto';
 
 @Controller('teams')
 export class TeamsController {
@@ -59,5 +60,10 @@ export class TeamsController {
   @Post('invite/cancel')
   inviteCancel(@Body() body: InviteCancelDto) {
     return this.teamsService.inviteCancel(body);
+  }
+
+  @Post('memberremove')
+  memberRemove(@Body() body: MemberRemoveDto) {
+    return this.teamsService.memberRemove(body);
   }
 }

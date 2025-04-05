@@ -8,6 +8,7 @@ import { UserTeamInvite } from '../orm/user-team-invite.entity';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { CreateInviteDto } from './dto/create-invite.dto';
 import { InviteCancelDto } from './dto/invite-cancel.dto';
+import { MemberRemoveDto } from './dto/member-remove.dto';
 
 @Injectable()
 export class TeamsService {
@@ -183,7 +184,6 @@ export class TeamsService {
   }
 
   async inviteCancel(input: InviteCancelDto) {
-    console.log(`Removed TeamInvite and UserTeamInvite. inviterId: ${input.inviterId}; inviteeId: ${input.inviteeId}; teamId: ${input.teamId}`);
 
     const teamInvite = await this.inviteRepository.findOne({
       where: {
@@ -216,5 +216,35 @@ export class TeamsService {
 
     console.log(`Removed TeamInvite and UserTeamInvite. inviterId: ${input.inviterId}; inviteeId: ${input.inviteeId}; teamId: ${input.teamId}`);
 
+  }
+
+  async memberRemove(input: MemberRemoveDto) {
+    const user = await this.userRepository.findOne({ where: { id: input.memberId } });
+    const team = await this.teamRepository.findOne({ where: { id: input.teamId }, relations: ['leader', 'members'] }); // Загружаем leader и members
+
+    if (!user) {
+      throw new Error(`User with ID ${input.memberId} not found.`);
+    }
+
+    if (!team) {
+      throw new Error(`Team with ID ${input.teamId} not found.`);
+    }
+
+    // 2. Проверяем, является ли пользователь лидером команды, и если да, обнуляем leader.
+    if (team.leader && team.leader.id === input.memberId) {
+      team.leader = null;
+    }
+
+    // 3. Удаляем пользователя из списка members.
+    team.members = team.members.filter(member => member.id !== input.memberId);
+
+    // 4. Обнуляем team у пользователя.
+    user.team = null;
+
+    // 5. Сохраняем изменения в базе данных. Сначала сохраняем команду, потом пользователя.
+    await this.teamRepository.save(team);
+    await this.userRepository.save(user);
+
+    console.log(`Remove User: User.id = ${input.memberId} from Team: Team.id = ${input.teamId}`);
   }
 }

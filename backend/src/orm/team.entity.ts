@@ -21,9 +21,9 @@ export class Team {
   @Column({ nullable: true })
   description: string;
 
-  @OneToOne(() => User, (user) => user.ledTeam)
+  @OneToOne(() => User, (user) => user.ledTeam, { nullable: true })
   @JoinColumn()
-  leader: User;
+  leader: User | null;
 
   @ManyToOne(() => User, (user) => user.ownedTeams)
   owner: User;
