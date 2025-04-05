@@ -10,6 +10,7 @@ import { CreateInviteDto } from './dto/create-invite.dto';
 import { InviteCancelDto } from './dto/invite-cancel.dto';
 import { MemberRemoveDto } from './dto/member-remove.dto';
 import { ChangeTeamleaderDto } from './dto/change-teamleader.dto';
+import { ChangeTeamInfoDto } from './dto/change-team-info.dto';
 
 @Injectable()
 export class TeamsService {
@@ -307,5 +308,20 @@ export class TeamsService {
     } else {
       console.log(`Изменён leader в Team где Team.id = ${input.teamId} на User с User.id = ${input.memberId}`);
     }
+  }
+
+  async changeTeamInfo(input: ChangeTeamInfoDto) {
+    const team = await this.teamRepository.findOneBy({ id: input.teamId });
+
+    if (!team) {
+      throw new Error(`Error: changeTeamInfo: Team с Team.id = ${input.teamId} не найдена`);
+    }
+
+    team.name = input.name;
+    team.description = input.description;
+
+    console.log(`changeTeamInfo: DONE: teamId=${input.teamId} name=${input.name} description=${input.description}`);
+
+    return this.teamRepository.save(team);
   }
 }

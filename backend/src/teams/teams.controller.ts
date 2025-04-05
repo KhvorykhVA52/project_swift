@@ -10,6 +10,7 @@ import { User } from '../orm/user.entity';
 import { InviteCancelDto } from './dto/invite-cancel.dto';
 import { MemberRemoveDto } from './dto/member-remove.dto';
 import { ChangeTeamleaderDto } from './dto/change-teamleader.dto';
+import { ChangeTeamInfoDto } from './dto/change-team-info.dto';
 
 @Controller('teams')
 export class TeamsController {
@@ -67,8 +68,14 @@ export class TeamsController {
   memberRemove(@Body() body: MemberRemoveDto) {
     return this.teamsService.memberRemove(body);
   }
+  
   @Post('changeteamleader')
   changeTeamleader(@Body() body: ChangeTeamleaderDto) {
     return this.teamsService.changeTeamleader(body);
+  }
+
+  @Post('changeteaminfo')
+  changeTeamInfo(@Body() body: ChangeTeamInfoDto) {
+    return this.teamsService.changeTeamInfo(body);
   }
 }
