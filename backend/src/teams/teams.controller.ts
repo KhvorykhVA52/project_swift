@@ -50,7 +50,7 @@ export class TeamsController {
     return this.teamsService.getUserTeamInvites(+userId);
   }
 
-  @Get(':teamId/members')
+  @Get('members/:teamId')
   getTeamMembers(@Param('teamId') teamId: string): Promise<User[]> {
     return this.teamsService.getTeamMembers(+teamId);
   }

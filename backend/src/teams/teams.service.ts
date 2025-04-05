@@ -27,8 +27,6 @@ export class TeamsService {
       relations: ['ownedTeams']
     });
     if (!owner) throw new NotFoundException('Owner not found');
-	
-	console.log(createTeamDto.name);
 
     const team = this.teamsRepository.create({
       ...createTeamDto,
