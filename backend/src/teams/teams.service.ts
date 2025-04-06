@@ -30,7 +30,7 @@ export class TeamsService {
       where: { id: ownerId },
       relations: ['ownedTeams']
     });
-    if (!owner) throw new NotFoundException('Owner not found');
+    if (!owner) throw new NotFoundException(`ERROR: teams.service.createTeam(): не удалось найти User при ownerId=${ownerId}`);
 
     const team = new Team();
     team.name = createTeamDto.name;
@@ -47,6 +47,7 @@ export class TeamsService {
     owner.ownedTeams.push(savedTeam);
     await this.userRepository.save(owner);
 
+    console.log(`OK: teams.service.createTeam(ownerId=${ownerId}, createTeamDto={name=${createTeamDto.name}, description=${createTeamDto.description}})`);
   }
 
   async createInvite(inviterId: number, dto: CreateInviteDto): Promise<{
@@ -63,11 +64,11 @@ export class TeamsService {
     ]);
 
     if (!inviter || !invitee || !team) {
-      throw new NotFoundException('User or team not found');
+      throw new NotFoundException(`ERROR: teams.service.createInvite(): не удалось найти данный User или Team при intiretId=${inviterId}, dto={inviteeId=${dto.inviteeId}, teamId=${dto.teamId}}`);
     }
 
     if (team.members.some(m => m.id === dto.inviteeId)) {
-      throw new Error('User already in team');
+      throw new Error(`ERROR: teams.service.createInvite(): данный User уже в в чьей-то команде. inviterId=${inviterId}, dto={inviteeId=${dto.inviteeId}, teamId=${dto.teamId}}`);
     }
 
     const existingInvite = await this.inviteRepository.findOne({
@@ -79,7 +80,7 @@ export class TeamsService {
     });
 
     if (existingInvite) {
-      throw new Error('Pending invite already exists');
+      throw new Error(`ERROR: teams.service.createInvite(): уже существует Invite при invitee=${invitee}, teamId=${dto.teamId}`);
     }
 
     const teamInvite = await this.inviteRepository.save(
@@ -100,6 +101,8 @@ export class TeamsService {
       })
     );
 
+    console.log(`OK: teams.service.createInvite(inviterId=${inviterId}, dto={inviteeId=${dto.inviteeId}, dto.teamId=${dto.teamId})`);
+
     return { teamInvite, userTeamInvite };
   }
 
@@ -110,7 +113,7 @@ export class TeamsService {
     });
   
     if (!teamInvite) {
-      throw new NotFoundException('Invite not found');
+      throw new NotFoundException(`ERROR: teams.service.respontToInvite(): не удалось найти Invite при inviteId=${inviteId}, inviteeId=${userId}`);
     }
   
     // Обновляем статус приглашения
@@ -151,9 +154,10 @@ export class TeamsService {
     });
   
     if (!updatedTeam) {
-      throw new NotFoundException('Team not found after update');
+      throw new NotFoundException(`ERROR: teams.service.respondToInvite(): не удалось найти Team при id=${teamInvite.team.id}`);
     }
   
+    console.log(`OK: teams.service.respondToInvite(inviteId=${inviteId}, userId=${userId}), accept=${accept}`);
     return updatedTeam;
   }
 
@@ -162,6 +166,7 @@ export class TeamsService {
       where: { invitee: { id: userId }, status: InviteStatus.PENDING },
       relations: ['team', 'inviter']
     });
+    console.log(`OK: teams.service.getUserInvites(userId=${userId})`);
   }
 
   async getUserTeamInvites(userId: number): Promise<UserTeamInvite[]> {
@@ -169,6 +174,7 @@ export class TeamsService {
       where: { invitee: { id: userId }, status: 'pending' },
       relations: ['team', 'inviter']
     });
+    console.log(`OK: teams.service.getUserTeamInvites(userId=${userId})`);
   }
 
   async getTeamMembers(teamId: number): Promise<User[]> {
@@ -179,9 +185,10 @@ export class TeamsService {
       });
       return team?.members || [];
     } catch (error) {
-      console.error('Error fetching team members:', error);
-      throw new InternalServerErrorException('Error fetching team members');
+      console.error('ERROR: teams.service.getTeamMembers(): ', error);
+      throw new InternalServerErrorException(`ERROR: teams.service.getTeamMembers: не удалось найти Team при teamId=${teamId}`);
     }
+    console.log(`OK: teams.service.getTeamMembers(teamId=${teamId})`);
   }
 
   async inviteCancel(input: InviteCancelDto) {
@@ -196,7 +203,7 @@ export class TeamsService {
     });
 
     if (!teamInvite) {
-      throw new NotFoundException('Invite not found');
+      throw new NotFoundException('ERROR: teams.service.inviteCancel(): не удалось найти TeamInvite при inviter=${input.inviterId}, invitee=${input.inviterId}, teamId=${input.teamId}');
     }
 
     const userTeamInvite = await this.userTeamInviteRepository.findOne({
@@ -209,13 +216,13 @@ export class TeamsService {
     });
 
     if (!userTeamInvite) {
-      throw new NotFoundException('User team invite not found');
+      throw new NotFoundException(`ERROR: teams.service.inviteCancel(): не удалось найти userTeamInvite при inviter=${input.inviterId}, invitee=${input.inviterId}, teamId=${input.teamId}`);
     }
 
     await this.inviteRepository.remove(teamInvite);
     await this.userTeamInviteRepository.remove(userTeamInvite);
 
-    console.log(`Removed TeamInvite and UserTeamInvite. inviterId: ${input.inviterId}; inviteeId: ${input.inviteeId}; teamId: ${input.teamId}`);
+    console.log(`OK: teams.service.userTeamInvite(inviterId=${input.inviterId}, inviteeId=${input.inviteeId}, teamId=${input.teamId})`);
 
   }
 
@@ -224,11 +231,11 @@ export class TeamsService {
     const team = await this.teamRepository.findOne({ where: { id: input.teamId }, relations: ['leader', 'members'] }); // Загружаем leader и members
 
     if (!user) {
-      throw new Error(`User with ID ${input.memberId} not found.`);
+      throw new Error(`ERROR: teams.service.memberRemove(): не удалось найти User при memberId=${input.memberId}`);
     }
 
     if (!team) {
-      throw new Error(`Team with ID ${input.teamId} not found.`);
+      throw new Error(`ERROR: teams.service.inviteCancel(): не удалось найти Team при teamId=${input.teamId}`);
     }
 
     // 2. Проверяем, является ли пользователь лидером команды, и если да, обнуляем leader.
@@ -246,7 +253,7 @@ export class TeamsService {
     await this.teamRepository.save(team);
     await this.userRepository.save(user);
 
-    console.log(`Remove User: User.id = ${input.memberId} from Team: Team.id = ${input.teamId}`);
+    console.log(`OK: teams.service.memberRemove(User.id=${input.memberId}, Team.id=${input.teamId})`);
   }
 
   async changeTeamleader(input: ChangeTeamleaderDto) {
@@ -257,7 +264,7 @@ export class TeamsService {
     });
 
     if (!team) {
-      throw new Error(`Команда с id = ${input.teamId} не найдена`);
+      throw new Error(`ERROR: teams.service.changeTeamleader(): не удалось найти Team при teamId=${input.teamId}`);
     }
 
     // 2. Обрабатываем случай удаления текущего лидера.
@@ -277,12 +284,12 @@ export class TeamsService {
       });
 
       if (!newLeader) {
-        throw new Error(`User с id = ${input.memberId} не найден`);
+        throw new Error(`ERROR: teams.service.changeTeamleader(): не удалось найти User при userId=${input.memberId}`);
       }
 
       // 4. Проверяем, не является ли этот пользователь уже лидером другой команды.
       if (newLeader.ledTeam) {
-        throw new Error(`User с id = ${input.memberId} уже является лидером другой команды`);
+        throw new Error(`ERROR: teams.service.changeTeamleader(): User с userId=${input.memberId} уже является лидером другой команды`);
       }
             
       // 5.  Если у команды уже есть лидер, сбрасываем его.
@@ -301,25 +308,20 @@ export class TeamsService {
 
     // 7. Сохраняем изменения в команде.
     await this.teamRepository.save(team);
-
-    if (input.teamId == -1) {
-      console.log(`Изменён leader в Team где Team.id = ${input.teamId} на null (Больше нет leader)`);
-    } else {
-      console.log(`Изменён leader в Team где Team.id = ${input.teamId} на User с User.id = ${input.memberId}`);
-    }
+    console.log(`OK: changeTeamleader(Team.id=${input.teamId}, User.id=${input.memberId}`);
   }
 
   async changeTeamInfo(input: ChangeTeamInfoDto) {
     const team = await this.teamRepository.findOneBy({ id: input.teamId });
 
     if (!team) {
-      throw new Error(`Error: changeTeamInfo: Team с Team.id = ${input.teamId} не найдена`);
+      throw new Error(`ERROR: teams.service.changeTeamInfo(): Team с Team.id = ${input.teamId} не найдена`);
     }
 
     team.name = input.name;
     team.description = input.description;
 
-    console.log(`changeTeamInfo: DONE: teamId=${input.teamId} name=${input.name} description=${input.description}`);
+    console.log(`OK: teams.service.changeTeamInfo(teamId=${input.teamId}, name=${input.name}, description=${input.description})`);
 
     return this.teamRepository.save(team);
   }
@@ -331,10 +333,10 @@ export class TeamsService {
     });
 
     if (!user) {
-      throw new Error(`Error: getTeams: не получилось найти User.ownedTeams при User.id=${id}`);
+      throw new Error(`ERROR: teams.service.getTeams(): не удалось найти User.ownedTeams при User.id=${id}`);
     }
     
-    console.log(`OK: getTeams(${id})`);
+    console.log(`OK: teams.service.getTeams(User.id=${id})`);
     return user.ownedTeams;
   }
 }
