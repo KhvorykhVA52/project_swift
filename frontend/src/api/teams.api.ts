@@ -3,9 +3,9 @@ import { Team } from '../../../backend/src/orm/team.entity';
 import { CreateTeamDto } from '../../../backend/src/common/dto/create-team.dto';
 import { AddToTeamDto } from '../../../backend/src/common/dto/add-to-team.dto';
 
-export async function getAll(): Promise<Team[] | string> {
+export async function getTeams(id: number): Promise<Team[]|undefined> {
 
-  const response = await api.get('/teams/');
+  const response = await api.get('/teams/getteams/' + id);
 
   if (response.status == 200) {
 
@@ -13,25 +13,18 @@ export async function getAll(): Promise<Team[] | string> {
 
   }
 
-  return 'Error: no any team found';
-
+  return undefined;
 }
 
 export async function create(
-
-  id: number,
+  ownerId: number,
   newteam: CreateTeamDto
-
-): Promise<string> {
-  console.log('/teams/' + id);
-  const response = await api.post('/teams/create/' + id, newteam);
-
+) {
+  const response = await api.post('/teams/create/', {ownerId: ownerId, ...newteam});
   if (response.status  == 201){
     return 'OK'
   }
-
   return 'Error';
-
 }
 
 export async function AddInByOne(

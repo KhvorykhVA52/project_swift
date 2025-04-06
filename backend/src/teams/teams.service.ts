@@ -25,18 +25,21 @@ export class TeamsService {
     private userTeamInviteRepository: Repository<UserTeamInvite>,
   ) {}
 
-  async createTeam(ownerId: number, createTeamDto: CreateTeamDto): Promise<Team> {
+  async createTeam(ownerId: number, createTeamDto: CreateTeamDto) {
     const owner = await this.userRepository.findOne({
       where: { id: ownerId },
       relations: ['ownedTeams']
     });
     if (!owner) throw new NotFoundException('Owner not found');
 
-    const team = this.teamRepository.create({
-      ...createTeamDto,
-      owner,
-      members: [owner]
-    });
+    const team = new Team();
+    team.name = createTeamDto.name;
+    if (createTeamDto.description){
+      team.description = createTeamDto.description;
+    }
+    team.owner = owner;
+    team.members = [owner];
+
 
     const savedTeam = await this.teamRepository.save(team);
 
@@ -44,7 +47,6 @@ export class TeamsService {
     owner.ownedTeams.push(savedTeam);
     await this.userRepository.save(owner);
 
-    return savedTeam;
   }
 
   async createInvite(inviterId: number, dto: CreateInviteDto): Promise<{
@@ -332,6 +334,7 @@ export class TeamsService {
       throw new Error(`Error: getTeams: не получилось найти User.ownedTeams при User.id=${id}`);
     }
     
+    console.log(`OK: getTeams(${id})`);
     return user.ownedTeams;
   }
 }

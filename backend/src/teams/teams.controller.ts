@@ -16,12 +16,12 @@ import { ChangeTeamInfoDto } from './dto/change-team-info.dto';
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
-  @Post()
+  @Post('create')
   createTeam(
     @Body('ownerId') ownerId: number,
     @Body() createTeamDto: CreateTeamDto
-  ): Promise<Team> {
-    return this.teamsService.createTeam(ownerId, createTeamDto);
+  ) {
+    this.teamsService.createTeam(ownerId, createTeamDto);
   }
 
   @Post('invite')

@@ -1,16 +1,16 @@
 <template>
-  <div class="app-container" :class="{ 'dark': darkMode }">
+  <div class="app-container">
     <header class="app-header">
       <div class="app-header-left">
-        <span class="app-icon"></span>
+        <div class="app-icon"></div>
         <p class="app-name">ПОРТАЛ ПРОЕКТОВ</p>
         <div class="search-wrapper">
-          <input 
-            class="search-input" 
-            type="text" 
+          <input
+            class="search-input"
+            type="text"
             placeholder="Поиск"
             v-model="searchQuery"
-          >
+          />
           <span class="search-icon">
             <svg viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -25,7 +25,7 @@
             <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="none" stroke="currentColor" stroke-width="2"/>
           </svg>
         </button>
-        
+
         <button class="notification-btn" @click="toggleNotifications">
           <svg viewBox="0 0 24 24">
             <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -33,7 +33,7 @@
           </svg>
           <span class="notification-badge" v-if="unreadNotifications > 0">{{ unreadNotifications }}</span>
         </button>
-        
+
         <div class="profile-dropdown">
           <button class="profile-btn" @click="toggleProfileDropdown">
             <span class="profile-avatar">{{ userName.charAt(0) }}</span>
@@ -51,7 +51,7 @@
 
     <div class="app-content">
       <nav class="app-sidebar">
-        <router-link 
+        <router-link
           v-for="link in sidebarLinks"
           :key="link.path"
           :to="link.path"
@@ -59,7 +59,12 @@
           :class="{ 'active': $route.path === link.path }"
           :title="link.title"
         >
-          <svg viewBox="0 0 24 24">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            preserveAspectRatio="xMidYMid slice"
+          >
             <path :d="link.icon" fill="none" stroke="currentColor" stroke-width="2"/>
           </svg>
         </router-link>
@@ -73,6 +78,7 @@
 </template>
 
 <script>
+
 export default {
   name: 'MainLayout',
   data() {
@@ -99,10 +105,10 @@ export default {
           icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 104 0M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' 
         },
         { 
-          path: '/addinteam', 
-          title: 'Добавить в команду', 
-          icon: 'M12 5v14M5 12h14' 
-        }
+          path: '/listofmyteams', 
+          title: 'Мои команды',
+          icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 104 0M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
+        },
       ]
     }
   },

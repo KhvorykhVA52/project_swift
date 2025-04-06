@@ -5,6 +5,7 @@ import UsersPage from 'pages/UsersPage.vue';
 import UserEditPage from 'pages/UserEditPage.vue';
 import TasksPage from 'pages/TasksPage.vue';
 import AddInTeamPage from 'pages/AddInTeamPage.vue';
+import ListOfMyTeamsPage from 'pages/ListOfMyTeamsPage.vue';
 import ServiceLayout from 'layouts/ServiceLayout.vue';
 import LoginPage from 'pages/LoginPage.vue';
 import SignupPage from 'pages/SignupPage.vue';
@@ -20,6 +21,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'users/:id', component: UserEditPage },
       { path: 'tasks', name: 'tasks', component: TasksPage },
       { path: 'addinteam', name: 'addinteam', component: AddInTeamPage },
+      { path: 'listofmyteams', name: 'listofmyteams', component: ListOfMyTeamsPage },
     ],
   },
   {
