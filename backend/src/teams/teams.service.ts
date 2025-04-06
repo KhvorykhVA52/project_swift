@@ -51,111 +51,108 @@ export class TeamsService {
     teamInvite: TeamInvite,
     userTeamInvite: UserTeamInvite
   }> {
-    try {
-      const [inviter, invitee, team] = await Promise.all([
-        this.userRepository.findOneBy({ id: inviterId }),
-        this.userRepository.findOneBy({ id: dto.inviteeId }),
-        this.teamRepository.findOne({
-          where: { id: dto.teamId },
-          relations: ['members']
-        }),
-      ]);
+    const [inviter, invitee, team] = await Promise.all([
+      this.userRepository.findOneBy({ id: inviterId }),
+      this.userRepository.findOneBy({ id: dto.inviteeId }),
+      this.teamRepository.findOne({
+        where: { id: dto.teamId },
+        relations: ['members']
+      }),
+    ]);
 
-      if (!inviter || !invitee || !team) {
-        throw new NotFoundException('User or team not found');
-      }
-
-      // Проверка что пользователь уже не в команде
-      if (team.members.some(m => m.id === dto.inviteeId)) {
-        throw new Error('User already in team');
-      }
-
-      // Проверка существующих приглашений
-      const existingInvite = await this.inviteRepository.findOne({
-        where: {
-          invitee: { id: dto.inviteeId },
-          team: { id: dto.teamId },
-          status: InviteStatus.PENDING
-        }
-      });
-
-      if (existingInvite) {
-        throw new Error('Pending invite already exists');
-      }
-
-      // Создаем основное приглашение
-      const teamInvite = await this.inviteRepository.save(
-        this.inviteRepository.create({
-          inviter,
-          invitee,
-          team,
-          status: InviteStatus.PENDING
-        })
-      );
-
-      // Создаем запись в истории
-      const userTeamInvite = await this.userTeamInviteRepository.save(
-        this.userTeamInviteRepository.create({
-          inviter,
-          invitee,
-          team,
-          status: 'pending'
-        })
-      );
-
-      return { teamInvite, userTeamInvite };
-    } catch (error) {
-      console.error('Error creating invite:', error);
-      throw new InternalServerErrorException('Error creating invite');
+    if (!inviter || !invitee || !team) {
+      throw new NotFoundException('User or team not found');
     }
+
+    if (team.members.some(m => m.id === dto.inviteeId)) {
+      throw new Error('User already in team');
+    }
+
+    const existingInvite = await this.inviteRepository.findOne({
+      where: {
+        invitee: { id: dto.inviteeId },
+        team: { id: dto.teamId },
+        status: InviteStatus.PENDING
+      }
+    });
+
+    if (existingInvite) {
+      throw new Error('Pending invite already exists');
+    }
+
+    const teamInvite = await this.inviteRepository.save(
+      this.inviteRepository.create({
+        inviter,
+        invitee,
+        team,
+        status: InviteStatus.PENDING
+      })
+    );
+
+    const userTeamInvite = await this.userTeamInviteRepository.save(
+      this.userTeamInviteRepository.create({
+        inviter,
+        invitee,
+        team,
+        status: 'pending'
+      })
+    );
+
+    return { teamInvite, userTeamInvite };
   }
 
   async respondToInvite(inviteId: number, userId: number, accept: boolean): Promise<Team> {
-    try {
-
-      const teamInvite = await this.inviteRepository.findOne({
-        where: { id: inviteId, invitee: { id: userId } },
-        relations: ['team', 'invitee', 'team.members']
-      });
-
-      if (!teamInvite) {
-        throw new NotFoundException('Invite not found');
+    const teamInvite = await this.inviteRepository.findOne({
+      where: { id: inviteId, invitee: { id: userId } },
+      relations: ['team', 'team.members', 'inviter', 'invitee']
+    });
+  
+    if (!teamInvite) {
+      throw new NotFoundException('Invite not found');
+    }
+  
+    // Обновляем статус приглашения
+    teamInvite.status = accept ? InviteStatus.ACCEPTED : InviteStatus.REJECTED;
+    await this.inviteRepository.save(teamInvite);
+  
+    // Обновляем UserTeamInvite
+    const userTeamInvite = await this.userTeamInviteRepository.findOne({
+      where: {
+        inviter: { id: teamInvite.inviter.id },
+        invitee: { id: userId },
+        team: { id: teamInvite.team.id }
       }
-
-      const userTeamInvite = await this.userTeamInviteRepository.findOne({
-        where: { invitee: { id: userId }, team: { id: teamInvite.team.id } }
-      });
-
-      if (!userTeamInvite) {
-        throw new NotFoundException('User team invite not found');
-      }
-
-      if (accept) {
+    });
+  
+    if (userTeamInvite) {
+      userTeamInvite.status = accept ? 'accepted' : 'rejected';
+      await this.userTeamInviteRepository.save(userTeamInvite);
+    }
+  
+    if (accept) {
+      // Проверяем, что пользователь еще не в команде
+      if (!teamInvite.team.members.some(m => m.id === userId)) {
         // Добавляем пользователя в команду
-        if (!teamInvite.team.members.some(m => m.id === userId)) {
-          teamInvite.team.members.push(teamInvite.invitee);
-          await this.teamRepository.save(teamInvite.team);
-        }
-
-        // Устанавливаем команду пользователю
+        teamInvite.team.members.push(teamInvite.invitee);
+        await this.teamRepository.save(teamInvite.team);
+  
+        // Обновляем связь у пользователя
         teamInvite.invitee.team = teamInvite.team;
         await this.userRepository.save(teamInvite.invitee);
       }
-
-      // Обновляем статусы
-      teamInvite.status = accept ? InviteStatus.ACCEPTED : InviteStatus.REJECTED;
-      userTeamInvite.status = accept ? 'accepted' : 'rejected';
-
-      await Promise.all([
-        this.inviteRepository.save(teamInvite),
-        this.userTeamInviteRepository.save(userTeamInvite)
-      ]);
-
-      return teamInvite.team;
-    } catch (error) {
-      console.error('Error responding to invite:', error);
-      throw new InternalServerErrorException('Error responding to invite');
     }
+  
+    // Возвращаем обновленную команду
+    const updatedTeam = await this.teamRepository.findOne({
+      where: { id: teamInvite.team.id },
+      relations: ['members']
+    });
+  
+    if (!updatedTeam) {
+      throw new NotFoundException('Team not found after update');
+    }
+  
+    return updatedTeam;
   }
 
   async getUserInvites(userId: number): Promise<TeamInvite[]> {
@@ -323,5 +320,18 @@ export class TeamsService {
     console.log(`changeTeamInfo: DONE: teamId=${input.teamId} name=${input.name} description=${input.description}`);
 
     return this.teamRepository.save(team);
+  }
+
+  async getTeams(id: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: id },
+      relations: ['ownedTeams', 'ownedTeams.members'],
+    });
+
+    if (!user) {
+      throw new Error(`Error: getTeams: не получилось найти User.ownedTeams при User.id=${id}`);
+    }
+    
+    return user.ownedTeams;
   }
 }

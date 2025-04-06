@@ -78,4 +78,9 @@ export class TeamsController {
   changeTeamInfo(@Body() body: ChangeTeamInfoDto) {
     return this.teamsService.changeTeamInfo(body);
   }
+
+  @Get('getteams/:id')
+  getTeams(@Param('id') id) {
+    return this.teamsService.getTeams(id);
+  }
 }
