@@ -1,33 +1,40 @@
 import { RouteRecordRaw } from 'vue-router';
+import MainLayout from 'layouts/MainLayout.vue';
+import ProjectsPage from 'pages/ProjectsPage.vue';
+import UsersPage from 'pages/UsersPage.vue';
+import UserEditPage from 'pages/UserEditPage.vue';
+import TasksPage from 'pages/TasksPage.vue';
+import AddInTeamPage from 'pages/AddInTeamPage.vue';
+import ServiceLayout from 'layouts/ServiceLayout.vue';
+import LoginPage from 'pages/LoginPage.vue';
+import SignupPage from 'pages/SignupPage.vue';
+import ErrorNotFound from 'pages/ErrorNotFound.vue';
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: MainLayout,
     children: [
-      { path: '', component: () => import('pages/ProjectsPage.vue') },
-      { path: 'users', component: () => import('pages/UsersPage.vue') }, 
-      { path: 'users/:id', component: () => import('pages/UserEditPage.vue') },
-      { path: 'ideas', component: () => import('pages/TasksPage.vue') },
-      { path: 'addinteam', component: () => import('pages/AddInTeamPage.vue') },
+      { path: '', name: 'projects', component: ProjectsPage },
+      { path: 'users', name: 'users', component: UsersPage },
+      { path: 'users/:id', component: UserEditPage },
+      { path: 'tasks', name: 'tasks', component: TasksPage },
+      { path: 'addinteam', name: 'addinteam', component: AddInTeamPage },
     ],
   },
   {
     path: '/login',
-    component: () => import('layouts/ServiceLayout.vue'),
-    children: [{ path: '', component: () => import('pages/LoginPage.vue') }],
+    component: ServiceLayout,
+    children: [{ path: '', component: LoginPage }],
   },
   {
     path: '/signup',
-    component: () => import('layouts/ServiceLayout.vue'),
-    children: [{ path: '', component: () => import('pages/SignupPage.vue') }],
+    component: ServiceLayout,
+    children: [{ path: '', component: SignupPage }],
   },
-
-  // Always leave this as last one,
-  // but you can also remove it
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue'),
+    component: ErrorNotFound,
   },
 ];
 

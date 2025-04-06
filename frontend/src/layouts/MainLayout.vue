@@ -1,6 +1,5 @@
 <template>
   <div class="app-container" :class="{ 'dark': darkMode }">
-    <!-- Верхнее меню -->
     <header class="app-header">
       <div class="app-header-left">
         <span class="app-icon"></span>
@@ -12,35 +11,32 @@
             placeholder="Поиск"
             v-model="searchQuery"
           >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"></circle>
-            <path d="M21 21l-4.35-4.35"></path>
-          </svg>
+          <span class="search-icon">
+            <svg viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 21l-4.35-4.35" fill="none" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </span>
         </div>
       </div>
       <div class="app-header-right">
-        <button 
-          class="mode-switch" 
-          title="Переключить тему"
-          @click="toggleDarkMode"
-          :class="{ 'active': darkMode }"
-        >
-          <svg class="moon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" width="24" height="24" viewBox="0 0 24 24">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>
+        <button class="mode-switch" @click="toggleDarkMode" :class="{ 'active': darkMode }">
+          <svg viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="none" stroke="currentColor" stroke-width="2"/>
           </svg>
         </button>
         
         <button class="notification-btn" @click="toggleNotifications">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          <svg viewBox="0 0 24 24">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0" fill="none" stroke="currentColor" stroke-width="2"/>
           </svg>
           <span class="notification-badge" v-if="unreadNotifications > 0">{{ unreadNotifications }}</span>
         </button>
         
         <div class="profile-dropdown">
           <button class="profile-btn" @click="toggleProfileDropdown">
-            <img src="" alt="Profile" />
+            <span class="profile-avatar">{{ userName.charAt(0) }}</span>
             <span>{{ userName }}</span>
           </button>
           <div class="dropdown-menu" v-if="showProfileDropdown">
@@ -54,60 +50,23 @@
     </header>
 
     <div class="app-content">
-      <!-- Боковое меню -->
       <nav class="app-sidebar">
         <router-link 
-          to="/" 
-          class="app-sidebar-link" 
-          :class="{ 'active': $route.name === 'projects' }"
-          title="Проекты"
+          v-for="link in sidebarLinks"
+          :key="link.path"
+          :to="link.path"
+          class="app-sidebar-link"
+          :class="{ 'active': $route.path === link.path }"
+          :title="link.title"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-        </router-link>
-        
-        <router-link 
-          to="/tasks" 
-          class="app-sidebar-link" 
-          :class="{ 'active': $route.name === 'tasks' }"
-          title="Идеи"
-        >
-          <svg class="link-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z" />
-          </svg>
-        </router-link>
-        
-        <router-link 
-          to="/users" 
-          class="app-sidebar-link" 
-          :class="{ 'active': $route.name === 'users' }"
-          title="Команды"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-        </router-link>
-
-        <router-link 
-          to="/addinteam" 
-          class="app-sidebar-link" 
-          :class="{ 'active': $route.name === 'addinteam' }"
-          title="Добавить в команду"
-        >
-          <svg class="link-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z" />
+          <svg viewBox="0 0 24 24">
+            <path :d="link.icon" fill="none" stroke="currentColor" stroke-width="2"/>
           </svg>
         </router-link>
       </nav>
 
-      <!-- Основное содержимое страницы -->
       <main class="main-content">
-        <router-view></router-view> <!-- Сюда будут вставляться страницы -->
+        <router-view></router-view>
       </main>
     </div>
   </div>
@@ -122,22 +81,49 @@ export default {
       searchQuery: '',
       showProfileDropdown: false,
       userName: 'Иван Иванов',
-      unreadNotifications: 3
+      unreadNotifications: 3,
+      sidebarLinks: [
+        { 
+          path: '/', 
+          title: 'Проекты', 
+          icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' 
+        },
+        { 
+          path: '/tasks', 
+          title: 'Идеи', 
+          icon: 'M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z' 
+        },
+        { 
+          path: '/users', 
+          title: 'Команды', 
+          icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 104 0M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75' 
+        },
+        { 
+          path: '/addinteam', 
+          title: 'Добавить в команду', 
+          icon: 'M12 5v14M5 12h14' 
+        }
+      ]
     }
   },
   methods: {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
+      document.documentElement.classList.toggle('dark', this.darkMode);
     },
     toggleProfileDropdown() {
       this.showProfileDropdown = !this.showProfileDropdown;
     },
     toggleNotifications() {
-      this.unreadNotifications = 0; // Помечаем как прочитанные
+      this.unreadNotifications = 0;
     },
     logout() {
-      // Логика выхода
       this.$router.push('/login');
+    }
+  },
+  mounted() {
+    if (this.darkMode) {
+      document.documentElement.classList.add('dark');
     }
   }
 }
@@ -193,14 +179,13 @@ export default {
   flex-direction: column;
   height: 100vh;
   background-color: var(--app-container);
-  transition: .2s;
+  transition: background-color 0.3s;
 }
 
 .app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
   padding: 16px 24px;
   background-color: var(--projects-section);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -212,18 +197,13 @@ export default {
   align-items: center;
 }
 
-.app-header-left { 
-  flex-grow: 1; 
-} 
-
-.app-header-right button {
-  margin-left: 10px;
+.app-header-left {
+  flex-grow: 1;
 }
 
 .app-icon {
   width: 26px;
   height: 2px;
-  border-radius: 4px;
   background-color: var(--main-color);
   position: relative;
 }
@@ -233,10 +213,9 @@ export default {
   position: absolute;
   width: 12px;
   height: 2px;
-  border-radius: 4px;
   background-color: var(--main-color);
   left: 50%;
-  transform: translatex(-50%);
+  transform: translateX(-50%);
 }
 
 .app-icon:before { top: -6px; }
@@ -246,75 +225,47 @@ export default {
   color: var(--main-color);
   margin: 0 32px;
   font-size: 20px;
-  line-height: 24px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .search-wrapper {
-  border-radius: 20px;
-  background-color: var(--search-area-bg);
-  padding-right: 12px;
-  height: 40px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  background-color: var(--search-area-bg);
+  border-radius: 20px;
+  padding: 8px 16px;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 2px 6px 0 rgba(136,148,171,.2),0 24px 20px -24px rgba(71,82,107,.1);
 }
 
 .search-input {
   border: none;
-  flex: 1;
+  background: transparent;
   outline: none;
-  height: 100%;
-  padding: 0 20px;
-  font-size: 16px;
-  background-color: var(--search-area-bg);
+  width: 100%;
   color: var(--main-color);
 }
 
-.search-input::placeholder {
-  color: var(--main-color);
-  opacity: .6;
+.search-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
-.mode-switch {
-  background-color: transparent;
+.mode-switch, .notification-btn {
+  background: transparent;
   border: none;
-  padding: 0;
-  color: var(--main-color);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 32px;
-  height: 32px;
+  cursor: pointer;
+  padding: 8px;
   border-radius: 50%;
-  transition: background-color 0.3s;
 }
 
-.mode-switch:hover {
+.mode-switch:hover, .notification-btn:hover {
   background-color: var(--link-color-hover);
 }
 
 .notification-btn {
-  color: var(--main-color);
-  padding: 0;
-  border: 0;
-  background-color: transparent;
-  height: 32px;
-  width: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   position: relative;
-  border-radius: 50%;
-  transition: background-color 0.3s;
-}
-
-.notification-btn:hover {
-  background-color: var(--link-color-hover);
 }
 
 .notification-badge {
@@ -330,49 +281,43 @@ export default {
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  font-weight: bold;
 }
 
 .profile-dropdown {
   position: relative;
-  margin-left: 10px;
+  margin-left: 16px;
 }
 
 .profile-btn {
-  padding: 0 12px;
-  border: 0;
-  background-color: transparent;
   display: flex;
   align-items: center;
-  height: 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
   border-radius: 20px;
-  transition: background-color 0.3s;
-  color: var(--main-color);
 }
 
 .profile-btn:hover {
   background-color: var(--link-color-hover);
 }
 
-.profile-btn img {
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 32px;
   height: 32px;
-  object-fit: cover;
+  background-color: var(--button-bg);
+  color: white;
   border-radius: 50%;
-  margin-right: 8px;
-}
-
-.profile-btn span {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 700;
   margin-right: 8px;
 }
 
 .dropdown-menu {
   position: absolute;
   right: 0;
-  top: 50px;
+  top: 100%;
   background-color: var(--more-list-bg);
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--more-list-shadow);
@@ -386,7 +331,6 @@ export default {
   padding: 12px 16px;
   text-decoration: none;
   color: var(--main-color);
-  transition: background-color 0.2s;
 }
 
 .dropdown-item:hover {
@@ -396,42 +340,42 @@ export default {
 .dropdown-divider {
   height: 1px;
   background-color: var(--message-box-border);
-  margin: 4px 0;
 }
 
 .logout {
   color: #ff4757;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 .app-content {
   display: flex;
   height: calc(100vh - 60px);
-  overflow: hidden;
 }
 
 .app-sidebar {
-  padding: 40px 16px;
+  width: 80px;
+  background-color: var(--projects-section);
+  border-right: 1px solid var(--message-box-border);
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: var(--projects-section);
-  border-right: 1px solid var(--message-box-border);
-  width: 80px;
-  flex-shrink: 0;
+  padding: 40px 16px;
 }
 
 .app-sidebar-link {
-  color: var(--link-color);
-  margin: 16px 0;
-  transition: .2s;
-  border-radius: 50%;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 40px;
   height: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  border-radius: 50%;
+  margin: 16px 0;
   position: relative;
+  color: var(--link-color);
 }
 
 .app-sidebar-link:hover {
@@ -442,6 +386,11 @@ export default {
 .app-sidebar-link.active {
   background-color: var(--link-color-active-bg);
   color: var(--link-color-active);
+}
+
+.app-sidebar-link svg {
+  width: 24px;
+  height: 24px;
 }
 
 .app-sidebar-link::after {
@@ -458,9 +407,11 @@ export default {
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s, visibility 0.3s;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  z-index: 1000;
+  pointer-events: none;
+  min-width: max-content;
 }
 
 .app-sidebar-link:hover::after {
