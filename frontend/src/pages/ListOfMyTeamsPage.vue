@@ -8,7 +8,7 @@
     </div>
 
     <!-- Основное окно со списком команд -->
-    <div v-for="(team, index) in teams" :key="index" class="team-block q-mb-md">
+    <div v-for="(team, index) in teams" :key="index" class="team-block q-mb-md" @click="openTeamDetails(team)">
       <div class="team-name text-h6 text-weight-bold text-grey-9">{{ team.name }}</div>
       <div class="team-description text-grey-7">
         {{ truncatedDescription(team.description, 100) }}
@@ -32,23 +32,58 @@
       </div>
     </div>
 
+    <!-- Модальное окно с информацией о команде -->
+    <div v-if="selectedTeam" class="team-details-modal">
+      <div class="team-details-modal-content">
+        <button @click="closeTeamDetails" class="team-details-close-button">Закрыть</button>
+
+        <div class="team-details-team-info-container">
+          <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
+          <div class="team-details-team-description-wrapper">
+            <p class="team-details-team-description-text">{{ selectedTeam.description }}</p>
+          </div>
+        </div>
+
+        <div class="team-details-members-container">
+          <div class="team-details-leader-wrapper">
+            <div v-if="leader" class="team-details-member-box leader-box">
+              <div class="team-details-member-firstname">{{ leader.firstname }}</div>
+              <div class="team-details-member-lastname">{{ leader.lastname }}</div>
+              <div class="team-details-leader-label">Тимлидер</div>
+            </div>
+          </div>
+
+          <div v-for="(member, index) in filteredMembersWithoutLeader" :key="index" class="member-box">
+            <div class="team-details-member-firstname">{{ member.firstname }}</div>
+            <div class="team-details-member-lastname">{{ member.lastname }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Модальное окно создания команды -->
-    <div v-if="showCreateTeamModal" class="modal-overlay">
-      <div class="modal-content create-team-modal">
-        <h3>Создать команду</h3>
-        <div class="form-group">
-          <label for="teamName">Название команды:</label>
-          <input type="text" id="teamName" v-model="newTeam.name" />
+    <div v-if="selectedTeam" class="team-details-modal">
+      <div class="team-details-modal-content">
+        <button @click="closeTeamDetails" class="team-details-close-button">Закрыть</button>
+
+        <div class="team-details-team-info-container">
+          <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
+          <p class="team-details-team-description-text">{{ selectedTeam.description }}</p>
         </div>
-        <div class="form-group">
-          <label for="teamDescription">Описание команды:</label>
-          <textarea id="teamDescription" v-model="newTeam.description"></textarea>
-        </div>
-        <div class="modal-actions">
-          <button class="save-btn" @click="saveTeam">Сохранить</button>
-          <button class="cancel-btn" @click="showCreateTeamModal = false">
-            Отмена
-          </button>
+
+        <div class="team-details-members-container">
+          <div class="team-details-leader-wrapper">
+            <div v-if="leader" class="team-details-member-box leader-box">
+              <div class="team-details-member-firstname">{{ leader.firstname }}</div>
+              <div class="team-details-member-lastname">{{ leader.lastname }}</div>
+              <div class="team-details-leader-label">Тимлидер</div>
+            </div>
+          </div>
+
+          <div v-for="(member, index) in filteredMembersWithoutLeader" :key="index" class="team-details-member-box">
+            <div class="team-details-member-firstname">{{ member.firstname }}</div>
+            <div class="team-details-member-lastname">{{ member.lastname }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -69,13 +104,38 @@ export default defineComponent({
       teams: null,
       showCreateTeamModal: false,
       newTeam: null,
+      selectedTeam: null,
     };
   },
   async mounted() {
     await this.loadTeams();
 
   },
+  computed: {
+    leader() {
+        return this.selectedTeam ? this.selectedTeam.leader : null;
+    },
+    filteredMembersWithoutLeader() {
+      if (!this.selectedTeam) {
+        return [];
+      }
+      return this.selectedTeam.members.filter(member => !this.isOwner(member, this.selectedTeam.owner) && !this.isLeader(member, this.selectedTeam.leader));
+    },
+  },
   methods: {
+    isOwner(member, owner) {
+      return member.firstname === owner.firstname && member.lastname === owner.lastname;
+    },
+    isLeader(member, leader) {
+        if (!leader) return false;
+      return member.firstname === leader.firstname && member.lastname === leader.lastname;
+    },
+    openTeamDetails(team) {
+      this.selectedTeam = team;
+    },
+    closeTeamDetails() {
+      this.selectedTeam = null;
+    },
     truncatedDescription(text, maxLength) {
       return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     },
@@ -116,11 +176,12 @@ export default defineComponent({
         console.error('Error: saveTeam(): не удалось создать команду:', error);
       }
 
-      this.teams.push({name: this.newTeam.name, description: this.newTeam.description, members: []});
+      if (this.teams.length < 2){
+        this.teams.push({name: this.newTeam.name, description: this.newTeam.description, members: []});
+      }
       
       this.showCreateTeamModal = false;
 
-      // Очищаем поля формы (опционально)
       this.newTeam = {
         name: '',
         description: '',
@@ -131,6 +192,136 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.team-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.team-details-modal-content {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 600px;
+}
+
+.team-details-close-button {
+  background-color: #dc3545; /* Красный цвет */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.team-details-close-button:hover {
+  background-color: #c82333;
+}
+
+.team-details-team-info-container {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.team-details-team-name-header {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #343a40;
+}
+
+.team-details-team-description-text {
+  font-size: 16px;
+  color: #495057;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.team-details-members-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.team-details-member-box {
+  background-color: #e9ecef;
+  border-radius: 8px;
+  padding: 10px;
+  width: calc(50% - 10px);
+  text-align: center;
+}
+
+.team-details-member-firstname {
+  font-size: 14px;
+  font-weight: bold;
+  color: #343a40;
+  margin-bottom: 5px;
+}
+
+.team-details-member-lastname {
+  font-size: 14px;
+  color: #495057;
+}
+
+.team-details-leader-label {
+  background-color: #ffc107; /* Желтый цвет */
+  color: #212529; /* Темный цвет текста */
+  padding: 3px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.team-details-leader-box {
+  order: -1;
+  background-color: #d0e9c6;
+}
+
+.team-details-leader-wrapper {
+  width: 100%;
+  display: flex;    
+  justify-content: flex-start; 
+  margin-bottom: 10px;
+}
+
+.team-details-team-description-wrapper {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.team-description-text {
+  font-size: 16px;
+  color: #495057;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: auto;
+}
+
 .team-block {
   background-color: #fff; /* RGB(255, 255, 255) */
   padding: 16px;

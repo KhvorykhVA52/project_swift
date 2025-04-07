@@ -32,6 +32,11 @@ export class TeamsService {
     });
     if (!owner) throw new NotFoundException(`ERROR: teams.service.createTeam(): не удалось найти User при ownerId=${ownerId}`);
 
+    if (owner.ownedTeams && owner.ownedTeams.length > 2) {
+      console.log(`ERROR: teams.service.createTeam(): превышение лимита на User.ownedTeams[] при ownerId=${ownerId}`);
+      return;
+    }
+    
     const team = new Team();
     team.name = createTeamDto.name;
     if (createTeamDto.description){
@@ -68,7 +73,7 @@ export class TeamsService {
     }
 
     if (team.members.some(m => m.id === dto.inviteeId)) {
-      throw new Error(`ERROR: teams.service.createInvite(): данный User уже в в чьей-то команде. inviterId=${inviterId}, dto={inviteeId=${dto.inviteeId}, teamId=${dto.teamId}}`);
+      throw new InternalServerErrorException(`ERROR: teams.service.createInvite(): данный User уже в в чьей-то команде. inviterId=${inviterId}, dto={inviteeId=${dto.inviteeId}, teamId=${dto.teamId}}`);
     }
 
     const existingInvite = await this.inviteRepository.findOne({
@@ -80,7 +85,7 @@ export class TeamsService {
     });
 
     if (existingInvite) {
-      throw new Error(`ERROR: teams.service.createInvite(): уже существует Invite при invitee=${invitee}, teamId=${dto.teamId}`);
+      throw new InternalServerErrorException(`ERROR: teams.service.createInvite(): уже существует Invite при invitee=${invitee}, teamId=${dto.teamId}`);
     }
 
     const teamInvite = await this.inviteRepository.save(
@@ -231,11 +236,11 @@ export class TeamsService {
     const team = await this.teamRepository.findOne({ where: { id: input.teamId }, relations: ['leader', 'members'] }); // Загружаем leader и members
 
     if (!user) {
-      throw new Error(`ERROR: teams.service.memberRemove(): не удалось найти User при memberId=${input.memberId}`);
+      throw new InternalServerErrorException(`ERROR: teams.service.memberRemove(): не удалось найти User при memberId=${input.memberId}`);
     }
 
     if (!team) {
-      throw new Error(`ERROR: teams.service.inviteCancel(): не удалось найти Team при teamId=${input.teamId}`);
+      throw new InternalServerErrorException(`ERROR: teams.service.inviteCancel(): не удалось найти Team при teamId=${input.teamId}`);
     }
 
     // 2. Проверяем, является ли пользователь лидером команды, и если да, обнуляем leader.
@@ -264,7 +269,7 @@ export class TeamsService {
     });
 
     if (!team) {
-      throw new Error(`ERROR: teams.service.changeTeamleader(): не удалось найти Team при teamId=${input.teamId}`);
+      throw new InternalServerErrorException(`ERROR: teams.service.changeTeamleader(): не удалось найти Team при teamId=${input.teamId}`);
     }
 
     // 2. Обрабатываем случай удаления текущего лидера.
@@ -284,12 +289,12 @@ export class TeamsService {
       });
 
       if (!newLeader) {
-        throw new Error(`ERROR: teams.service.changeTeamleader(): не удалось найти User при userId=${input.memberId}`);
+        throw new InternalServerErrorException(`ERROR: teams.service.changeTeamleader(): не удалось найти User при userId=${input.memberId}`);
       }
 
       // 4. Проверяем, не является ли этот пользователь уже лидером другой команды.
       if (newLeader.ledTeam) {
-        throw new Error(`ERROR: teams.service.changeTeamleader(): User с userId=${input.memberId} уже является лидером другой команды`);
+        throw new InternalServerErrorException(`ERROR: teams.service.changeTeamleader(): User с userId=${input.memberId} уже является лидером другой команды`);
       }
             
       // 5.  Если у команды уже есть лидер, сбрасываем его.
@@ -315,7 +320,7 @@ export class TeamsService {
     const team = await this.teamRepository.findOneBy({ id: input.teamId });
 
     if (!team) {
-      throw new Error(`ERROR: teams.service.changeTeamInfo(): Team с Team.id = ${input.teamId} не найдена`);
+      throw new InternalServerErrorException(`ERROR: teams.service.changeTeamInfo(): Team с Team.id = ${input.teamId} не найдена`);
     }
 
     team.name = input.name;
@@ -329,11 +334,11 @@ export class TeamsService {
   async getTeams(id: number) {
     const user = await this.userRepository.findOne({
       where: { id: id },
-      relations: ['ownedTeams', 'ownedTeams.members'],
+      relations: ['ownedTeams', 'ownedTeams.members', 'ownedTeams.leader', 'ownedTeams.owner'],
     });
 
     if (!user) {
-      throw new Error(`ERROR: teams.service.getTeams(): не удалось найти User.ownedTeams при User.id=${id}`);
+      throw new InternalServerErrorException(`ERROR: teams.service.getTeams(): не удалось найти User.ownedTeams при User.id=${id}`);
     }
     
     console.log(`OK: teams.service.getTeams(User.id=${id})`);
