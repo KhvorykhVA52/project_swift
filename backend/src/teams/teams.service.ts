@@ -32,7 +32,7 @@ export class TeamsService {
     });
     if (!owner) throw new NotFoundException(`ERROR: teams.service.createTeam(): не удалось найти User при ownerId=${ownerId}`);
 
-    if (owner.ownedTeams && owner.ownedTeams.length > 2) {
+    if (owner.ownedTeams && owner.ownedTeams.length > 1) {
       console.log(`ERROR: teams.service.createTeam(): превышение лимита на User.ownedTeams[] при ownerId=${ownerId}`);
       return;
     }

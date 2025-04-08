@@ -62,31 +62,25 @@
     </div>
 
     <!-- Модальное окно создания команды -->
-    <div v-if="selectedTeam" class="team-details-modal">
-      <div class="team-details-modal-content">
-        <button @click="closeTeamDetails" class="team-details-close-button">Закрыть</button>
-
-        <div class="team-details-team-info-container">
-          <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
-          <p class="team-details-team-description-text">{{ selectedTeam.description }}</p>
-        </div>
-
-        <div class="team-details-members-container">
-          <div class="team-details-leader-wrapper">
-            <div v-if="leader" class="team-details-member-box leader-box">
-              <div class="team-details-member-firstname">{{ leader.firstname }}</div>
-              <div class="team-details-member-lastname">{{ leader.lastname }}</div>
-              <div class="team-details-leader-label">Тимлидер</div>
-            </div>
-          </div>
-
-          <div v-for="(member, index) in filteredMembersWithoutLeader" :key="index" class="team-details-member-box">
-            <div class="team-details-member-firstname">{{ member.firstname }}</div>
-            <div class="team-details-member-lastname">{{ member.lastname }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div v-if="showCreateTeamModal" class="modal-overlay">
+       <div class="modal-content create-team-modal">
+         <h3>Создать команду</h3>
+         <div class="form-group">
+           <label for="teamName">Название команды:</label>
+           <input type="text" id="teamName" v-model="newTeam.name" />
+         </div>
+         <div class="form-group">
+           <label for="teamDescription">Описание команды:</label>
+           <textarea id="teamDescription" v-model="newTeam.description"></textarea>
+         </div>
+         <div class="modal-actions">
+           <button class="save-btn" @click="saveTeam">Сохранить</button>
+           <button class="cancel-btn" @click="showCreateTeamModal = false">
+             Отмена
+           </button>
+         </div>
+       </div>
+     </div>
   </div>
 </template>
 
