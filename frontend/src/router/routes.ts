@@ -10,6 +10,7 @@ import ServiceLayout from 'layouts/ServiceLayout.vue';
 import LoginPage from 'pages/LoginPage.vue';
 import SignupPage from 'pages/SignupPage.vue';
 import ErrorNotFound from 'pages/ErrorNotFound.vue';
+import ProfilePage from 'pages/ProfilePage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -22,6 +23,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'tasks', name: 'tasks', component: TasksPage },
       { path: 'addinteam', name: 'addinteam', component: AddInTeamPage },
       { path: 'listofmyteams', name: 'listofmyteams', component: ListOfMyTeamsPage },
+      { path: 'profile', name: 'profile', component: ProfilePage },
     ],
   },
   {
