@@ -16,6 +16,7 @@ import { Project } from './orm/project.entity';
 import { Comments } from './orm/comment.entity';
 import { Task } from './orm/task.entity';
 import { TeamsModule } from './teams/teams.module';
+import { IdeaModule } from './idea/idea.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { TeamsModule } from './teams/teams.module';
       }),
       inject: [ConfigService],
     }),
+    IdeaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

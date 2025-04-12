@@ -8,7 +8,7 @@ import { TeamsController } from './teams.controller';
 import { TeamsService } from './teams.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Team, TeamInvite, User, UserTeamInvite])], // Добавляем UserTeamInvite
+  imports: [TypeOrmModule.forFeature([Team, TeamInvite, User, UserTeamInvite])],
   controllers: [TeamsController],
   providers: [TeamsService],
 })
