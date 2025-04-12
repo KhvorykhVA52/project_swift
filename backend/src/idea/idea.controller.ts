@@ -8,7 +8,12 @@ export class IdeaController {
     constructor(private readonly ideaService: IdeaService) {}
 
     @Post('create')
-    createIdea(@Body() createIdeaDto: CreateIdeaDto) {
-        return this.ideaService.createIdea(createIdeaDto);
+    createIdea(@Body() body: CreateIdeaDto) {
+        return this.ideaService.createIdea(body);
+    }
+
+    @Post('delete')
+    deleteIdea(@Body() body: {id: number}) {
+        return this.ideaService.deleteIdea(body);
     }
 }

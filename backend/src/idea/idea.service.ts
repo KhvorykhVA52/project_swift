@@ -18,8 +18,8 @@ export class IdeaService {
         const user = await this.userRepository.findOneBy({id: input.initiatorId});
 
         if (!user) {
-            console.log(`ERROR: idea.service.createIdea(): не найден User при initiatorId=${input.initiatorId}`);
-            return;
+            console.log(`ERROR: idea.service.createIdea(): не найден User при User.id=${input.initiatorId}`);
+            return `ERROR`;
         }
 
         const newIdea = new Idea();
@@ -32,7 +32,19 @@ export class IdeaService {
         
         this.ideaRepository.save(newIdea);
 
-        console.log(`OK: idea.service.createIdea(initiatorId:${input.initiatorId})`);
+        console.log(`OK: idea.service.createIdea(initiatorId:${input.initiatorId}, name:${input.name})`);
         return (newIdea);
+    }
+
+    async deleteIdea(input: {id: number}) {
+        const idea = await this.ideaRepository.findOneBy({id: input.id});
+
+        if (!idea) {
+            console.log(`ERROR: idea.service.deleteIdea(): не найден Idea при Idea.id=${input.id}`);
+            return `ERROR`;
+        }
+
+        console.log(`OK: idea.service.deteleIdea(${input.id})`);
+        return this.ideaRepository.remove(idea);
     }
 }
