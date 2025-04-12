@@ -16,4 +16,45 @@ export class IdeaController {
     deleteIdea(@Body() body: {id: number}) {
         return this.ideaService.deleteIdea(body);
     }
+
+    @Get()
+    getIdeas(@Body() body) {
+        return this.ideaService.getIdeasBy(body);
+    }
+
+    @Post('changename')
+    changeName(@Body() body) {
+        return this.ideaService.changeName(body);
+    }
+
+    @Post('changeproblem')
+    changeProblem(@Body() body) {
+        return this.ideaService.changeProblem(body);
+    }
+
+    @Post('changesolution')
+    changeSolution(@Body() body) {
+        return this.ideaService.changeSolution(body);
+    }
+
+    @Post('changeresult')
+    changeResult(@Body() body) {
+        return this.ideaService.changeResult(body);
+    }
+
+    @Post('changeresource')
+    changeResource(@Body() body) {
+        return this.ideaService.changeResource(body);
+    }
+
+    @Post('changestatus')
+    changeStatus(@Body() body) {
+        return this.ideaService.changeStatus(body);
+    }
+
+    @Post('changecustomer')
+    changeCustomer(@Body() body) {
+        return this.ideaService.changeCustomer(body);
+    }
+
 }
