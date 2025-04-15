@@ -44,8 +44,8 @@ import {
     comments: Comments[];
   
     // Заказчик идеи
-    @ManyToOne(() => User, (user) => user.customerIdeas, { eager: true, onDelete: 'CASCADE' })
-    customer: User;
+    @ManyToOne(() => User, (user) => user.customerIdeas, { eager: true, onDelete: 'CASCADE', nullable: true })
+    customer: User | null;
     
     // Инициатор идеи
     @ManyToOne(() => User, (user) => user.initiatedIdeas, { eager: true, onDelete: 'CASCADE' })
