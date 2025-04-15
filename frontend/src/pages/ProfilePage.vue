@@ -61,22 +61,28 @@
 <script>
 export default {
   data() {
+    // Загружаем данные из localStorage или используем значения по умолчанию
+    const savedUser = localStorage.getItem('userProfile');
+    const defaultUser = {
+      firstname: 'Иван',
+      lastname: 'Иванов',
+      email: 'ivanovin@std.tyuiu.ru',
+      group: 'ACOиУ6-24-1',
+      phone: '+7(999)-999-99-99',
+      registrationDate: '07.04.2025'
+    };
+
     return {
-      user: {
-        firstname: 'Иван',
-        lastname: 'Иванов',
-        email: 'ivanovin@std.tyuiu.ru',
-        group: 'ACOиУ6-24-1',
-        phone: '+7(999)-999-99-99',
-        registrationDate: '07.04.2025'
-      },
+      user: savedUser ? JSON.parse(savedUser) : defaultUser,
+      originalUser: savedUser ? JSON.parse(savedUser) : {...defaultUser}, // Сохраняем оригинальные данные для отмены
       editing: {
         firstname: false,
         lastname: false,
         group: false,
         phone: false
       },
-      avatarColor: this.generateRandomColor()
+      avatarColor: this.getSavedColor() || this.generateRandomColor(),
+      isLoading: false
     }
   },
   computed: {
@@ -88,6 +94,9 @@ export default {
     },
     isEditing() {
       return Object.values(this.editing).some(val => val);
+    },
+    hasChanges() {
+      return JSON.stringify(this.user) !== JSON.stringify(this.originalUser);
     }
   },
   methods: {
@@ -95,7 +104,12 @@ export default {
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
       return colors[Math.floor(Math.random() * colors.length)];
     },
+    getSavedColor() {
+      return localStorage.getItem('avatarColor');
+    },
     startEditing() {
+      // Сохраняем текущие данные перед редактированием
+      this.originalUser = {...this.user};
       this.editing = {
         firstname: true,
         lastname: true,
@@ -103,17 +117,46 @@ export default {
         phone: true
       };
     },
-    saveChanges() {
-      // Здесь можно добавить логику сохранения данных
-      this.editing = {
-        firstname: false,
-        lastname: false,
-        group: false,
-        phone: false
-      };
+    async saveChanges() {
+      this.isLoading = true;
+
+      try {
+        // Сохраняем в localStorage
+        localStorage.setItem('userProfile', JSON.stringify(this.user));
+        localStorage.setItem('avatarColor', this.avatarColor);
+
+        // Обновляем оригинальные данные
+        this.originalUser = {...this.user};
+
+        // Показываем уведомление об успешном сохранении
+        this.$q.notify({
+          type: 'positive',
+          message: 'Данные успешно сохранены',
+          timeout: 2000
+        });
+
+        // Можно добавить отправку на сервер
+        // await this.saveToServer();
+      } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ошибка при сохранении данных',
+          timeout: 2000
+        });
+      } finally {
+        this.isLoading = false;
+        this.editing = {
+          firstname: false,
+          lastname: false,
+          group: false,
+          phone: false
+        };
+      }
     },
     cancelEditing() {
-      // Можно добавить подтверждение изменений
+      // Восстанавливаем оригинальные данные
+      this.user = {...this.originalUser};
       this.editing = {
         firstname: false,
         lastname: false,
@@ -129,10 +172,54 @@ export default {
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          // Здесь можно обработать загруженное изображение
-          console.log('Avatar uploaded:', e.target.result);
+          localStorage.setItem('userAvatar', e.target.result);
+          this.$q.notify({
+            type: 'positive',
+            message: 'Аватар успешно изменен',
+            timeout: 2000
+          });
         };
         reader.readAsDataURL(file);
+      }
+    },
+    async saveToServer() {
+      try {
+        const response = await this.$axios.post('/api/profile', this.user);
+        if (response.data.success) {
+          this.$q.notify({
+            type: 'positive',
+            message: 'Данные сохранены на сервере',
+            timeout: 2000
+          });
+        }
+      } catch (error) {
+        console.error('Ошибка сохранения на сервере:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ошибка при сохранении на сервере',
+          timeout: 2000
+        });
+      }
+    }
+  },
+  mounted() {
+    // Загружаем данные пользователя и аватар при монтировании
+    const savedUser = localStorage.getItem('userProfile');
+    if (savedUser) {
+      this.user = JSON.parse(savedUser);
+      this.originalUser = {...this.user};
+    }
+
+    const savedAvatar = localStorage.getItem('userAvatar');
+    if (savedAvatar) {
+      // Установите аватар, если он есть
+    }
+  },
+  watch: {
+    user: {
+      deep: true,
+      handler(newVal) {
+        localStorage.setItem('userProfile', JSON.stringify(newVal));
       }
     }
   }
