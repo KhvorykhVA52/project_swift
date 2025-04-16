@@ -51,3 +51,4 @@ import {
     @ManyToOne(() => User, (user) => user.initiatedIdeas, { eager: true, onDelete: 'CASCADE' })
     initiator: User;
   }
+  
