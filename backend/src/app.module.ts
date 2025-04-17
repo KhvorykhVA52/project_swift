@@ -17,6 +17,7 @@ import { Comments } from './orm/comment.entity';
 import { Task } from './orm/task.entity';
 import { TeamsModule } from './teams/teams.module';
 import { IdeaModule } from './idea/idea.module';
+import {CommentModule } from './comments/comment.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { IdeaModule } from './idea/idea.module';
     UsersModule,
     ProjectModule,
     TeamsModule,
+    CommentModule,
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
