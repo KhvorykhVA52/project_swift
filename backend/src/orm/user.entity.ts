@@ -31,6 +31,9 @@ export class User {
   firstname: string;
 
   @Column({ default: '' })
+  avatarUrl: string;
+
+  @Column({ default: '' })
   lastname: string;
 
   @Column({ default: '' })

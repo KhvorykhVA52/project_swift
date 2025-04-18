@@ -7,6 +7,12 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 import { User } from '../orm/user.entity';
 import { Idea } from '../orm/idea.entity';
 
+// Тип для возвращаемых данных без циклических зависимостей
+type CommentResponse = Omit<Comments, 'author' | 'idea'> & {
+  author: { id: number };
+  idea: { id: number };
+};
+
 @Injectable()
 export class CommentService {
   constructor(
@@ -18,91 +24,127 @@ export class CommentService {
     private ideaRepository: Repository<Idea>,
   ) {}
 
-  async createComment(createCommentDto: CreateCommentDto): Promise<Comments | null> {
-    // 1. Поиск User с отдельной проверкой
-    const user = await this.userRepository.findOne({ 
-      where: { id: createCommentDto.author },
-      relations: ['comments']
-    });
-    if (!user) {
-      console.log(`ОШИБКА: comment.service.createComment(): Не найден User с ID ${createCommentDto.author}`);
+  async createComment(createCommentDto: CreateCommentDto): Promise<CommentResponse | null> {
+    try {
+      // 1. Поиск User и Idea (только ID)
+      const user = await this.userRepository.findOne({ 
+        where: { id: createCommentDto.author },
+        select: ['id']
+      });
+      if (!user) {
+        console.log(`ОШИБКА: Не найден User с ID ${createCommentDto.author}`);
+        return null;
+      }
+
+      const idea = await this.ideaRepository.findOne({ 
+        where: { id: createCommentDto.idea },
+        select: ['id']
+      });
+      if (!idea) {
+        console.log(`ОШИБКА: Не найдена Idea с ID ${createCommentDto.idea}`);
+        return null;
+      }
+
+      // 2. Создание комментария
+      const newComment = this.commentsRepository.create({
+        ...createCommentDto,
+        author: { id: user.id }, // Используем только ID
+        idea: { id: idea.id }    // Используем только ID
+      });
+
+      // 3. Сохранение
+      const savedComment = await this.commentsRepository.save(newComment);
+
+      // 4. Обновление связей через QueryBuilder (без рекурсии)
+      await Promise.all([
+        this.ideaRepository
+          .createQueryBuilder()
+          .relation(Idea, 'comments')
+          .of(idea.id)
+          .add(savedComment.id),
+        this.userRepository
+          .createQueryBuilder()
+          .relation(User, 'comments')
+          .of(user.id)
+          .add(savedComment.id)
+      ]);
+
+      console.log(`УСПЕХ: Создан комментарий ID ${savedComment.id}`);
+      
+      // 5. Возвращаем данные без циклических ссылок
+      return {
+        ...savedComment,
+        author: { id: user.id },
+        idea: { id: idea.id }
+      };
+    } catch (error) {
+      console.log(`ОШИБКА: ${error.message}`);
       return null;
     }
-
-    // 2. Поиск Idea с отдельной проверкой
-    const idea = await this.ideaRepository.findOne({ 
-      where: { id: createCommentDto.idea },
-      relations: ['comments']
-    });
-    if (!idea) {
-      console.log(`ОШИБКА: comment.service.createComment(): Не найдена Idea с ID ${createCommentDto.idea}`);
-      return null;
-    }
-
-    // 3. Создание комментария
-    const newComment = new Comments();
-    newComment.comment = createCommentDto.comment;
-    newComment.grade = createCommentDto.grade;
-    newComment.author = user;
-    newComment.idea = idea;
-
-    // 4. Сохранение и обновление связей
-    const savedComment = await this.commentsRepository.save(newComment);
-    
-    // Добавляем в Idea
-    if (!idea.comments) idea.comments = [];
-    idea.comments.push(savedComment);
-    await this.ideaRepository.save(idea);
-
-    // Добавляем в User
-    if (!user.comments) user.comments = [];
-    user.comments.push(savedComment);
-    await this.userRepository.save(user);
-
-    console.log(`УСПЕХ: comment.service.createComment(): Создан комментарий ID ${savedComment.id} (User ID ${user.id}, Idea ID ${idea.id})`);
-    return savedComment;
   }
 
-  async updateComment(input: { id: number; data: UpdateCommentDto }): Promise<Comments | null> {
-    const comment = await this.commentsRepository.findOneBy({ id: input.id });
-    if (!comment) {
-      console.log(`ОШИБКА: comment.service.updateComment(): Не найден комментарий ID ${input.id}`);
+  async updateComment(input: { id: number; data: UpdateCommentDto }): Promise<CommentResponse | null> {
+    try {
+      const comment = await this.commentsRepository.findOne({ 
+        where: { id: input.id },
+        relations: ['author', 'idea'],
+        loadEagerRelations: false
+      });
+      
+      if (!comment) {
+        console.log(`ОШИБКА: Комментарий ID ${input.id} не найден`);
+        return null;
+      }
+
+      if (input.data.comment !== undefined) comment.comment = input.data.comment;
+      if (input.data.grade !== undefined) comment.grade = input.data.grade;
+
+      const updatedComment = await this.commentsRepository.save(comment);
+      
+      console.log(`УСПЕХ: Обновлен комментарий ID ${input.id}`);
+      return {
+        ...updatedComment,
+        author: { id: comment.author.id },
+        idea: { id: comment.idea.id }
+      };
+    } catch (error) {
+      console.log(`ОШИБКА: ${error.message}`);
       return null;
     }
-
-    // Обновление только указанных полей
-    if (input.data.comment !== undefined) comment.comment = input.data.comment;
-    if (input.data.grade !== undefined) comment.grade = input.data.grade;
-
-    const updatedComment = await this.commentsRepository.save(comment);
-    console.log(`УСПЕХ: comment.service.updateComment(): Обновлен комментарий ID ${input.id}`);
-    return updatedComment;
   }
 
   async deleteComment(id: number): Promise<boolean> {
-    const comment = await this.commentsRepository.findOne({
-      where: { id },
-      relations: ['idea', 'author']
-    });
-    if (!comment) {
-      console.log(`ОШИБКА: comment.service.deleteComment(): Не найден комментарий ID ${id}`);
+    try {
+      const comment = await this.commentsRepository.findOne({ 
+        where: { id },
+        relations: ['author', 'idea'],
+        select: ['id']
+      });
+
+      if (!comment) {
+        console.log(`ОШИБКА: Комментарий ID ${id} не найден`);
+        return false;
+      }
+
+      await Promise.all([
+        this.ideaRepository
+          .createQueryBuilder()
+          .relation(Idea, 'comments')
+          .of(comment.idea)
+          .remove(id),
+        this.userRepository
+          .createQueryBuilder()
+          .relation(User, 'comments')
+          .of(comment.author)
+          .remove(id)
+      ]);
+
+      await this.commentsRepository.delete(id);
+      console.log(`УСПЕХ: Удален комментарий ID ${id}`);
+      return true;
+    } catch (error) {
+      console.log(`ОШИБКА: ${error.message}`);
       return false;
     }
-
-    // Удаление из Idea
-    if (comment.idea?.comments) {
-      comment.idea.comments = comment.idea.comments.filter(c => c.id !== id);
-      await this.ideaRepository.save(comment.idea);
-    }
-
-    // Удаление из User
-    if (comment.author?.comments) {
-      comment.author.comments = comment.author.comments.filter(c => c.id !== id);
-      await this.userRepository.save(comment.author);
-    }
-
-    await this.commentsRepository.delete(id);
-    console.log(`УСПЕХ: comment.service.deleteComment(): Удален комментарий ID ${id}`);
-    return true;
   }
 }
