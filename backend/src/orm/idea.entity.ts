@@ -10,6 +10,7 @@ import {
   import { Competence, StatusIdea } from '../common/types'; 
   import { Comments } from './comment.entity';
   
+  
   @Entity()
   export class Idea {
     @PrimaryGeneratedColumn()

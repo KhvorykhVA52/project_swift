@@ -2,14 +2,22 @@
   <div class="profile-container">
     <div class="profile-header">
       <div class="avatar-container">
-        <div class="avatar" :style="{ 'background-color': avatarColor }">
-          {{ userInitials }}
+        <div class="avatar" :style="avatarStyle">
+          <img v-if="user.avatar" :src="user.avatar" alt="Аватар" class="avatar-image">
+          <span v-else>{{ userInitials }}</span>
         </div>
         <input type="file" id="avatar-upload" accept="image/*" @change="handleAvatarUpload" style="display: none;">
         <button class="change-avatar-btn" @click="triggerAvatarUpload">Изменить аватар</button>
       </div>
       <h1>{{ fullName }}</h1>
       <p class="email">{{ user.email }}</p>
+      <button 
+            class="remove-avatar-btn" 
+            @click="removeAvatar"
+            v-if="user.avatar"
+          >
+            Удалить аватар
+          </button>
     </div>
 
     <div class="profile-info">
@@ -61,7 +69,6 @@
 <script>
 export default {
   data() {
-    // Загружаем данные из localStorage или используем значения по умолчанию
     const savedUser = localStorage.getItem('userProfile');
     const defaultUser = {
       firstname: 'Иван',
@@ -69,12 +76,14 @@ export default {
       email: 'ivanovin@std.tyuiu.ru',
       group: 'ACOиУ6-24-1',
       phone: '+7(999)-999-99-99',
-      registrationDate: '07.04.2025'
+      registrationDate: '07.04.2025',
+            avatar: localStorage.getItem('userAvatar') || null
+
     };
 
     return {
-      user: savedUser ? JSON.parse(savedUser) : defaultUser,
-      originalUser: savedUser ? JSON.parse(savedUser) : {...defaultUser}, // Сохраняем оригинальные данные для отмены
+      user: savedUser ? { ...defaultUser, ...JSON.parse(savedUser) } : defaultUser,
+      originalUser: savedUser ? { ...defaultUser, ...JSON.parse(savedUser) } : {...defaultUser},
       editing: {
         firstname: false,
         lastname: false,
@@ -86,7 +95,12 @@ export default {
     }
   },
   computed: {
-    fullName() {
+    avatarStyle() {
+      return {
+        'background-color': this.user.avatar ? 'transparent' : this.avatarColor
+      };
+    },
+ fullName() {
       return `${this.user.firstname} ${this.user.lastname}`;
     },
     userInitials() {
@@ -97,9 +111,9 @@ export default {
     },
     hasChanges() {
       return JSON.stringify(this.user) !== JSON.stringify(this.originalUser);
-    }
-  },
-  methods: {
+    }  },
+
+   methods: {
     generateRandomColor() {
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
       return colors[Math.floor(Math.random() * colors.length)];
@@ -108,7 +122,6 @@ export default {
       return localStorage.getItem('avatarColor');
     },
     startEditing() {
-      // Сохраняем текущие данные перед редактированием
       this.originalUser = {...this.user};
       this.editing = {
         firstname: true,
@@ -121,22 +134,12 @@ export default {
       this.isLoading = true;
 
       try {
-        // Сохраняем в localStorage
-        localStorage.setItem('userProfile', JSON.stringify(this.user));
-        localStorage.setItem('avatarColor', this.avatarColor);
-
-        // Обновляем оригинальные данные
-        this.originalUser = {...this.user};
-
-        // Показываем уведомление об успешном сохранении
+        this.saveUserData();
         this.$q.notify({
           type: 'positive',
           message: 'Данные успешно сохранены',
           timeout: 2000
         });
-
-        // Можно добавить отправку на сервер
-        // await this.saveToServer();
       } catch (error) {
         console.error('Ошибка сохранения:', error);
         this.$q.notify({
@@ -154,8 +157,18 @@ export default {
         };
       }
     },
+    saveUserData() {
+      localStorage.setItem('userProfile', JSON.stringify(this.user));
+      localStorage.setItem('avatarColor', this.avatarColor);
+      if (this.user.avatar) {
+        localStorage.setItem('userAvatar', this.user.avatar);
+      }
+      this.originalUser = {...this.user};
+      window.dispatchEvent(new CustomEvent('userUpdated', {
+        detail: this.user
+      }));
+    },
     cancelEditing() {
-      // Восстанавливаем оригинальные данные
       this.user = {...this.originalUser};
       this.editing = {
         firstname: false,
@@ -169,41 +182,62 @@ export default {
     },
     handleAvatarUpload(event) {
       const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          localStorage.setItem('userAvatar', e.target.result);
-          this.$q.notify({
-            type: 'positive',
-            message: 'Аватар успешно изменен',
-            timeout: 2000
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-    },
-    async saveToServer() {
-      try {
-        const response = await this.$axios.post('/api/profile', this.user);
-        if (response.data.success) {
-          this.$q.notify({
-            type: 'positive',
-            message: 'Данные сохранены на сервере',
-            timeout: 2000
-          });
-        }
-      } catch (error) {
-        console.error('Ошибка сохранения на сервере:', error);
+      if (!file) return;
+
+      // Проверка типа файла
+      if (!file.type.match('image.*')) {
         this.$q.notify({
           type: 'negative',
-          message: 'Ошибка при сохранении на сервере',
+          message: 'Пожалуйста, выберите файл изображения',
           timeout: 2000
         });
+        return;
       }
+
+      // Проверка размера файла (не более 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Размер файла не должен превышать 2MB',
+          timeout: 2000
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        this.user.avatar = e.target.result;
+        this.saveUserData();
+        this.$q.notify({
+          type: 'positive',
+          message: 'Аватар успешно изменен',
+          timeout: 2000
+        });
+      };
+      
+      reader.onerror = () => {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ошибка при загрузке изображения',
+          timeout: 2000
+        });
+      };
+      
+      reader.readAsDataURL(file);
+    },
+    removeAvatar() {
+      this.user.avatar = null;
+      localStorage.removeItem('userAvatar');
+      this.saveUserData();
+      this.$q.notify({
+        type: 'positive',
+        message: 'Аватар удален',
+        timeout: 2000
+      });
     }
   },
   mounted() {
-    // Загружаем данные пользователя и аватар при монтировании
     const savedUser = localStorage.getItem('userProfile');
     if (savedUser) {
       this.user = JSON.parse(savedUser);
@@ -211,8 +245,8 @@ export default {
     }
 
     const savedAvatar = localStorage.getItem('userAvatar');
-    if (savedAvatar) {
-      // Установите аватар, если он есть
+    if (savedAvatar && !this.user.avatar) {
+      this.user.avatar = savedAvatar;
     }
   },
   watch: {
@@ -240,6 +274,7 @@ export default {
 
 .avatar-container {
   margin-bottom: 15px;
+  position: relative;
 }
 
 .avatar {
@@ -253,6 +288,21 @@ export default {
   color: white;
   margin: 0 auto 10px;
   font-weight: bold;
+  overflow: hidden;
+  position: relative;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
 }
 
 .change-avatar-btn {
@@ -261,10 +311,26 @@ export default {
   color: #1976D2;
   cursor: pointer;
   font-size: 14px;
+  padding: 5px 10px;
+  border-radius: 4px;
 }
 
 .change-avatar-btn:hover {
-  text-decoration: underline;
+  background-color: rgba(25, 118, 210, 0.1);
+}
+
+.remove-avatar-btn {
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.remove-avatar-btn:hover {
+  background-color: rgba(244, 67, 54, 0.1);
 }
 
 .profile-info {

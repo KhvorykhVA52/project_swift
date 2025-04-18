@@ -36,7 +36,7 @@
 
         <div class="profile-dropdown">
           <button class="profile-btn" @click="toggleProfileDropdown">
-            <span class="profile-avatar">{{ userName.charAt(0) }}</span>
+            <span class="profile-avatar">{{ userInitials }}</span>
             <span>{{ userName }}</span>
           </button>
           <div class="dropdown-menu" v-if="showProfileDropdown">
@@ -78,7 +78,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'MainLayout',
   data() {
@@ -86,7 +85,6 @@ export default {
       darkMode: false,
       searchQuery: '',
       showProfileDropdown: false,
-      userName: 'Иван Иванов',
       unreadNotifications: 3,
       sidebarLinks: [
         { 
@@ -112,6 +110,24 @@ export default {
       ]
     }
   },
+  computed: {
+    userName() {
+      const savedUser = localStorage.getItem('userProfile');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        return `${user.firstname} ${user.lastname}`;
+      }
+      return 'Виктор Иванов';
+    },
+    userInitials() {
+      const savedUser = localStorage.getItem('userProfile');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        return `${user.firstname.charAt(0)}${user.lastname.charAt(0)}`;
+      }
+      return 'ВИ';
+    }
+  },
   methods: {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
@@ -125,17 +141,28 @@ export default {
     },
     logout() {
       this.$router.push('/login');
+    },
+    handleUserUpdate() {
+      // Принудительное обновление computed свойств
+      this.$forceUpdate();
     }
   },
   mounted() {
     if (this.darkMode) {
       document.documentElement.classList.add('dark');
     }
-  }
+    // Подписываемся на событие обновления пользователя
+    window.addEventListener('userUpdated', this.handleUserUpdate);
+  },
+beforeUnmount() {
+  // Отписываемся от события при уничтожении компонента
+  window.removeEventListener('userUpdated', this.handleUserUpdate);
+}
 }
 </script>
 
 <style>
+/* Ваши существующие стили остаются без изменений */
 :root {
   --app-container: #f3f6fd;
   --main-color: #1f1c2e;
