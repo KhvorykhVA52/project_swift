@@ -18,8 +18,8 @@ export class IdeaController {
     }
 
     @Get()
-    getIdeas(@Body() body) {
-        return this.ideaService.getIdeasBy(body);
+    getIdeas() {
+        return this.ideaService.getAll();
     }
 
     @Post('changename')

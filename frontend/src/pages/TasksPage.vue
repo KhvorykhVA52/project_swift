@@ -33,128 +33,74 @@
           class="idea-card q-mb-md"
           flat
           bordered
+          @click="showIdeaDetails(idea)"
         >
-          <div @click="showIdeaDetails(idea)">
-            <q-card-section class="idea-header-section">
-              <div class="row items-center no-wrap">
-                <div class="col">
-                  <div class="text-h6 text-weight-bold">{{ idea.title }}</div>
-                </div>
-                <div class="col-auto">
-                  <q-btn-group flat rounded>
-                    <q-btn 
-                      flat 
-                      round 
-                      icon="edit" 
-                      color="teal-7"
-                      @click.stop="editIdea(idea)"
-                    />
-                    <q-btn 
-                      flat 
-                      round 
-                      icon="delete" 
-                      color="red"
-                      @click.stop="deleteIdea(idea.id)"
-                    />
-                    <q-btn 
-                      flat 
-                      round 
-                      icon="transform" 
-                      color="positive"
-                      @click.stop="convertToProject(idea)"
-                    />
-                  </q-btn-group>
-                </div>
+          <q-card-section class="idea-header-section">
+            <div class="row items-center no-wrap">
+              <div class="col">
+                <div class="text-h6 text-weight-bold">{{ idea.title }}</div>
               </div>
-            </q-card-section>
-
-            <q-separator />
-
-            <q-card-section>
-              <div class="idea-details">
-                <div class="idea-detail-item">
-                  <div class="idea-label text-teal-7">Проблема</div>
-                  <div class="idea-value">
-                    {{ idea.problem ? truncateText(idea.problem, 150) : '—' }}
-                  </div>
-                </div>
-                <div class="idea-detail-item">
-                  <div class="idea-label text-teal-7">Решение</div>
-                  <div class="idea-value">
-                    {{ idea.solution ? truncateText(idea.solution, 150) : '—' }}
-                  </div>
-                </div>
+              <div class="col-auto">
+                <q-btn-group flat rounded>
+                  <q-btn 
+                    flat 
+                    round 
+                    icon="edit" 
+                    color="teal-7"
+                    @click.stop="editIdea(idea)"
+                  />
+                  <q-btn 
+                    flat 
+                    round 
+                    icon="delete" 
+                    color="red"
+                    @click.stop="deleteIdea(idea.id)"
+                  />
+                  <q-btn 
+                    flat 
+                    round 
+                    icon="transform" 
+                    color="positive"
+                    @click.stop="convertToProject(idea)"
+                  />
+                </q-btn-group>
               </div>
-            </q-card-section>
-
-            <q-separator />
-
-            <q-card-section class="idea-meta-section">
-              <div class="row items-center justify-between">
-                <div class="text-caption text-grey-7">
-                  <q-icon name="person_outline" size="xs" class="q-mr-xs" />
-                  {{ idea.author }}
-                  <q-icon name="event" size="xs" class="q-ml-sm q-mr-xs" />
-                  {{ idea.date }}
-                </div>
-              </div>
-            </q-card-section>
-          </div>
+            </div>
+          </q-card-section>
 
           <q-separator />
 
-          <q-card-section class="comments-section">
-            <div class="text-subtitle1 text-weight-medium q-mb-sm">Комментарии</div>
-            
-            <div 
-              v-for="comment in sortedComments(idea.comments)" 
-              :key="comment.id" 
-              class="comment q-mb-md"
-            >
-              <div class="comment-bubble">
-                <div class="comment-text">
-                  {{ comment.text }}
-                </div>
-                <div class="comment-author text-caption text-grey-7 q-mt-xs">
-                  — {{ comment.author }}, {{ formatCommentDate(comment) }}
+          <q-card-section>
+            <div class="idea-details">
+              <div class="idea-detail-item">
+                <div class="idea-label text-teal-7">Проблема</div>
+                <div class="idea-value">
+                  {{ idea.problem ? truncateText(idea.problem, 150) : '—' }}
                 </div>
               </div>
-              <div class="comment-actions">
-                <q-btn 
-                  flat 
-                  dense 
-                  icon="edit" 
-                  size="sm" 
-                  color="teal-7"
-                  @click.stop="editComment(comment)"
-                />
-                <q-btn 
-                  flat 
-                  dense 
-                  icon="delete" 
-                  size="sm" 
-                  color="red"
-                  @click.stop="deleteComment(comment.id, idea.id)"
-                />
+              <div class="idea-detail-item">
+                <div class="idea-label text-teal-7">Решение</div>
+                <div class="idea-value">
+                  {{ idea.solution ? truncateText(idea.solution, 150) : '—' }}
+                </div>
               </div>
             </div>
+          </q-card-section>
 
-            <div class="add-comment q-mt-md">
-              <q-input
-                v-model="newComments[idea.id]"
-                filled
-                type="textarea"
-                placeholder="Добавить комментарий..."
-                autogrow
-                class="q-mb-sm comment-textarea"
-                @keydown.enter="handleEnter($event, idea.id)"
-              />
-              <q-btn 
-                color="teal"
-                label="Отправить" 
-                @click="addComment(idea.id)"
-                unelevated
-              />
+          <q-separator />
+
+          <q-card-section class="idea-meta-section">
+            <div class="row items-center justify-between">
+              <div class="text-caption text-grey-7">
+                <q-icon name="person_outline" size="xs" class="q-mr-xs" />
+                {{ idea.author }}
+                <q-icon name="event" size="xs" class="q-ml-sm q-mr-xs" />
+                {{ idea.date }}
+              </div>
+              <div class="text-caption text-grey-7">
+                <q-icon name="comment" size="xs" class="q-mr-xs" />
+                {{ idea.comments.length }} комментариев
+              </div>
             </div>
           </q-card-section>
         </q-card>
@@ -243,9 +189,9 @@
       </q-card>
     </q-dialog>
 
-    <!-- Модальное окно для просмотра идеи -->
-    <q-dialog v-model="showIdeaDetailsModal">
-      <q-card style="min-width: 600px">
+    <!-- Модальное окно для просмотра идеи с комментариями -->
+    <q-dialog v-model="showIdeaDetailsModal" full-width>
+      <q-card style="min-width: 800px; max-width: 1000px">
         <q-card-section class="bg-teal text-white">
           <div class="text-h6">{{ viewedIdea.title }}</div>
         </q-card-section>
@@ -261,7 +207,62 @@
           <div class="q-mb-md">{{ viewedIdea.result || '—' }}</div>
           
           <div class="text-subtitle1 text-weight-medium q-mb-sm">Необходимые ресурсы</div>
-          <div>{{ viewedIdea.resources || '—' }}</div>
+          <div class="q-mb-md">{{ viewedIdea.resources || '—' }}</div>
+
+          <q-separator class="q-my-md" />
+
+          <div class="text-subtitle1 text-weight-medium q-mb-sm">Комментарии</div>
+          
+          <div 
+            v-for="comment in sortedComments(viewedIdea.comments || [])" 
+            :key="comment.id" 
+            class="comment q-mb-md"
+          >
+            <div class="comment-bubble">
+              <div class="comment-text">
+                {{ comment.text }}
+              </div>
+              <div class="comment-author text-caption text-grey-7 q-mt-xs">
+                — {{ comment.author }}, {{ formatCommentDate(comment) }}
+              </div>
+            </div>
+            <div class="comment-actions">
+              <q-btn 
+                flat 
+                dense 
+                icon="edit" 
+                size="sm" 
+                color="teal-7"
+                @click.stop="editComment(comment)"
+              />
+              <q-btn 
+                flat 
+                dense 
+                icon="delete" 
+                size="sm" 
+                color="red"
+                @click.stop="deleteComment(comment.id, viewedIdea.id!)"
+              />
+            </div>
+          </div>
+
+          <div class="add-comment q-mt-md">
+            <q-input
+              v-model="newComments[viewedIdea.id!]"
+              filled
+              type="textarea"
+              placeholder="Добавить комментарий..."
+              autogrow
+              class="q-mb-sm comment-textarea"
+              @keydown.enter="handleEnter($event, viewedIdea.id!)"
+            />
+            <q-btn 
+              color="teal"
+              label="Отправить" 
+              @click="addComment(viewedIdea.id!)"
+              unelevated
+            />
+          </div>
         </q-card-section>
 
         <q-card-actions align="right" class="bg-grey-1 q-pa-md">
@@ -338,7 +339,17 @@ const currentIdea = ref<Partial<Idea>>({
   author: 'Иван Иванов',
   date: ''
 });
-const viewedIdea = ref<Partial<Idea>>({});
+const viewedIdea = ref<Idea>({
+  id: 0,
+  title: '',
+  problem: '',
+  solution: '',
+  result: '',
+  resources: '',
+  author: '',
+  date: '',
+  comments: []
+});
 const editingIdea = ref(false);
 const newComments = ref<Record<number, string>>({});
 const ideaSearchText = ref('');
@@ -534,6 +545,7 @@ const formatCommentDate = (comment: Comment) => {
 .idea-card {
   border-radius: 8px;
   transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .idea-card:hover {

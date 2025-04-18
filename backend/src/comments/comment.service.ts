@@ -147,4 +147,22 @@ export class CommentService {
       return false;
     }
   }
+
+  async getBy(id: number) {
+    const idea = await this.ideaRepository.findOne({where: {id: id},
+      relations: ['comments']
+    });
+
+    if (!idea) {
+      console.log(`ERROR: comment.service.ts: getBy(): не найден Idea при Idea.id=${id}`);
+      return `ERROR`;
+    }
+
+    if (!idea.comments) {
+      idea.comments = [];
+    }
+
+    console.log(`OK: comment.service.ts: getBy(${id})`);
+    return idea.comments;
+  }
 }
