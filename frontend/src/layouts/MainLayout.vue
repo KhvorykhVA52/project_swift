@@ -86,7 +86,7 @@ export default {
       darkMode: false,
       searchQuery: '',
       showProfileDropdown: false,
-      userName: '',
+      userName: 'Иван Иванов',
       unreadNotifications: 3,
       bellNotifications: {},
       sidebarLinks: [
@@ -134,20 +134,12 @@ export default {
     },
     logout() {
       this.$router.push('/login');
-    },
-    async setName() {
-      const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
-      if (!parsedSession) {
-        console.error('Ошибка при получении информации о сессии:'. error);
-      }
-      this.userName = parsedSession.firstname + ' ' + parsedSession.lastname;
     }
   },
-  async mounted() {
+  mounted() {
     if (this.darkMode) {
       document.documentElement.classList.add('dark');
     }
-    await this.setName()
   }
 }
 </script>
