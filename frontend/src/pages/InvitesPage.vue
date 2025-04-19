@@ -1,6 +1,6 @@
 <template>
   <div class="invite-list-container">
-    <h1>Список приглашений в команды</h1>
+    <h1 style="font-size: 20px;">Список приглашений в команды</h1>
     <ul class="invite-list">
       <li
         v-for="(invite, index) in invites"
