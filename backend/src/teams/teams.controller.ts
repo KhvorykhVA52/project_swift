@@ -28,7 +28,7 @@ export class TeamsController {
   createInvite(
     @Body('inviterId') inviterId: number,
     @Body() dto: CreateInviteDto
-  ): Promise<{teamInvite: TeamInvite, userTeamInvite: UserTeamInvite}> {
+  ) {
     return this.teamsService.createInvite(inviterId, dto);
   }
 

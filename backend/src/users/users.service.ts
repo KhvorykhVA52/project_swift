@@ -47,6 +47,13 @@ export class UsersService {
   }
 
   async findAll() {
+    return (await this.userRepository.find({
+      relations: ["team"],
+    }));
+  }
+
+  async securedFindAll() {
+    //не используется
     return (await this.userRepository.find()).map((u) => u.getSecuredDto());
   }
 
