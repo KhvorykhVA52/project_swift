@@ -49,7 +49,7 @@ import {
   TaskDto,
   TaskStatus,
 } from '../../../backend/src/common/types';
-import { Ref, ref } from 'vue';
+import { ref } from 'vue';
 import * as api from '../api/tasks.api';
 import * as userApi from '../api/users.api';
 import { useMainStore } from 'src/stores/main-store';
@@ -64,91 +64,84 @@ type StatusRecord = {
   value: TaskStatus;
 };
 
+type UpdateFunction = (callback: () => void) => void;
+
 const mainStore = useMainStore();
-
 const props = defineProps<TaskEditProps>();
-
 defineEmits([...useDialogPluginComponent.emits]);
 
 const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } =
   useDialogPluginComponent();
 
-const description = ref(props.task ? props.task.title : '');
-const status: Ref<TaskStatus> = ref(
-  props.task ? props.task.status : TaskStatus.new
-);
+const description = ref(props.task?.title ?? '');
+const status = ref<TaskStatus>(props.task?.status ?? TaskStatus.new);
+const usersDict = ref<SecuredUser[]>([]);
+const assignee = ref<SecuredUser | undefined>(props.task?.assignee ?? mainStore.getCurrentUser());
 
 const statusesDict: StatusRecord[] = [
-  {
-    label: 'Новая',
-    value: TaskStatus.new,
-  },
-  {
-    label: 'В работе',
-    value: TaskStatus.inProgress,
-  },
+  { label: 'Новая', value: TaskStatus.new },
+  { label: 'В работе', value: TaskStatus.inProgress },
+  ...(!props.new ? [{ label: 'Выполнена', value: TaskStatus.done }] : [])
 ];
 
-if (!props.new) {
-  statusesDict.push({
-    label: 'Выполнена',
-    value: TaskStatus.done,
-  });
-}
-
-const getStatusLabel = (status: TaskStatus) => {
-  const statusOption = statusesDict.find((v) => v.value == status);
-  if (statusOption) {
-    return statusOption.label;
-  } else {
-    return 'Not found';
-  }
-};
+const getStatusLabel = (status: TaskStatus) => 
+  statusesDict.find(v => v.value === status)?.label ?? 'Неизвестно';
 
 async function onOKClick() {
-  const newUser: CreateUpdateTaskDto = {
-    title: description.value,
-    status: status.value,
-    assignee: assignee.value,
-  };
-
-  if (props.new) {
-    await api.create(newUser);
-  } else if (props.task) {
-    await api.update(props.task?.id, newUser);
+  if (!assignee.value) {
+    console.error('Исполнитель не выбран');
+    return;
   }
 
-  onDialogOK();
+  const taskData: CreateUpdateTaskDto = {
+    title: description.value,
+    status: status.value,
+    assignee: assignee.value
+  };
+
+  try {
+    if (props.new) {
+      await api.create(taskData);
+    } else if (props.task?.id) {
+      await api.update(props.task.id, taskData);
+    }
+    onDialogOK();
+  } catch (error) {
+    console.error('Ошибка сохранения задачи:', error);
+  }
 }
 
 const onDelete = async () => {
-  if (props.task) {
-    await api.remove(props.task?.id);
-    onDialogOK();
+  if (props.task?.id) {
+    try {
+      await api.remove(props.task.id);
+      onDialogOK();
+    } catch (error) {
+      console.error('Ошибка удаления задачи:', error);
+    }
   }
 };
-
-const usersDict = ref([] as SecuredUser[]);
-const assignee = ref(mainStore.getCurrentUser());
-if (props.task) {
-  assignee.value = props.task.assignee;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UpdateFunction = (callback: () => void) => void;
 
 const filterFn = async (val: string, update: UpdateFunction) => {
   if (usersDict.value.length > 0) {
     update(() => {
-      // Здесь можно добавить логику, если нужно
+      if (val) {
+        const needle = val.toLowerCase();
+        usersDict.value = usersDict.value.filter(
+          user => `${user.lastname} ${user.firstname}`.toLowerCase().includes(needle)
+        );
+      }
     });
     return;
   }
 
-  const users = await userApi.getAll();
-
-  update(() => {
-    usersDict.value = users;
-  });
+  try {
+    const users = await userApi.getAll();
+    update(() => {
+      usersDict.value = users;
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки пользователей:', error);
+  }
 };
 </script>

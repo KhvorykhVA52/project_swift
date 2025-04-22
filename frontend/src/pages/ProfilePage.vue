@@ -3,21 +3,21 @@
     <div class="profile-header">
       <div class="avatar-container">
         <div class="avatar" :style="avatarStyle">
-          <img v-if="user.avatar" :src="user.avatar" alt="Аватар" class="avatar-image">
+          <img v-if="user.avatarUrl" :src="getFullAvatarUrl(user.avatarUrl)" alt="Аватар" class="avatar-image">
           <span v-else>{{ userInitials }}</span>
         </div>
         <input type="file" id="avatar-upload" accept="image/*" @change="handleAvatarUpload" style="display: none;">
         <button class="change-avatar-btn" @click="triggerAvatarUpload">Изменить аватар</button>
       </div>
-      <h1>{{ fullName }}</h1>
+      <h1>{{ user.firstname }} {{ user.lastname }}</h1>
       <p class="email">{{ user.email }}</p>
-      <button 
-            class="remove-avatar-btn" 
-            @click="removeAvatar"
-            v-if="user.avatar"
-          >
-            Удалить аватар
-          </button>
+      <button
+        class="remove-avatar-btn"
+        @click="removeAvatar"
+        v-if="user.avatarUrl"
+      >
+        Удалить аватар
+      </button>
     </div>
 
     <div class="profile-info">
@@ -39,12 +39,12 @@
         </div>
         <div class="info-item">
           <span class="label">Группа:</span>
-          <span class="value" v-if="!editing.group">{{ user.group }}</span>
+          <span class="value" v-if="!editing.group && user.group">{{ user.group }}</span>
           <q-input v-else v-model="user.group" dense />
         </div>
         <div class="info-item">
           <span class="label">Телефон:</span>
-          <span class="value" v-if="!editing.phone">{{ user.phone }}</span>
+          <span class="value" v-if="!editing.phone && user.phone">{{ user.phone }}</span>
           <q-input v-else v-model="user.phone" dense />
         </div>
         <div class="info-item">
@@ -56,6 +56,12 @@
       <div class="action-buttons">
         <template v-if="!isEditing">
           <q-btn color="primary" label="Редактировать" @click="startEditing" />
+          <q-btn 
+            color="secondary" 
+            label="Изменить стек" 
+            @click="showTechStack = true" 
+            class="q-ml-sm"
+          />
         </template>
         <template v-else>
           <q-btn color="positive" label="Сохранить" @click="saveChanges" />
@@ -63,45 +69,91 @@
         </template>
       </div>
     </div>
+
+    <!-- Модальное окно для редактирования стека технологий -->
+    <q-dialog v-model="showTechStack">
+      <q-card class="tech-stack-dialog">
+        <q-card-section>
+          <div class="text-h6">Ваш стек технологий</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <div class="tech-category" v-for="(category, name) in techStack" :key="name">
+            <h3>{{ getCategoryName(name) }}</h3>
+            <div class="tech-items">
+              <q-checkbox
+                v-for="item in category"
+                :key="item.name"
+                v-model="item.selected"
+                :label="item.name"
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Отмена" color="negative" v-close-popup />
+          <q-btn flat label="Сохранить" color="positive" @click="saveTechStack" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script>
+import { getCurrentUser, updateProfile, uploadAvatar, deleteAvatar } from '../api/users.api';
+
 export default {
   data() {
-    const savedUser = localStorage.getItem('userProfile');
-    const defaultUser = {
-      firstname: 'Иван',
-      lastname: 'Иванов',
-      email: 'ivanovin@std.tyuiu.ru',
-      group: 'ACOиУ6-24-1',
-      phone: '+7(999)-999-99-99',
-      registrationDate: '07.04.2025',
-            avatar: localStorage.getItem('userAvatar') || null
-
-    };
-
     return {
-      user: savedUser ? { ...defaultUser, ...JSON.parse(savedUser) } : defaultUser,
-      originalUser: savedUser ? { ...defaultUser, ...JSON.parse(savedUser) } : {...defaultUser},
+      user: {
+         firstname: '',
+        lastname: '',
+        email: '',
+        group: '',
+        phone: '',
+        registrationDate: '',
+        avatarUrl: null,
+        competence: []
+      },
+      originalUser: {},
       editing: {
         firstname: false,
         lastname: false,
         group: false,
         phone: false
       },
-      avatarColor: this.getSavedColor() || this.generateRandomColor(),
+      techStack: {
+        languages: [
+          { name: 'PHP', selected: false },
+          { name: 'Blueprint', selected: false },
+          { name: 'GOLANG', selected: false },
+          { name: 'Rust', selected: false }
+        ],
+        frameworks: [
+          { name: 'Node.js', selected: false },
+          { name: 'Vue', selected: false },
+          { name: 'React', selected: false }
+        ],
+        databases: [
+          { name: 'MongoDB', selected: false },
+          { name: 'SQL', selected: false }
+        ],
+        devops: [
+          { name: 'Git', selected: false },
+          { name: 'Docker', selected: false }
+        ]
+      },
+      showTechStack: false,
+      avatarColor: this.generateRandomColor(),
       isLoading: false
     }
   },
   computed: {
     avatarStyle() {
       return {
-        'background-color': this.user.avatar ? 'transparent' : this.avatarColor
+        'background-color': this.user.avatarUrl ? 'transparent' : this.avatarColor
       };
-    },
- fullName() {
-      return `${this.user.firstname} ${this.user.lastname}`;
     },
     userInitials() {
       return `${this.user.firstname.charAt(0)}${this.user.lastname.charAt(0)}`;
@@ -111,15 +163,69 @@ export default {
     },
     hasChanges() {
       return JSON.stringify(this.user) !== JSON.stringify(this.originalUser);
-    }  },
+    }
+  },
+  methods: {
+       getFullAvatarUrl(avatarPath) {
+      if (!avatarPath) return '';
+      // Проверяем, содержит ли путь уже базовый URL
+      if (avatarPath.startsWith('http')) return avatarPath;
+      return `http://localhost:9000${avatarPath}`;
+    },
 
-   methods: {
+
+
+
+
+
     generateRandomColor() {
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
       return colors[Math.floor(Math.random() * colors.length)];
     },
-    getSavedColor() {
-      return localStorage.getItem('avatarColor');
+    getCategoryName(key) {
+      const names = {
+        languages: 'Языки разработки',
+        frameworks: 'Фреймворки',
+        databases: 'Базы данных',
+        devops: 'DevOps'
+      };
+      return names[key] || key;
+    },
+    async saveTechStack() {
+      const selectedCompetence = [];
+      
+      this.techStack.languages.forEach(lang => {
+        if (lang.selected) selectedCompetence.push(lang.name);
+      });
+      
+      this.techStack.frameworks.forEach(fw => {
+        if (fw.selected) selectedCompetence.push(fw.name);
+      });
+      
+      this.techStack.databases.forEach(db => {
+        if (db.selected) selectedCompetence.push(db.name);
+      });
+      
+      this.techStack.devops.forEach(devops => {
+        if (devops.selected) selectedCompetence.push(devops.name);
+      });
+
+      try {
+        await updateProfile({ competence: selectedCompetence });
+        this.user.competence = selectedCompetence;
+        this.$q.notify({
+          type: 'positive',
+          message: 'Стек технологий обновлен',
+          timeout: 2000
+        });
+      } catch (error) {
+        console.error('Ошибка сохранения стека:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ошибка при сохранении стека технологий',
+          timeout: 2000
+        });
+      }
     },
     startEditing() {
       this.originalUser = {...this.user};
@@ -132,21 +238,26 @@ export default {
     },
     async saveChanges() {
       this.isLoading = true;
-
       try {
-        this.saveUserData();
-        this.$q.notify({
-          type: 'positive',
-          message: 'Данные успешно сохранены',
-          timeout: 2000
-        });
+        const payload = {
+          firstname: this.user.firstname,
+          lastname: this.user.lastname,
+          telephone: this.user.phone,
+          group: this.user.group
+        };
+
+        const updatedUser = await updateProfile(payload);
+        if (updatedUser) {
+          this.user.phone = updatedUser.telephone || '';
+    this.user.group = updatedUser.group || '';
+          this.$q.notify({
+            type: 'positive',
+            message: 'Данные успешно сохранены',
+            timeout: 2000
+          });
+        }
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-        this.$q.notify({
-          type: 'negative',
-          message: 'Ошибка при сохранении данных',
-          timeout: 2000
-        });
       } finally {
         this.isLoading = false;
         this.editing = {
@@ -156,17 +267,6 @@ export default {
           phone: false
         };
       }
-    },
-    saveUserData() {
-      localStorage.setItem('userProfile', JSON.stringify(this.user));
-      localStorage.setItem('avatarColor', this.avatarColor);
-      if (this.user.avatar) {
-        localStorage.setItem('userAvatar', this.user.avatar);
-      }
-      this.originalUser = {...this.user};
-      window.dispatchEvent(new CustomEvent('userUpdated', {
-        detail: this.user
-      }));
     },
     cancelEditing() {
       this.user = {...this.originalUser};
@@ -180,82 +280,111 @@ export default {
     triggerAvatarUpload() {
       document.getElementById('avatar-upload').click();
     },
-    handleAvatarUpload(event) {
+    async handleAvatarUpload(event) {
       const file = event.target.files[0];
-      if (!file) return;
+  if (!file) return;
 
-      // Проверка типа файла
-      if (!file.type.match('image.*')) {
-        this.$q.notify({
-          type: 'negative',
-          message: 'Пожалуйста, выберите файл изображения',
-          timeout: 2000
-        });
-        return;
-      }
-
-      // Проверка размера файла (не более 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        this.$q.notify({
-          type: 'negative',
-          message: 'Размер файла не должен превышать 2MB',
-          timeout: 2000
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        this.user.avatar = e.target.result;
-        this.saveUserData();
-        this.$q.notify({
-          type: 'positive',
-          message: 'Аватар успешно изменен',
-          timeout: 2000
-        });
+  try {
+    const formData = new FormData();
+    formData.append('file', file); // Измените 'avatar' на 'file' если бэкенд ожидает такой ключ
+    
+    const response = await uploadAvatar(formData);
+    if (response && response.avatarUrl) {
+      this.user.avatarUrl = response.avatarUrl;
+      // Сохраняем в localStorage
+      localStorage.setItem('userProfile', JSON.stringify(this.user));
+      // Обновляем данные в верхней панели
+      this.$root.userData = {
+        firstname: this.user.firstname,
+        lastname: this.user.lastname,
+        avatarUrl: this.user.avatarUrl
       };
       
-      reader.onerror = () => {
-        this.$q.notify({
-          type: 'negative',
-          message: 'Ошибка при загрузке изображения',
-          timeout: 2000
-        });
-      };
-      
-      reader.readAsDataURL(file);
-    },
-    removeAvatar() {
-      this.user.avatar = null;
-      localStorage.removeItem('userAvatar');
-      this.saveUserData();
       this.$q.notify({
         type: 'positive',
-        message: 'Аватар удален',
+        message: 'Аватар успешно изменен',
         timeout: 2000
-      });
-    }
-  },
-  mounted() {
-    const savedUser = localStorage.getItem('userProfile');
-    if (savedUser) {
-      this.user = JSON.parse(savedUser);
-      this.originalUser = {...this.user};
-    }
+          });
 
-    const savedAvatar = localStorage.getItem('userAvatar');
-    if (savedAvatar && !this.user.avatar) {
-      this.user.avatar = savedAvatar;
-    }
-  },
-  watch: {
-    user: {
-      deep: true,
-      handler(newVal) {
-        localStorage.setItem('userProfile', JSON.stringify(newVal));
+          await this.loadUserProfile();
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки аватара:', error);
+    this.$q.notify({
+      type: 'negative',
+      message: 'Ошибка при загрузке изображения: ' + error.message,
+      timeout: 2000
+        });
+      }
+    },
+    async removeAvatar() {
+      try {
+        await deleteAvatar();
+        this.user.avatarUrl = null;
+        this.$q.notify({
+          type: 'positive',
+          message: 'Аватар удален',
+          timeout: 2000
+        });
+        await this.loadUserProfile();
+      } catch (error) {
+        console.error('Ошибка удаления аватара:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ошибка при удалении аватара',
+          timeout: 2000
+        });
+      }
+    },
+    formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU');
+    },
+    async loadUserProfile() {
+      try {
+        const userData = await getCurrentUser();
+        if (userData) {
+          this.user = {
+            firstname: userData.firstname || '',
+            lastname: userData.lastname || '',
+            email: userData.email || '',
+            group: userData.group || '',
+            phone: userData.telephone || '',
+            registrationDate: userData.createdAt 
+              ? this.formatDate(userData.createdAt) 
+              : this.formatDate(new Date()),
+            avatarUrl: userData.avatarUrl || null,
+            competence: userData.competence || []
+          };
+          
+          this.$emit('user-updated', {
+            firstname: this.user.firstname,
+            lastname: this.user.lastname,
+            avatarUrl: this.user.avatarUrl
+          });
+
+          this.techStack.languages.forEach(lang => {
+            lang.selected = this.user.competence.includes(lang.name);
+          });
+          this.techStack.frameworks.forEach(fw => {
+            fw.selected = this.user.competence.includes(fw.name);
+          });
+          this.techStack.databases.forEach(db => {
+            db.selected = this.user.competence.includes(db.name);
+          });
+          this.techStack.devops.forEach(devops => {
+            devops.selected = this.user.competence.includes(devops.name);
+          });
+          
+          this.originalUser = {...this.user};
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки профиля:', error);
       }
     }
+  },
+  async mounted() {
+    await this.loadUserProfile();
   }
 }
 </script>
@@ -296,13 +425,6 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.avatar-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
 }
 
 .change-avatar-btn {
@@ -375,5 +497,25 @@ export default {
 .email {
   color: var(--secondary-color);
   margin-top: 5px;
+}
+
+.tech-stack-dialog {
+  min-width: 400px;
+  max-width: 600px;
+}
+
+.tech-category {
+  margin-bottom: 20px;
+}
+
+.tech-category h3 {
+  margin-bottom: 10px;
+  color: var(--main-color);
+}
+
+.tech-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 </style>

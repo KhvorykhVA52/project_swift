@@ -45,18 +45,22 @@ export class TasksService {
 
   async create(createTaskDto: CreateUpdateTaskDto, user: any) {
     const authorUser = await this.usersService.findOneById(user.userId);
+    if (!authorUser) {
+      throw new Error('Author user not found');
+    }
+  
     const assigneeUser = createTaskDto.assignee?.id 
       ? await this.usersService.findOneById(createTaskDto.assignee.id)
       : null;
-
+  
     const newTask = new Task();
     newTask.title = createTaskDto.title;
     newTask.status = createTaskDto.status;
     newTask.author = authorUser;
     newTask.assignee = assigneeUser;
-
+  
     await this.taskRepository.save(newTask);
-
+  
     return this.toDto(newTask);
   }
 

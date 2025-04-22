@@ -112,20 +112,28 @@ export default {
   },
   computed: {
     userName() {
-      const savedUser = localStorage.getItem('userProfile');
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        return `${user.firstname} ${user.lastname}`;
-      }
+      const eventUser = this.$root.userData;
+    if (eventUser) {
+      return `${eventUser.firstname} ${eventUser.lastname}`;
+    }
+    const savedUser = localStorage.getItem('userProfile');
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      return `${user.firstname} ${user.lastname}`;
+    }
       return 'Виктор Иванов';
     },
     userInitials() {
-      const savedUser = localStorage.getItem('userProfile');
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        return `${user.firstname.charAt(0)}${user.lastname.charAt(0)}`;
-      }
-      return 'ВИ';
+      const eventUser = this.$root.userData;
+    if (eventUser) {
+      return `${eventUser.firstname.charAt(0)}${eventUser.lastname.charAt(0)}`;
+    }
+    const savedUser = localStorage.getItem('userProfile');
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      return `${user.firstname.charAt(0)}${user.lastname.charAt(0)}`;
+    }
+    return 'ВИ';
     }
   },
   methods: {

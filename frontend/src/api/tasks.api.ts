@@ -28,22 +28,9 @@ export async function getTasks(): Promise<TaskDto[]> {
 
  
 
-export async function create(
-
-  newUser: CreateUpdateTaskDto
-
-): Promise<string | undefined> {
-
-  const response = await api.post('/tasks', newUser);
-
-  if (response.status == 201) {
-
-    return response.data;
-
-  }
-
-  return;
-
+export async function create(task: CreateUpdateTaskDto): Promise<TaskDto | undefined> {
+  const response = await api.post('/tasks', task);
+  return response.status === 201 ? response.data : undefined;
 }
 
  

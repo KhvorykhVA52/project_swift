@@ -35,185 +35,105 @@
   </template>
   
    
-  
   <script setup lang="ts">
-  
-  import { Ref, onMounted, ref } from 'vue';
-  
-  import { CreateUserDto, Role, UpdateUserDto, UserAccountStatus } from '../../../backend/src/common/types';
-  
-  import { useRoute, useRouter } from 'vue-router';
-  
-  import * as api from '../api/users.api';
-  
-  import { useQuasar } from 'quasar';
-  
-   
-  
-  type Mode = 'new' | 'update';
-  
-   
-  
-  const mode: Ref<Mode> = ref('new')
-  
-   
-  
-  const route = useRoute();
-  
-  const router = useRouter();
-  
-   
-  
-  const $q = useQuasar();
-  
-   
-  
-  const id = ref(-1);
-  
-  const name = ref('');
-  
-  const firstname = ref('');
-  
-  const lastname = ref('');
-  
-  const password = ref('');
-  
-  const roles: Ref<Role[]> = ref([Role.user]);
-  
-  const rolesDict = [Role.admin, Role.user]
-  
-  const status: Ref<UserAccountStatus> = ref(UserAccountStatus.active);
-  
-  const statusDict = [UserAccountStatus.active, UserAccountStatus.inactive, UserAccountStatus.pending]
-  
-   
-  
-  onMounted(async () => {
-  
-    if (route.params.id == 'new') {
-  
-      mode.value = 'new';
-  
-    } else {
-  
-      mode.value = 'update';
-  
-      id.value = +route.params.id;
-  
-      await loadUserData();
-  
-    }
-  
-  })
-  
-   
-  
-  const loadUserData = async () => {
-  
-    const response = await api.get(id.value);
-  
-    if (response) {
-  
-      firstname.value = response.firstname;
-  
-      lastname.value = response.lastname;
-  
-      name.value = response.email;
-  
-      roles.value = response.roles;
-  
-      status.value = response.status;
-  
-    }
-  
+import { Ref, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import * as api from '../api/users.api';
+import { useQuasar } from 'quasar';
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  Role,
+  UserAccountStatus
+} from '../../../backend/src/common/types';
+
+type Mode = 'new' | 'update';
+
+const mode: Ref<Mode> = ref('new');
+const route = useRoute();
+const router = useRouter();
+const $q = useQuasar();
+
+const id = ref(-1);
+const name = ref('');
+const firstname = ref('');
+const lastname = ref('');
+const password = ref('');
+const group = ref('');
+const telephone = ref('');
+const roles: Ref<Role[]> = ref([Role.user]);
+const rolesDict = [Role.admin, Role.user];
+const status: Ref<UserAccountStatus> = ref(UserAccountStatus.active);
+const statusDict = [UserAccountStatus.active, UserAccountStatus.inactive, UserAccountStatus.pending];
+
+onMounted(async () => {
+  if (route.params.id === 'new') {
+    mode.value = 'new';
+  } else {
+    mode.value = 'update';
+    id.value = +route.params.id;
+    await loadUserData();
   }
-  
-   
-  
-  const onSave = async () => {
-  
-    if (mode.value == 'new') {
-  
-   
-  
+});
+
+const loadUserData = async () => {
+  const response = await api.get(id.value);
+  if (response) {
+    firstname.value = response.firstname;
+    lastname.value = response.lastname;
+    name.value = response.email;
+    group.value = response.group || '';
+    telephone.value = response.telephone || '';
+    roles.value = response.roles;
+    status.value = response.status;
+  }
+};
+
+const onSave = async () => {
+  try {
+    if (mode.value === 'new') {
       const newUser: CreateUserDto = {
-  
         email: name.value,
-  
         firstname: firstname.value,
-  
         lastname: lastname.value,
-  
         password: password.value,
-  
         roles: roles.value,
-  
-        status: status.value
-  
+        status: status.value,
+        group: group.value,
+        telephone: telephone.value
       };
-  
-   
-  
+
       const response = await api.create(newUser);
-  
-      console.log('add new response ', response);
-  
       if (response) {
-  
         router.push({ path: `/users/${response.id}` });
-  
-        mode.value = 'update';
-  
-        id.value = response.id;
-  
       }
-  
-    } else if (mode.value == 'update') {
-  
+    } else {
       const updatedUser: UpdateUserDto = {
-  
-        email: name.value,
-  
-        firstname: firstname.value,
-  
-        lastname: lastname.value,
-  
+        ...(name.value && { email: name.value }),
+        ...(firstname.value && { firstname: firstname.value }),
+        ...(lastname.value && { lastname: lastname.value }),
         roles: roles.value,
-  
-        status: status.value
-  
+        status: status.value,
+        ...(group.value && { group: group.value }),
+        ...(telephone.value && { telephone: telephone.value })
       };
-  
-   
-  
-      const response = await api.update(id.value, updatedUser)
-  
-   
-  
+
+      const response = await api.update(id.value, updatedUser);
       if (response) {
-  
-   
-  
         $q.notify({
-  
-          message: 'Сохранено',
-  
+          message: 'Данные успешно сохранены',
           color: 'positive',
-  
-          icon: 'save'
-  
-        })
-  
-   
-  
+          timeout: 2000
+        });
       }
-  
-   
-  
     }
-  
+  } catch (error) {
+    $q.notify({
+      message: 'Ошибка при сохранении',
+      color: 'negative',
+      timeout: 2000
+    });
+    console.error('Ошибка сохранения:', error);
   }
-  
-   
-  
-  </script>
+};
+</script>

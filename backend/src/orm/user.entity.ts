@@ -40,7 +40,7 @@ export class User {
   group: string;
 
   @Column({ default: '' })
-  telephone: string;
+telephone: string;
 
   @Column({ type: 'enum', enum: Role, array: true, default: [Role.user] })
   roles: Role[];
