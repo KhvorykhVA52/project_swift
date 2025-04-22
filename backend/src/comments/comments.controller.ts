@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete, Put, UseGuards, Get } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -9,7 +9,7 @@ export class CommentsController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   async create(@Body() createCommentDto: CreateCommentDto) {
     const result = await this.commentService.createComment(createCommentDto);
     if (!result) {
@@ -26,7 +26,7 @@ export class CommentsController {
   }
 
   @Put('edit/:id')
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto
@@ -49,7 +49,7 @@ export class CommentsController {
   }
 
   @Delete('delete/:id')
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string) {
     const success = await this.commentService.deleteComment(+id);
     return {
@@ -58,5 +58,10 @@ export class CommentsController {
         ? `УСПЕХ: Комментарий ID ${id} удален` 
         : `ОШИБКА: Комментарий ID ${id} не найден`
     };
+  }
+
+  @Get('getBy')
+  async getBy(@Body() body: {id: number}) {
+    return this.commentService.getBy(body.id);
   }
 }

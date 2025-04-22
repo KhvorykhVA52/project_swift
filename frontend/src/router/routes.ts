@@ -11,6 +11,7 @@ import LoginPage from 'pages/LoginPage.vue';
 import SignupPage from 'pages/SignupPage.vue';
 import ErrorNotFound from 'pages/ErrorNotFound.vue';
 import ProfilePage from 'pages/ProfilePage.vue';
+import InvitesPage from 'pages/InvitesPage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -24,6 +25,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'addinteam', name: 'addinteam', component: AddInTeamPage },
       { path: 'listofmyteams', name: 'listofmyteams', component: ListOfMyTeamsPage },
       { path: 'profile', name: 'profile', component: ProfilePage },
+      { path: 'invites', name: 'invites', component: InvitesPage },
     ],
   },
   {

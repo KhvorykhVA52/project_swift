@@ -61,10 +61,22 @@ export class UsersService {
     await this.userRepository.update(id, { status });
   }
 
+<<<<<<< HEAD
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
       select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone']
     });
+=======
+  async findAll() {
+    return (await this.userRepository.find({
+      relations: ["team"],
+    }));
+  }
+
+  async securedFindAll() {
+    //не используется
+    return (await this.userRepository.find()).map((u) => u.getSecuredDto());
+>>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
   }
 
   async updateAvatar(id: number, avatarUrl: string): Promise<void> {

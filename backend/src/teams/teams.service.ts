@@ -55,10 +55,8 @@ export class TeamsService {
     console.log(`OK: teams.service.createTeam(ownerId=${ownerId}, createTeamDto={name=${createTeamDto.name}, description=${createTeamDto.description}})`);
   }
 
-  async createInvite(inviterId: number, dto: CreateInviteDto): Promise<{
-    teamInvite: TeamInvite,
-    userTeamInvite: UserTeamInvite
-  }> {
+  async createInvite(inviterId: number, dto: CreateInviteDto) {
+    console.log(dto.inviteeId);
     const [inviter, invitee, team] = await Promise.all([
       this.userRepository.findOneBy({ id: inviterId }),
       this.userRepository.findOneBy({ id: dto.inviteeId }),
@@ -69,10 +67,12 @@ export class TeamsService {
     ]);
 
     if (!inviter || !invitee || !team) {
+      return 'ERROR1';
       throw new NotFoundException(`ERROR: teams.service.createInvite(): не удалось найти данный User или Team при intiretId=${inviterId}, dto={inviteeId=${dto.inviteeId}, teamId=${dto.teamId}}`);
     }
 
     if (team.members.some(m => m.id === dto.inviteeId)) {
+      return 'ERROR2';
       throw new InternalServerErrorException(`ERROR: teams.service.createInvite(): данный User уже в в чьей-то команде. inviterId=${inviterId}, dto={inviteeId=${dto.inviteeId}, teamId=${dto.teamId}}`);
     }
 
@@ -85,7 +85,8 @@ export class TeamsService {
     });
 
     if (existingInvite) {
-      throw new InternalServerErrorException(`ERROR: teams.service.createInvite(): уже существует Invite при invitee=${invitee}, teamId=${dto.teamId}`);
+      return 'ERROR3';
+      //throw new InternalServerErrorException(`ERROR: teams.service.createInvite(): уже существует Invite при invitee=${invitee}, teamId=${dto.teamId}`);
     }
 
     const teamInvite = await this.inviteRepository.save(
@@ -108,7 +109,7 @@ export class TeamsService {
 
     console.log(`OK: teams.service.createInvite(inviterId=${inviterId}, dto={inviteeId=${dto.inviteeId}, dto.teamId=${dto.teamId})`);
 
-    return { teamInvite, userTeamInvite };
+    return 'OK';
   }
 
   async respondToInvite(inviteId: number, userId: number, accept: boolean): Promise<Team> {

@@ -55,18 +55,15 @@ export class IdeaService {
         return this.ideaRepository.remove(idea);
     }
 
-    async getIdeasBy(input: {id: number}) {
-        const user = await this.userRepository.findOne({
-            where:{id: input.id},
-            relations: ['initiatedIdeas']
-        });
-
-        if (!user) {
-            console.log(`ERROR: ides.service.getIdeasBy(): не найден User при User.id=${input.id}`);
+    async getAll() {
+        try{
+            const ideas = await this.ideaRepository.find();
+            console.log(`OK: idea.service.getAll()`);
+            return ideas;
+        } catch(error) {
+            console.log(`ERROR: idea.service.getAll(): ${error}`);
             return `ERROR`;
         }
-
-        return user?.initiatedIdeas||[];
     }
 
     async changeName(input: {id: number, data: string}) {

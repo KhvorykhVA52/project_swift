@@ -20,23 +20,24 @@
         </div>
       </div>
       <div class="app-header-right">
-        <button class="mode-switch" @click="toggleDarkMode" :class="{ 'active': darkMode }">
-          <svg viewBox="0 0 24 24">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="none" stroke="currentColor" stroke-width="2"/>
+        <button class="header-icon-btn mode-switch" @click="toggleDarkMode" :class="{ 'active': darkMode }">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5C8.13401 5 5 8.13401 5 12C5 15.866 8.13401 19 12 19C15.171 19 18.1395 17.1814 19 14.2899" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M19 14C18.8319 14 18.6652 13.9941 18.5 13.9824C12.5 15 9.50001 11.5 12 5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
 
-        <button class="notification-btn" @click="toggleNotifications">
-          <svg viewBox="0 0 24 24">
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke="currentColor" stroke-width="2"/>
-            <path d="M13.73 21a2 2 0 01-3.46 0" fill="none" stroke="currentColor" stroke-width="2"/>
+        <button class="header-icon-btn bell-btn" @click="toggleBellNotifications">
+          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6.48149 9.07777C6.39886 5.86945 8.89127 3 12.1007 3V3C15.24 3 17.656 5.74275 17.5341 8.87969C17.5127 9.42969 17.5 9.97677 17.5 10.5C17.5 13.7812 21 18 21 18H3C3 18 6.5 14.7188 6.5 10.5C6.5 10.0122 6.49331 9.5369 6.48149 9.07777Z" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 21C10.4886 21.6132 11.2035 22 12 22C12.7965 22 13.5114 21.6132 14 21" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <span class="notification-badge" v-if="unreadNotifications > 0">{{ unreadNotifications }}</span>
+          <span class="bell-badge" v-if="bellNotifications > 0">{{ bellNotifications }}</span>
         </button>
 
         <div class="profile-dropdown">
           <button class="profile-btn" @click="toggleProfileDropdown">
-            <span class="profile-avatar">{{ userInitials }}</span>
+            <span class="profile-avatar">{{ userName.charAt(0) }}</span>
             <span>{{ userName }}</span>
           </button>
           <div class="dropdown-menu" v-if="showProfileDropdown">
@@ -85,31 +86,39 @@ export default {
       darkMode: false,
       searchQuery: '',
       showProfileDropdown: false,
+      userName: 'Иван Иванов',
       unreadNotifications: 3,
+      bellNotifications: {},
       sidebarLinks: [
         { 
           path: '/', 
           title: 'Проекты', 
-          icon: 'M 0.5 1.480469 L 23.5 1.480469 M 0.5 16.808594 L 23.5 16.808594 M 2.421875 1.480469 L 21.589844 1.480469 L 21.589844 16.808594 L 2.421875 16.808594 Z M 2.421875 1.480469 M 12 16.808594 L 12 23.519531 M 8.171875 23.519531 L 8.171875 22.558594 L 12 19.691406 M 15.828125 23.519531 L 15.828125 22.558594 L 12 19.691406 ' 
+          icon: 'M5 17C3.89543 17 3 16.2325 3 15.2857V6.71429C3 5.76751 3.89543 5 5 5H19C20.1046 5 21 5.76751 21 6.71429V15.2857C21 16.2325 20.1046 17 19 17 M12 15L17.1962 21H6.80385L12 15Z' 
         },
         { 
           path: '/tasks', 
           title: 'Идеи', 
-          icon: 'M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z' 
+          icon: 'M9.6 15.1397C12 15.1397 11.1467 15.1397 12 15.1397C12.8533 15.1397 12 15.1397 14.4 15.1397M9.6 15.1397C7.48091 14.1624 6 11.9304 6 9.33333C6 5.83553 8.68629 3 12 3C15.3137 3 18 5.83553 18 9.33333C18 11.9304 16.5191 14.1624 14.4 15.1397M9.6 15.1397V17.5C9.6 18.0523 10.0477 18.5 10.6 18.5H13.4C13.9523 18.5 14.4 18.0523 14.4 17.5V15.1397M13 21H11M11 11H13' 
         },
         { 
           path: '/users', 
           title: 'Пользователи', 
-          icon: 'M 8.5 21 L 4 21 C 4 17.132812 7.132812 14 11 14 C 11.167969 14 11.335938 14.007812 11.5 14.019531 M 15 7 C 15 9.210938 13.210938 11 11 11 C 8.789062 11 7 9.210938 7 7 C 7 4.789062 8.789062 3 11 3 C 13.210938 3 15 4.789062 15 7 Z M 12.589844 21 L 14.613281 20.59375 C 14.792969 20.558594 14.878906 20.542969 14.960938 20.507812 C 15.035156 20.480469 15.105469 20.445312 15.167969 20.398438 C 15.242188 20.347656 15.304688 20.285156 15.433594 20.15625 L 19.589844 16 C 20.140625 15.449219 20.140625 14.550781 19.589844 14 C 19.039062 13.449219 18.140625 13.449219 17.589844 14 L 13.433594 18.15625 C 13.304688 18.285156 13.242188 18.347656 13.191406 18.421875 C 13.144531 18.484375 13.109375 18.554688 13.082031 18.628906 C 13.046875 18.710938 13.03125 18.796875 12.996094 18.976562 Z M 12.589844 21 ' 
+          icon: 'M 8.5 21 L 4 21 C 4 17.132812 7.132812 14 11 14 C 11.167969 14 11.335938 14.007812 11.5 14.019531 M 15 7 C 15 9.210938 13.210938 11 11 11 C 8.789062 11 7 9.210938 7 7 C 7 4.789062 8.789062 3 11 3 C 13.210938 3 15 4.789062 15 7 Z M 12.589844 21 L 14.613281 20.59375 C 14.792969 20.558594 14.878906 20.542969 14.960938 20.507812 C 15.035156 20.480469 15.105469 20.445312 15.167969 20.398438 C 15.242188 20.347656 15.304688 20.285156 15.433594 20.15625 L 19.589844 16 C 20.140625 15.449219 20.140625 14.550781 19.589844 14 C 19.039062 13.449219 18.140625 13.449219 17.589844 14 L 13.433594 18.15625 C 13.304688 18.285156 13.242188 18.347656 13.191406 18.421875 C 13.144531 18.484375 13.109375 18.554688 13.082031 18.628906 C 13.046875 18.710938 13.03125 18.796875 12.996094 18.976562 Z M 12.589844 21'
         },
         { 
           path: '/listofmyteams', 
           title: 'Мои команды',
-          icon: '',
+          icon: 'M9 9C10.6569 9 12 7.65685 12 6C12 4.34315 10.6569 3 9 3C7.34315 3 6 4.34315 6 6C6 7.65685 7.34315 9 9 9ZM14 9C15.6569 9 17 7.65685 17 6C17 4.34315 15.6569 3 14 3 M11 12H7C4.79086 12 3 13.7909 3 16C3 17.6569 4.34315 19 6 19H12C13.6569 19 15 17.6569 15 16C15 13.7909 13.2091 12 11 12Z M17 12C19.2091 12 21 13.7909 21 16C21 17.6569 19.6569 19 18 19'
+        },
+        {
+          path: '/invites',
+          title: 'Приглашения',
+          icon: 'M 9 4 A 3 3 0 1 1 9 10 A 3 3 0 1 1 9 4 M11 13H7C4.79086 13 3 14.7909 3 17C3 18.6569 4.34315 20 6 20H12C13.6569 20 15 18.6569 15 17C15 14.7909 13.2091 13 11 13Z M21 8L18 11L16.5 9.5',
         },
       ]
     }
   },
+<<<<<<< HEAD
   computed: {
     userName() {
       const eventUser = this.$root.userData;
@@ -136,10 +145,15 @@ export default {
     return 'ВИ';
     }
   },
+=======
+>>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
   methods: {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
+    },
+    toggleBellNotifications() {
+      this.bellNotifications = 0;
     },
     toggleProfileDropdown() {
       this.showProfileDropdown = !this.showProfileDropdown;
@@ -149,28 +163,17 @@ export default {
     },
     logout() {
       this.$router.push('/login');
-    },
-    handleUserUpdate() {
-      // Принудительное обновление computed свойств
-      this.$forceUpdate();
     }
   },
   mounted() {
     if (this.darkMode) {
       document.documentElement.classList.add('dark');
     }
-    // Подписываемся на событие обновления пользователя
-    window.addEventListener('userUpdated', this.handleUserUpdate);
-  },
-beforeUnmount() {
-  // Отписываемся от события при уничтожении компонента
-  window.removeEventListener('userUpdated', this.handleUserUpdate);
-}
+  }
 }
 </script>
 
 <style>
-/* Ваши существующие стили остаются без изменений */
 :root {
   --app-container: #f3f6fd;
   --main-color: #1f1c2e;
@@ -293,26 +296,34 @@ beforeUnmount() {
   height: 20px;
 }
 
-.mode-switch, .notification-btn {
+.header-icon-btn {
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  margin: 0 4px;
 }
 
-.mode-switch:hover, .notification-btn:hover {
+.header-icon-btn:hover {
   background-color: var(--link-color-hover);
 }
 
-.notification-btn {
-  position: relative;
+.header-icon {
+  width: 24px;
+  height: 24px;
 }
 
-.notification-badge {
+.bell-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: 2px;
+  right: 2px;
   background-color: #ff4757;
   color: white;
   border-radius: 50%;

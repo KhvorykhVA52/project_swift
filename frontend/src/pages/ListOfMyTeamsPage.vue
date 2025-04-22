@@ -36,7 +36,7 @@
     <div v-if="selectedTeam" class="team-details-modal">
       <div class="team-details-modal-content">
         <button @click="closeTeamDetails" class="team-details-close-button">Закрыть</button>
-
+        <button @click="openInviteDialog" class="team-invite-invite-button">Пригласить в команду</button>
         <div class="team-details-team-info-container">
           <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
           <div class="team-details-team-description-wrapper">
@@ -60,6 +60,54 @@
         </div>
       </div>
     </div>
+
+    <!-- Модальное окно приглашения в команду -->
+    <div v-if="showInviteDialog" class="invite-dialog">
+      <div class="invite-dialog-content">
+        <h3>Пригласить участника</h3>
+        <input type="text" v-model="searchQuery" placeholder="Поиск">
+        <div class="user-list">
+          <div v-for="(user, index) in filteredUsers" :key="index" class="user-block" @click="selectUser(user)" style="cursor: pointer;">
+            <div class="user-info">{{ truncate(user.firstname) }}</div>
+            <div class="user-info">{{ truncate(user.lastname) }}</div>
+            <div class="user-info">{{ truncate(user.group) }}</div>
+            <hr v-if="index < filteredUsers.length - 1">
+          </div>
+          <div v-if="filteredUsers.length === 0" class="no-results">
+            Ничего не найдено.
+          </div>
+        </div>
+        <div class="dialog-buttons">
+          <button @click="closeInviteDialog">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно подтверждения отправки приглашения -->
+    <div v-if="showInviteCheck" class="invite-check-modal">
+      <div class="invite-check-content">
+        <h3>Отправить приглашение в команду?</h3>
+        <p>Имя: {{ selectedUser.firstname }}</p>
+        <p>Фамилия: {{ selectedUser.lastname }}</p>
+        <p>Группа: {{ selectedUser.group }}</p>
+        <div>
+          <button @click="sendInvitation" class="invite-check-send-button">Отправить</button>
+          <button @click="closeInviteCheck" class="invite-check-deny-button">Отмена</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="confirmationModalVisible" class="modal-backdrop"></div>
+
+    <!-- Модальное временное окно по показу удачного отправки приглашения -->
+    <div v-if="showInviteOK" :class="['invite-ok-message', { 'hidden': !showInviteOK }]">
+      Приглашение отправлено!
+    </div>
+
+    <!-- Модальное временное окно по показу ошибки отправки приглашения -->
+    <div v-if="showInviteERROR" :class="['invite-error-message', { 'hidden': !showInviteERROR }]">
+      Не получилось отправить приглашение
+    </div>
+
 
     <!-- Модальное окно создания команды -->
     <div v-if="showCreateTeamModal" class="modal-overlay">
@@ -90,6 +138,7 @@
 import * as api from '../api/teams.api';
 import { defineComponent } from 'vue';
 import { CreateTeamDto } from '../../../backend/src/teams/dto/create-team.dto';
+import { CreateInviteDto } from '../../../backend/src/teams/dto/create-invite.dto';
 
 export default defineComponent({
   name: 'TeamsPage',
@@ -99,10 +148,20 @@ export default defineComponent({
       showCreateTeamModal: false,
       newTeam: null,
       selectedTeam: null,
+      showInviteDialog: false,
+      users: null,
+      truncate: null,
+      searchQuery: '',
+      selectedUser: null,
+      showInviteCheck: false,
+      showInviteOK: false,
+      showInviteERROR: false,
+      timerId: null,
     };
   },
   async mounted() {
     await this.loadTeams();
+    await this.loadUsers();
 
   },
   computed: {
@@ -115,8 +174,89 @@ export default defineComponent({
       }
       return this.selectedTeam.members.filter(member => !this.isOwner(member, this.selectedTeam.owner) && !this.isLeader(member, this.selectedTeam.leader));
     },
+    filteredUsers() {
+      if (!this.users) {
+        return []; // или return [], чтобы вернуть пустой массив
+      }
+
+      const query = this.searchQuery.toLowerCase();
+      const searchTerms = query.split(' ').filter(term => term !== ''); // Разделяем запрос на слова и убираем пустые строки
+
+      let filteredResults = this.users; // Начинаем с полного списка пользователей
+
+      for (const term of searchTerms) {
+        filteredResults = filteredResults.filter(user => {
+          const firstname = (user.firstname || '').toLowerCase();
+          const lastname = (user.lastname || '').toLowerCase();
+          const group = (user.group || '').toLowerCase();
+
+          return (
+            firstname.includes(term) ||
+            lastname.includes(term) ||
+            group.includes(term)
+          );
+        });
+      }
+
+      return filteredResults;
+    },
   },
   methods: {
+    async sendInvitation() {
+      const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
+      if (!parsedSession) {
+        console.error('Ошибка при получении информации о сессии:'. error);
+        return;
+      }
+
+      console.log(this.selectedUser);
+
+      const createInviteDto = new CreateInviteDto();
+
+      createInviteDto.inviteeId = this.selectedUser.id;
+      createInviteDto.teamId = this.selectedTeam.id;
+
+      const response = await api.invite(parsedSession.id, createInviteDto);
+      console.log(response);
+      if (response=='OK') {
+        this.showInviteCheck = false;
+        this.showInviteOK = true;
+
+        if (this.timerId) {
+          clearTimeout(this.timerId);
+        }
+
+        this.timerId = setTimeout(() => {
+          this.showInviteOK = false;
+          this.timerId = null;
+        }, 2000);
+        
+      } else {
+        this.showInviteERROR = true;
+        if (this.timerId) {
+          clearTimeout(this.timerId);
+        }
+
+        this.timerId = setTimeout(() => {
+          this.showInviteERROR = false;
+          this.timerId = null;
+        }, 2000);
+        
+      }
+    },
+    closeInviteCheck() {
+      this.showInviteCheck = false;
+    },
+    selectUser(user) {
+      this.selectedUser = user;
+      this.showInviteCheck = true;
+    },
+    openInviteDialog(){
+      this.showInviteDialog = true;
+    },
+    closeInviteDialog() {
+      this.showInviteDialog = false;
+    },
     isOwner(member, owner) {
       return member.firstname === owner.firstname && member.lastname === owner.lastname;
     },
@@ -140,8 +280,23 @@ export default defineComponent({
       if (!Array.isArray(members)) {
         return [];
       }
-      const filteredMembers = members.slice(1);
-      return filteredMembers.slice(0, 7);
+      const filteredMembers = members.filter(member => member.ownedTeams == null);
+      return filteredMembers;
+    },
+    async loadUsers() {
+      try {
+        this.truncate = (str) => {
+        if (!str) return '';
+          return str.length > 50 ? str.substring(0, 50) + '...' : str;
+        };
+
+        const response = await api.getAll();
+        console.log(response);
+        this.users = response.filter(user => !user.team);
+      } catch(error) {
+        console.log(error);
+        this.users = [];
+      }
     },
     async loadTeams() { 
       try {
@@ -186,6 +341,170 @@ export default defineComponent({
 </script>
 
 <style scoped>
+
+.invite-ok-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(10, 235, 10, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 6;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.invite-ok-message.hidden {
+  opacity: 0;
+}
+
+.invite-error-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(233, 11, 11, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 7;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.invite-error-message.hidden {
+  opacity: 0;
+}
+
+.invite-check-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.invite-check-content {
+  text-align: center;
+}
+
+.invite-check-send-button {
+  margin-top: 20px; /* Сохраняем верхний отступ */
+  display: inline-block; /* Важно для применения margin между элементами */
+  padding: 10px 20px; /* Добавляем внутренний отступ для текста */
+  font-size: 16px; /* Размер текста */
+  font-weight: bold; /* Жирный текст */
+  color: white; /* Цвет текста */
+  background-color: #4CAF50; /* Зеленый фон (пример) */
+  border: none; /* Убираем рамку */
+  border-radius: 5px; /* Скругляем углы */
+  cursor: pointer; /* Меняем курсор на "руку" при наведении */
+  transition: background-color 0.3s ease; /* Плавный переход цвета фона */
+  margin-right: 10px; /* Добавляем отступ справа для разделения кнопок */
+  text-decoration: none; /* Убираем подчеркивание (если это ссылка) */
+}
+
+.invite-check-send-button:hover {
+  background-color: #367c39; /* Более темный зеленый при наведении */
+}
+
+.invite-check-deny-button {
+  margin-top: 20px; /* Сохраняем верхний отступ */
+  display: inline-block; /* Важно для применения margin между элементами */
+  padding: 10px 20px; /* Добавляем внутренний отступ для текста */
+  font-size: 16px; /* Размер текста */
+  font-weight: bold; /* Жирный текст */
+  color: white; /* Цвет текста */
+  background-color:rgb(241, 6, 38); /* Зеленый фон (пример) */
+  border: none; /* Убираем рамку */
+  border-radius: 5px; /* Скругляем углы */
+  cursor: pointer; /* Меняем курсор на "руку" при наведении */
+  transition: background-color 0.3s ease; /* Плавный переход цвета фона */
+  margin-right: 10px; /* Добавляем отступ справа для разделения кнопок */
+  text-decoration: none; /* Убираем подчеркивание (если это ссылка) */
+}
+
+.invite-check-deny-button:hover {
+  background-color:rgb(139, 4, 4); /* Более темный зеленый при наведении */
+}
+
+.invite-check-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 4
+}
+.invite-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3;
+}
+
+.invite-dialog-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 700px;
+  max-width: 80vw;
+}
+
+.user-block {
+  padding: 10px;
+  margin-bottom: 5px;
+}
+
+.user-info {
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.user-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.no-results {
+  text-align: center;
+}
+
+.dialog-buttons {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.team-invite-invite-button {
+  background-color:rgb(106, 220, 53);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
 .team-details-modal {
   position: fixed;
   top: 0;
@@ -196,7 +515,7 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2;
 }
 
 .team-details-modal-content {
@@ -217,6 +536,7 @@ export default defineComponent({
   cursor: pointer;
   font-size: 16px;
   transition: background-color 0.2s ease;
+  margin-right: 10px;
 }
 
 .team-details-close-button:hover {
