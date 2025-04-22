@@ -275,11 +275,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-<<<<<<< HEAD
 import { computed, ref, onMounted } from 'vue';
-=======
-import { computed, ref } from 'vue';
->>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
 
 interface Comment {
   id: number;
@@ -302,7 +298,6 @@ interface Idea {
 
 const $q = useQuasar();
 
-<<<<<<< HEAD
 // Ключ для localStorage
 const STORAGE_KEY = 'ideasAppData';
 
@@ -354,36 +349,6 @@ const ideas = ref<Idea[]>([]);
 onMounted(() => {
   ideas.value = loadData();
 });
-=======
-// Переменные для функционала идей
-const ideas = ref<Idea[]>([
-  {
-    id: 1,
-    title: 'Первая идея',
-    problem: 'Описание проблемы',
-    solution: 'Предлагаемое решение',
-    result: 'Ожидаемый результат',
-    resources: 'Необходимые ресурсы',
-    author: 'Иван Иванов',
-    date: '05.04.2025',
-    comments: [
-      { id: 1, text: 'Хорошая идея!', author: 'Петр Петров', date: '05.04.2025 10:30' },
-      { id: 2, text: 'Нужно доработать', author: 'Сидор Сидоров', date: '05.04.2025 11:45' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Вторая идея',
-    problem: 'Другая проблема',
-    solution: 'Другое решение',
-    result: 'Другой результат',
-    resources: 'Другие ресурсы',
-    author: 'Петр Петров',
-    date: '05.04.2025',
-    comments: []
-  }
-]);
->>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
 
 const showAddIdeaModal = ref(false);
 const showIdeaDetailsModal = ref(false);
@@ -460,13 +425,8 @@ const saveIdea = () => {
       });
     }
   } else {
-<<<<<<< HEAD
     currentIdea.value.id = Date.now(); // Используем timestamp для уникального ID
     currentIdea.value.date = new Date().toLocaleString();
-=======
-    currentIdea.value.id = ideas.value.length + 1;
-    currentIdea.value.date = new Date().toLocaleDateString();
->>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
     ideas.value.unshift({
       ...currentIdea.value as Idea,
       comments: []
@@ -474,10 +434,6 @@ const saveIdea = () => {
   }
   showAddIdeaModal.value = false;
   saveData(); // Сохраняем изменения
-};
-
-const closeModal = () => {
-  showAddIdeaModal.value = false;
 };
 
 const closeModal = () => {
@@ -514,51 +470,13 @@ const addComment = (ideaId: number) => {
   const idea = ideas.value.find(i => i.id === ideaId);
   if (idea && newComments.value[ideaId] && newComments.value[ideaId].trim() !== '') {
     idea.comments.unshift({
-<<<<<<< HEAD
       id: Date.now(), // Используем timestamp для уникального ID
-=======
-      id: idea.comments.length + 1,
->>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
       text: newComments.value[ideaId],
       author: 'Иван Иванов',
       date: new Date().toLocaleString()
     });
     newComments.value[ideaId] = '';
     saveData(); // Сохраняем изменения
-  }
-};
-
-const handleEnter = (event: KeyboardEvent, ideaId: number) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
-    const textarea = event.target as HTMLTextAreaElement;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const value = newComments.value[ideaId] || '';
-    
-    newComments.value[ideaId] = value.substring(0, start) + '\n' + value.substring(end);
-    
-    // Обновляем позицию курсора
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + 1;
-    }, 0);
-  }
-};
-
-const handleIdeaEnter = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
-    const textarea = event.target as HTMLTextAreaElement;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const value = textarea.value || '';
-    
-    textarea.value = value.substring(0, start) + '\n' + value.substring(end);
-    
-    // Обновляем позицию курсора
-    setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + 1;
-    }, 0);
   }
 };
 

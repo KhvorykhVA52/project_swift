@@ -88,7 +88,7 @@ export default {
       showProfileDropdown: false,
       userName: 'Иван Иванов',
       unreadNotifications: 3,
-      bellNotifications: {},
+      bellNotifications: 0,
       sidebarLinks: [
         { 
           path: '/', 
@@ -118,35 +118,6 @@ export default {
       ]
     }
   },
-<<<<<<< HEAD
-  computed: {
-    userName() {
-      const eventUser = this.$root.userData;
-    if (eventUser) {
-      return `${eventUser.firstname} ${eventUser.lastname}`;
-    }
-    const savedUser = localStorage.getItem('userProfile');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      return `${user.firstname} ${user.lastname}`;
-    }
-      return 'Виктор Иванов';
-    },
-    userInitials() {
-      const eventUser = this.$root.userData;
-    if (eventUser) {
-      return `${eventUser.firstname.charAt(0)}${eventUser.lastname.charAt(0)}`;
-    }
-    const savedUser = localStorage.getItem('userProfile');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      return `${user.firstname.charAt(0)}${user.lastname.charAt(0)}`;
-    }
-    return 'ВИ';
-    }
-  },
-=======
->>>>>>> d8b70632f222d2e533d8659b662f94902383d6bf
   methods: {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
@@ -163,12 +134,37 @@ export default {
     },
     logout() {
       this.$router.push('/login');
+    },
+    async setName() {
+      try {
+        const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
+        if (parsedSession) {
+          this.userName = `${parsedSession.firstname} ${parsedSession.lastname}`;
+        }
+      } catch (error) {
+        console.error('Ошибка при получении информации о сессии:', error);
+      }
+    },
+    updateUserName(newName) {
+      try {
+        const parsedSession = JSON.parse(localStorage.getItem('ttm-session')) || {};
+        const [firstname, lastname] = newName.split(' ');
+        
+        parsedSession.firstname = firstname || '';
+        parsedSession.lastname = lastname || '';
+        
+        localStorage.setItem('ttm-session', JSON.stringify(parsedSession));
+        this.userName = newName;
+      } catch (error) {
+        console.error('Ошибка при обновлении имени пользователя:', error);
+      }
     }
   },
-  mounted() {
+  async mounted() {
     if (this.darkMode) {
       document.documentElement.classList.add('dark');
     }
+    await this.setName();
   }
 }
 </script>
