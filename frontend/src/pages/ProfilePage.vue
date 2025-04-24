@@ -249,7 +249,7 @@ export default {
         const updatedUser = await updateProfile(payload);
         if (updatedUser) {
           this.user.phone = updatedUser.telephone || '';
-    this.user.group = updatedUser.group || '';
+          this.user.group = updatedUser.group || '';
           this.$q.notify({
             type: 'positive',
             message: 'Данные успешно сохранены',
