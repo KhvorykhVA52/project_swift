@@ -33,14 +33,22 @@ export class IdeaService {
         newIdea.result = input.result;
         newIdea.resource = input.resource;
         newIdea.initiator = user;
+
+        const savedIdea = await this.ideaRepository.save(newIdea);
         
         user.initiatedIdeas.push(newIdea);
 
         this.userRepository.save(user);
-        this.ideaRepository.save(newIdea)
 
         console.log(`OK: idea.service.createIdea(initiatorId:${input.initiatorId}, name:${input.name})`);
-        return(`OK`);
+
+        const miniIdea = this.ideaRepository.findOne({
+            where: {id: savedIdea.id},
+            relations: ['comments', 'comments.author'],
+            loadEagerRelations: false,
+        })
+        
+        return miniIdea;
     }
 
     async deleteIdea(input: {id: number}) {
@@ -62,6 +70,44 @@ export class IdeaService {
             return ideas;
         } catch(error) {
             console.log(`ERROR: idea.service.getAll(): ${error}`);
+            return `ERROR`;
+        }
+    }
+    //просто getAll() пока не используется - позже возможно надо будет его удалить
+    async getAll2() {
+        try{
+            const ideas = await this.ideaRepository.find({
+                relations: ['comments', 'comments.author'],
+                loadEagerRelations: false,
+            });
+            console.log(`OK: idea.service.getAll2()`);
+            return ideas;
+        } catch(error) {
+            console.log(`ERROR: idea.service.getAll2(): ${error}`);
+            return `ERROR`;
+        }
+    }
+
+    async getBy(id: number) {
+        try{
+            const user = await this.userRepository.findOne({
+                where: {id: id},
+                relations: ['initiatedIdeas', 'initiatedIdeas.comments'],
+            })
+            if (!user) {
+                console.log(`ERROR: idea.service.getBy(): не найден User при User.id=${id}`);
+                return `ERROR`;
+            }
+            
+            console.log(`OK: idea.service.getBy(${id})`);
+
+            if (!user.initiatedIdeas) {
+                return [];
+            }
+            
+            return user.initiatedIdeas;
+        } catch(error) {
+            console.log(`ERROR: idea.service.getBy(): ${error}`);
             return `ERROR`;
         }
     }

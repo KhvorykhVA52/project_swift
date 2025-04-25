@@ -3,7 +3,7 @@ import { Idea } from 'src/orm/idea.entity';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { IdeaService } from './idea.service';
 
-@Controller('idea')
+@Controller('ideas')
 export class IdeaController {
     constructor(private readonly ideaService: IdeaService) {}
 
@@ -17,9 +17,19 @@ export class IdeaController {
         return this.ideaService.deleteIdea(body);
     }
 
-    @Get()
+    @Get('getall')
     getIdeas() {
         return this.ideaService.getAll();
+    }
+
+    @Get('getall2')
+    getIdeas2() {
+        return this.ideaService.getAll2();
+    }
+
+    @Get('getby/:id')
+    getBy(@Param('id') body) {
+        return this.ideaService.getBy(body);
     }
 
     @Post('changename')
