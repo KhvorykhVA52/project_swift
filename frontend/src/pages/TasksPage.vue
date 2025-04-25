@@ -448,7 +448,6 @@ async function saveIdea() {
     }
   }
   showAddIdeaModal.value = false;
-  saveData(); // Сохраняем изменения
 };
 
 const closeModal = () => {
@@ -517,7 +516,6 @@ async function addComment(ideaId: number) {
     viewedIdea.value = { ...ideas.value.find(i => i.id === ideaId) };
 
     newComments.value[ideaId] = '';
-    saveData(); // Сохраняем изменения
   }
 };
 
