@@ -3,23 +3,29 @@
     <div class="profile-header">
       <div class="avatar-container">
         <div class="avatar" :style="avatarStyle">
-          <img v-if="user.avatarUrl" :src="getFullAvatarUrl(user.avatarUrl)" alt="Аватар" class="avatar-image">
-          <span v-else>{{ userInitials }}</span>
+          <img
+             v-if="user.avatarUrl"
+             :src="getFullAvatarUrl(user.avatarUrl)"
+             alt="Аватар"
+             class="avatar-image"
+             @error="handleImageError"
+             ref="avatarImage"
+          >
+          <span v-else class="avatar-initials">{{ userInitials }}</span>
         </div>
         <input type="file" id="avatar-upload" accept="image/*" @change="handleAvatarUpload" style="display: none;">
         <button class="change-avatar-btn" @click="triggerAvatarUpload">Изменить аватар</button>
+        <button
+          class="remove-avatar-btn"
+          @click="removeAvatar"
+          v-if="user.avatarUrl"
+        >
+          Удалить аватар
+        </button>
       </div>
       <h1>{{ user.firstname }} {{ user.lastname }}</h1>
       <p class="email">{{ user.email }}</p>
-      <button
-        class="remove-avatar-btn"
-        @click="removeAvatar"
-        v-if="user.avatarUrl"
-      >
-        Удалить аватар
-      </button>
     </div>
-
     <div class="profile-info">
       <div class="info-section">
         <h2>Основная информация</h2>
@@ -56,10 +62,10 @@
       <div class="action-buttons">
         <template v-if="!isEditing">
           <q-btn color="primary" label="Редактировать" @click="startEditing" />
-          <q-btn 
-            color="secondary" 
-            label="Изменить стек" 
-            @click="showTechStack = true" 
+          <q-btn
+            color="secondary"
+            label="Изменить стек"
+            @click="showTechStack = true"
             class="q-ml-sm"
           />
         </template>
@@ -107,12 +113,12 @@ export default {
   data() {
     return {
       user: {
-         firstname: '',
+        firstname: '',
         lastname: '',
         email: '',
         group: '',
         phone: '',
-        registrationDate: '',
+        registrationDate: new Date().toISOString(),
         avatarUrl: null,
         competence: []
       },
@@ -125,28 +131,41 @@ export default {
       },
       techStack: {
         languages: [
-          { name: 'PHP', selected: false },
+           { name: 'PHP', selected: false },
           { name: 'Blueprint', selected: false },
           { name: 'GOLANG', selected: false },
-          { name: 'Rust', selected: false }
+          { name: 'Rust', selected: false },
+          { name: 'JavaScript', selected: false },
+          { name: 'TypeScript', selected: false },
+          { name: 'Python', selected: false }
         ],
         frameworks: [
-          { name: 'Node.js', selected: false },
+           { name: 'Node.js', selected: false },
           { name: 'Vue', selected: false },
-          { name: 'React', selected: false }
+          { name: 'React', selected: false },
+          { name: 'Angular', selected: false },
+          { name: 'Django', selected: false },
+          { name: 'Laravel', selected: false }
         ],
         databases: [
-          { name: 'MongoDB', selected: false },
-          { name: 'SQL', selected: false }
+            { name: 'MongoDB', selected: false },
+          { name: 'SQL', selected: false },
+          { name: 'PostgreSQL', selected: false },
+          { name: 'Redis', selected: false },
+          { name: 'Firebase', selected: false }
         ],
         devops: [
-          { name: 'Git', selected: false },
-          { name: 'Docker', selected: false }
+           { name: 'Git', selected: false },
+          { name: 'Docker', selected: false },
+          { name: 'Kubernetes', selected: false },
+          { name: 'CI/CD', selected: false },
+          { name: 'Terraform', selected: false }
         ]
       },
       showTechStack: false,
       avatarColor: this.generateRandomColor(),
-      isLoading: false
+      isLoading: false,
+      avatarUploadError: null
     }
   },
   computed: {
@@ -166,22 +185,69 @@ export default {
     }
   },
   methods: {
-       getFullAvatarUrl(avatarPath) {
-      if (!avatarPath) return '';
-      // Проверяем, содержит ли путь уже базовый URL
-      if (avatarPath.startsWith('http')) return avatarPath;
-      return `http://localhost:9000${avatarPath}`;
+     formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU');
     },
 
 
 
 
 
+    handleImageError(e) {
+    console.error('Image load error:', e);
+    
+    // Если URL аватара недействительный, сразу переходим к стандартному аватару
+    if (!this.user.avatarUrl || !this.isValidAvatarUrl(this.user.avatarUrl)) {
+      this.fallbackToDefaultAvatar();
+      return;
+    }
+
+    // Попробуем загрузить без параметров кеширования
+    const cleanUrl = this.user.avatarUrl.split('?')[0];
+    this.user.avatarUrl = `${cleanUrl}?retry=${Date.now()}`;
+
+    // Даем небольшой таймаут перед проверкой
+    setTimeout(() => {
+      const img = this.$refs.avatarImage;
+      if (!img || img.naturalWidth === 0) {
+        this.fallbackToDefaultAvatar();
+      }
+    }, 300);
+  },
+
+  isValidAvatarUrl(url) {
+    if (!url) return false;
+    // Проверяем, что URL выглядит корректно
+    return url.startsWith('/uploads/avatars/') || 
+           url.startsWith('http://') || 
+           url.startsWith('https://');
+  },
+
+  fallbackToDefaultAvatar() {
+    this.user.avatarUrl = null;
+    this.$q.notify({
+      type: 'warning',
+      message: 'Не удалось загрузить аватар. Используется стандартное изображение',
+      timeout: 2000
+    });
+  },
+
+  getFullAvatarUrl(avatarPath) {
+    if (!avatarPath) return '';
+    if (avatarPath.startsWith('http')) return avatarPath;
+    
+    const baseUrl = process.env.VUE_APP_API_URL || 'http://localhost:3000';
+    const cleanPath = avatarPath.replace(/^\//, '');
+    return `${baseUrl}/${cleanPath}?t=${Date.now()}`;
+  },
 
     generateRandomColor() {
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
       return colors[Math.floor(Math.random() * colors.length)];
     },
+
     getCategoryName(key) {
       const names = {
         languages: 'Языки разработки',
@@ -191,33 +257,30 @@ export default {
       };
       return names[key] || key;
     },
+
     async saveTechStack() {
       const selectedCompetence = [];
-      
-      this.techStack.languages.forEach(lang => {
-        if (lang.selected) selectedCompetence.push(lang.name);
-      });
-      
-      this.techStack.frameworks.forEach(fw => {
-        if (fw.selected) selectedCompetence.push(fw.name);
-      });
-      
-      this.techStack.databases.forEach(db => {
-        if (db.selected) selectedCompetence.push(db.name);
-      });
-      
-      this.techStack.devops.forEach(devops => {
-        if (devops.selected) selectedCompetence.push(devops.name);
+      Object.values(this.techStack).forEach(category => {
+        category.forEach(item => {
+          if (item.selected) selectedCompetence.push(item.name);
+        });
       });
 
       try {
-        await updateProfile({ competence: selectedCompetence });
-        this.user.competence = selectedCompetence;
-        this.$q.notify({
-          type: 'positive',
-          message: 'Стек технологий обновлен',
-          timeout: 2000
-        });
+        const response = await updateProfile({ competence: selectedCompetence });
+        if (response) {
+          this.user.competence = selectedCompetence;
+          localStorage.setItem('userProfile', JSON.stringify(this.user));
+          
+          // Обновляем чекбоксы после успешного сохранения
+          this.updateTechStackCheckboxes();
+          
+          this.$q.notify({
+            type: 'positive',
+            message: 'Стек технологий обновлен',
+            timeout: 2000
+          });
+        }
       } catch (error) {
         console.error('Ошибка сохранения стека:', error);
         this.$q.notify({
@@ -227,8 +290,17 @@ export default {
         });
       }
     },
+
+    updateTechStackCheckboxes() {
+      Object.values(this.techStack).forEach(category => {
+        category.forEach(item => {
+          item.selected = this.user.competence.includes(item.name);
+        });
+      });
+    },
+
     startEditing() {
-      this.originalUser = {...this.user};
+      this.originalUser = { ...this.user };
       this.editing = {
         firstname: true,
         lastname: true,
@@ -236,6 +308,7 @@ export default {
         phone: true
       };
     },
+
     async saveChanges() {
       this.isLoading = true;
       try {
@@ -247,9 +320,18 @@ export default {
         };
 
         const updatedUser = await updateProfile(payload);
-        if (updatedUser) {
-          this.user.phone = updatedUser.telephone || '';
-          this.user.group = updatedUser.group || '';
+         if (updatedUser) {
+          // Обновляем все поля из ответа сервера
+          this.user = { 
+            ...this.user,
+            firstname: updatedUser.firstname || this.user.firstname,
+            lastname: updatedUser.lastname || this.user.lastname,
+            telephone: updatedUser.telephone || this.user.phone,
+            group: updatedUser.group || this.user.group
+          };
+          
+          localStorage.setItem('userProfile', JSON.stringify(this.user));
+          
           this.$q.notify({
             type: 'positive',
             message: 'Данные успешно сохранены',
@@ -258,6 +340,11 @@ export default {
         }
       } catch (error) {
         console.error('Ошибка сохранения:', error);
+         this.$q.notify({
+          type: 'negative',
+          message: 'Ошибка при сохранении данных',
+          timeout: 2000
+        });
       } finally {
         this.isLoading = false;
         this.editing = {
@@ -268,8 +355,9 @@ export default {
         };
       }
     },
+
     cancelEditing() {
-      this.user = {...this.originalUser};
+      this.user = { ...this.originalUser };
       this.editing = {
         firstname: false,
         lastname: false,
@@ -277,71 +365,68 @@ export default {
         phone: false
       };
     },
+
     triggerAvatarUpload() {
       document.getElementById('avatar-upload').click();
     },
-    async handleAvatarUpload(event) {
-      const file = event.target.files[0];
+
+     async handleAvatarUpload(event) {
+    const file = event.target.files[0];
   if (!file) return;
 
   try {
-    const formData = new FormData();
-    formData.append('file', file); // Измените 'avatar' на 'file' если бэкенд ожидает такой ключ
+    this.isLoading = true;
+    const response = await uploadAvatar(file);
     
-    const response = await uploadAvatar(formData);
-    if (response && response.avatarUrl) {
-      this.user.avatarUrl = response.avatarUrl;
+    if (response?.avatarUrl) {
+      // Обновляем URL аватара с временной меткой
+      this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
+      
       // Сохраняем в localStorage
       localStorage.setItem('userProfile', JSON.stringify(this.user));
-      // Обновляем данные в верхней панели
-      this.$root.userData = {
-        firstname: this.user.firstname,
-        lastname: this.user.lastname,
-        avatarUrl: this.user.avatarUrl
-      };
       
       this.$q.notify({
         type: 'positive',
-        message: 'Аватар успешно изменен',
+        message: 'Аватар успешно обновлен',
         timeout: 2000
-          });
-
-          await this.loadUserProfile();
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки аватара:', error);
+        });
+      }
+    } catch (error) {
+       console.error('Upload error:', error);
     this.$q.notify({
       type: 'negative',
-      message: 'Ошибка при загрузке изображения: ' + error.message,
-      timeout: 2000
-        });
-      }
-    },
-    async removeAvatar() {
-      try {
-        await deleteAvatar();
-        this.user.avatarUrl = null;
-        this.$q.notify({
-          type: 'positive',
-          message: 'Аватар удален',
-          timeout: 2000
-        });
-        await this.loadUserProfile();
-      } catch (error) {
-        console.error('Ошибка удаления аватара:', error);
-        this.$q.notify({
-          type: 'negative',
-          message: 'Ошибка при удалении аватара',
-          timeout: 2000
-        });
-      }
-    },
-    formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('ru-RU');
-    },
+      message: error.response?.data?.message || 'Ошибка загрузки аватара',
+      timeout: 3000
+      });
+    } finally {
+      event.target.value = '';
+    this.isLoading = false;
+  }
+},
+
+     async removeAvatar() {
+    try {
+      await deleteAvatar();
+      this.user.avatarUrl = null;
+      localStorage.setItem('userProfile', JSON.stringify(this.user));
+      
+      this.$q.notify({
+        type: 'positive',
+        message: 'Аватар удален',
+        timeout: 2000
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      this.$q.notify({
+        type: 'negative',
+        message: 'Не удалось удалить аватар',
+        timeout: 2000
+      });
+    }
+  },
+
     async loadUserProfile() {
-      try {
+        try {
         const userData = await getCurrentUser();
         if (userData) {
           this.user = {
@@ -351,39 +436,47 @@ export default {
             group: userData.group || '',
             phone: userData.telephone || '',
             registrationDate: userData.createdAt 
-              ? this.formatDate(userData.createdAt) 
-              : this.formatDate(new Date()),
+              ? this.formatDate(userData.createdAt)
+              : this.formatDate(new Date().toISOString()),
             avatarUrl: userData.avatarUrl || null,
             competence: userData.competence || []
           };
-          
+
+          // Сохраняем оригинальные данные
+            this.originalUser = { ...this.user };
+          localStorage.setItem('userProfile', JSON.stringify(this.user));
+
+          // Обновляем чекбоксы технологий
+           Object.values(this.techStack).forEach(items => {
+            items.forEach(item => {
+              item.selected = this.user.competence.includes(item.name);
+                        this.updateTechStackCheckboxes();
+
+            });
+          });
+
           this.$emit('user-updated', {
             firstname: this.user.firstname,
             lastname: this.user.lastname,
             avatarUrl: this.user.avatarUrl
           });
-
-          this.techStack.languages.forEach(lang => {
-            lang.selected = this.user.competence.includes(lang.name);
-          });
-          this.techStack.frameworks.forEach(fw => {
-            fw.selected = this.user.competence.includes(fw.name);
-          });
-          this.techStack.databases.forEach(db => {
-            db.selected = this.user.competence.includes(db.name);
-          });
-          this.techStack.devops.forEach(devops => {
-            devops.selected = this.user.competence.includes(devops.name);
-          });
-          
-          this.originalUser = {...this.user};
         }
       } catch (error) {
         console.error('Ошибка загрузки профиля:', error);
       }
+    },
+
+      async loadSavedProfile() {
+      const savedProfile = localStorage.getItem('userProfile');
+      if (savedProfile) {
+        this.user = JSON.parse(savedProfile);
+        this.originalUser = { ...this.user };
+        this.updateTechStackCheckboxes();
+      }
     }
   },
   async mounted() {
+    await this.loadSavedProfile();
     await this.loadUserProfile();
   }
 }
@@ -419,6 +512,7 @@ export default {
   font-weight: bold;
   overflow: hidden;
   position: relative;
+  border: 2px solid #eee;
 }
 
 .avatar img {

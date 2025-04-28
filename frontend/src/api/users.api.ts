@@ -1,10 +1,11 @@
 import { api } from './axios';
-import { 
-  CreateUserDto, 
+import {
+  CreateUserDto,
   UpdateUserDto,
   ExtendedUser,
-  FullUserInfo 
+  FullUserInfo
 } from '../../../backend/src/common/types';
+import { AxiosError } from 'axios';
 
 export async function getAll(): Promise<ExtendedUser[]> {
   const response = await api.get('/users');
@@ -54,15 +55,51 @@ export async function updateProfile(payload: UpdateUserDto): Promise<FullUserInf
 export async function uploadAvatar(file: File): Promise<string | undefined> {
   const formData = new FormData();
   formData.append('avatar', file);
-  const response = await api.post('/users/me/avatar', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
+
+  try {
+    const response = await api.post('/users/me/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      transformRequest: (data) => data,
+    });
+
+    if (response.status === 200) {
+      // Обрабатываем разные возможные форматы ответа
+      return response.data?.avatarUrl || 
+             response.data?.url || 
+             response.data?.path || 
+             `/uploads/avatars/${response.data?.filename}`;
     }
-  });
-  if (response.status === 200) return response.data.avatarUrl;
-  return;
+    return undefined;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.error('Full upload error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw new Error(error.response?.data?.message || 'Ошибка загрузки аватара');
+    }
+    throw error;
+  }
 }
 
 export async function deleteAvatar(): Promise<void> {
-  await api.delete('/users/me/avatar');
+  try {
+    await api.delete('/users/me/avatar');
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.error('Delete avatar error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+    } else if (error instanceof Error) {
+      console.error('Delete error:', error.message);
+    } else {
+      console.error('Unknown delete error:', error);
+    }
+    throw error;
+  }
 }

@@ -4,23 +4,40 @@ import { Repository } from 'typeorm';
 import { User } from 'src/orm/user.entity';
 import * as bcrypt from 'bcrypt';
 import { Role, UpdateUserDto, UserAccountStatus, CreateUserDto } from 'src/common/types';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-  ) {}
+    private userRepository: Repository<User>,
+  ) {
+    this.ensureUploadsDirectoryExists();
+  }
+
+  private ensureUploadsDirectoryExists() {
+    const uploadsDir = path.join(__dirname, '..', '..', 'uploads', 'avatars');
+    try {
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        console.log(`Created uploads directory: ${uploadsDir}`);
+      }
+    } catch (err) {
+      console.error('Failed to create uploads directory:', err);
+      throw new Error('Failed to initialize uploads directory');
+    }
+  }
 
   async findOne(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
+    return this.userRepository.findOne({
       where: { email },
       select: ['id', 'email', 'firstname', 'lastname', 'passwordHash', 'roles', 'status']
     });
   }
 
   async findOneById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({ 
+    return this.userRepository.findOne({
       where: { id },
       select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone']
     });
@@ -69,23 +86,24 @@ export class UsersService {
   }
 
   async securedFindAll() {
-    //не используется
+    // не используется
     return (await this.userRepository.find()).map((u) => u.getSecuredDto());
   }
 
-  async updateAvatar(id: number, avatarUrl: string): Promise<void> {
-    await this.userRepository.update(id, { avatarUrl });
+  async updateAvatar(userId: number, avatarUrl: string): Promise<void> {
+    await this.userRepository.update(userId, { avatarUrl });
   }
 
   async getFullUserInfo(id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id },
-      relations: ['team', 'ledTeam']
+      relations: ['team', 'ledTeam'],
+      select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone', 'avatarUrl']
     });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User | null> {
     await this.userRepository.update(id, updateUserDto);
-    return this.getFullUserInfo(id);
+    return this.getFullUserInfo(id); // Важно возвращать обновленные данные
   }
 }
