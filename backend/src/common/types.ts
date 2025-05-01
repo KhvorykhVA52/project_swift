@@ -16,11 +16,12 @@ export enum TaskStatus {
 }
 
 export enum StatusIdea {
-  new = 'New',
-  underEditing = 'Under Editing',
-  underApproval = 'Under Approval',
-  approved = 'Approved',
-  published = 'Published',
+  new = 'Новое',
+  underEditing = 'Дорабатывается',
+  underApproval = 'Ожидает проверки',
+  approved = 'Утверждено',
+  deny = 'Отклонено',
+  underDiscussion = 'Обсуждается',
 }
 
 export enum StatusProject {

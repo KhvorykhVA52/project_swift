@@ -91,11 +91,13 @@
 
             <q-card-section class="idea-meta-section">
               <div class="row items-center justify-between">
-                <div class="text-caption text-grey-7">
+                <div v-if="idea && idea.initiator" class="text-caption text-grey-7">
                   <q-icon name="person_outline" size="xs" class="q-mr-xs" />
-                  {{ idea.author }}
+                  {{ idea.initiator.firstname + ' ' + idea.initiator.lastname }}
                   <q-icon name="event" size="xs" class="q-ml-sm q-mr-xs" />
-                  {{ idea.date }}
+                  {{ formatDate(idea.createdAt) }}
+                  <q-icon name="flag" size="xs" class="q-ml-sm q-mr-xs" />
+                  {{ idea.status }}
                 </div>
                 <div v-if="idea.comments && idea.comments.length > 0" class="text-caption text-grey-7">
                   <q-icon name="comment" size="xs" class="q-mr-xs" />
@@ -196,22 +198,82 @@
       <q-card style="min-width: 800px; max-width: 1000px">
         <q-card-section class="bg-blue-6 text-white q-pa-md">
           <div class="row items-center justify-between">
-            <div class="text-h6">{{ viewedIdea.name }}</div>   
-            <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
+            <div class="text-h6">{{ viewedIdea.name }}</div>
+            <div class="row items-center justify-end">
+              <q-btn v-if="checkEditStatus" flat class="bg-yellow-10 text-white q-mr-sm" label="Изменить статус" color="primary" @click="openEditStatus" />
+              <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
+            </div>
           </div>
         </q-card-section>
 
+        <q-dialog v-model="showEditStatus" persistent position="right" full-height>
+          <q-card style="width: 300px;">
+            <q-card-section>
+              <div class="text-h6">Изменить статус</div>
+            </q-card-section>
+
+            <q-card-section>
+              <q-list>
+                <div v-if="userIsAdmin">
+                  <q-item clickable v-ripple>
+                    <q-item-section>
+                      <q-radio v-model="selectedStatus" val="Отклонено" label="Отклонить" />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item clickable v-ripple>
+                    <q-item-section>
+                      <q-radio v-model="selectedStatus" val="Дорабатывается" label="На переработку" />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item clickable v-ripple>
+                    <q-item-section>
+                      <q-radio v-model="selectedStatus" val="Утверждено" label="Утвердить" />
+                    </q-item-section>
+                  </q-item>
+                </div>
+
+                <div v-if="userIsInitiator">
+                  <q-item clickable v-ripple>
+                    <q-item-section>
+                      <q-radio v-model="selectedStatus" val="Дорабатывается" label="На переработку" />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item clickable v-ripple>
+                    <q-item-section>
+                      <q-radio v-model="selectedStatus" val="Ожидает проверки" label="Ожидает проверки" />
+                    </q-item-section>
+                  </q-item>
+                </div>
+              </q-list>
+            </q-card-section>
+
+            <q-card-actions align="right">
+              <q-btn flat label="Отмена" color="primary" v-close-popup />
+              <q-btn flat label="Применить" color="primary" @click="SetStatus" />
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
+
         <q-card-section class="q-pt-lg">
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">Проблема</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text bold-text">Инициатор</div>
+          <div class="q-mb-md semi-bold">{{ viewedIdea.initiator?((viewedIdea.initiator.firstname || viewedIdea.initiator.lastname)? (viewedIdea.initiator.firstname || '') + ' ' + (viewedIdea.initiator.lastname || ''): '—'): '—' }}</div>
+
+          <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
+          <div class="q-mb-md"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
+
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Проблема</div>
           <div class="q-mb-md">{{ viewedIdea.problem || '—' }}</div>
           
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">Решение</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Решение</div>
           <div class="q-mb-md">{{ viewedIdea.solution || '—' }}</div>
           
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">Ожидаемый результат</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Ожидаемый результат</div>
           <div class="q-mb-md">{{ viewedIdea.result || '—' }}</div>
           
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">Необходимые ресурсы</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Необходимые ресурсы</div>
           <div class="q-mb-md">{{ viewedIdea.resource || '—' }}</div>
 
           <q-separator class="q-my-md" />
@@ -246,7 +308,7 @@
                 {{ comment.comment }}
               </div>
               <div class="comment-author text-caption text-grey-7 q-mt-xs">
-                — {{ comment.author.firstname + ' ' + comment.author.lastname }}, {{ formatCommentDate(comment.createdAt) }}
+                — {{ comment.author.firstname + ' ' + comment.author.lastname }}, {{ formatDate(comment.createdAt) }}
               </div>
             </div>
             <div class="comment-actions">
@@ -271,6 +333,16 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <!-- Модальное временное окно по показу удачной смены статуса инициатором -->
+    <div v-if="showStatusOK" :class="['status-ok-message', { 'hidden': !showStatusOK }]">
+      Статус идеи изменён успешно!
+    </div>
+
+    <!-- Модальное временное окно по показу ошибки смены статуса инициатором -->
+    <div v-if="showStatusERROR" :class="['status-error-message', { 'hidden': !showStatusERROR }]">
+      Не получилось изменить статус - идея уже обсуждается
+    </div>
   </div>
 </template>
 
@@ -281,6 +353,7 @@ import * as api from '../api/ideas.api';
 import { UpdateCommentDto } from '../../../backend/src/comments/dto/update-comment.dto';
 import { CreateCommentDto } from '../../../backend/src/comments/dto/create-comment.dto';
 import { CreateIdeaDto } from '../../../backend/src/idea/dto/create-idea.dto';
+import { StatusIdea } from '../../../backend/src/common/types';
 
 interface Author {
   id: number;
@@ -298,20 +371,123 @@ interface Comment {
 
 interface Idea {
   comments: Comment[];
-  date: string;
+  createdAt: string;
   customer: string;
   id: number;
-  author: string;
+  initiator: {id: number, firstname: string, lastname: string};
   name: string;
   problem: string;
   resource: string;
   result: string;
   solution: string;  
+  status: StatusIdea;
 }
 
 const $q = useQuasar();
 
 // Переменные для функционала идей
+
+const showEditStatus = ref(false);
+const selectedStatus = ref<StatusIdea>();
+const userIsAdmin = ref(false);
+const userIsInitiator = ref(false);
+
+function openEditStatus() {
+  showEditStatus.value = true;
+}
+
+async function SetStatus() {
+  if (!viewedIdea.value.status || !viewedIdea.value.id || !selectedStatus.value) {
+    return;
+  }
+
+  if (!userIsAdmin.value && viewedIdea.value.status === StatusIdea.underDiscussion) {
+    console.log('э куда?');
+    showStatusERROR.value = true;
+    if (timerId.value) {
+      clearTimeout(timerId.value);
+    }
+
+    timerId.value = setTimeout(() => {
+      showStatusERROR.value = false;
+      timerId.value = null;
+    }, 2000);
+    showStatusOK.value = false
+    return;
+  }
+
+  const response = await api.editIdeastatus(viewedIdea.value.id, selectedStatus.value);
+
+  if (!response) {
+    console.log('Что-то пошло не так');
+    return;
+  }
+  viewedIdea.value.status = selectedStatus.value;
+
+  const index = ideas.value.findIndex(i => i.id === viewedIdea.value.id);
+
+  ideas.value[index].status = selectedStatus.value;
+
+  showStatusERROR.value = false;
+  showStatusOK.value = true;
+
+  if (timerId.value) {
+    clearTimeout(timerId.value);
+  }
+
+  timerId.value = setTimeout(() => {
+    showStatusOK.value = false;
+    timerId.value = null;
+  }, 2000);
+
+  showEditStatus.value = false;
+}
+
+async function GetUserRoles(): Promise<string[] | string> {
+  const tempSession = localStorage.getItem('ttm-session')
+  if (!tempSession) {
+    return 'error';
+  }
+  const parsedSession = JSON.parse(tempSession);
+  if (!parsedSession) {
+    console.error('Ошибка при получении информации о сессии');
+    return 'error';
+  }
+  return parsedSession.roles;
+}
+
+async function isUserInitiator() {
+  console.log(viewedIdea.value);
+  const tempSession = localStorage.getItem('ttm-session')
+  if (!tempSession) {
+    return false;
+  }
+  const parsedSession = JSON.parse(tempSession);
+  if (!parsedSession) {
+    console.error('Ошибка при получении информации о сессии');
+    return false;
+  }
+  if (!viewedIdea.value.initiator) {
+    return false;
+  }
+  userIsInitiator.value = parsedSession.userId == viewedIdea.value.initiator.id;
+}
+
+const checkEditStatus = ref<boolean>();
+checkEditStatus.value = false;
+
+async function checkEditStatusFunction() {
+  const roles = await GetUserRoles();
+  if (roles.includes('admin')) {
+    checkEditStatus.value = true;
+    userIsAdmin.value = true;
+    userIsInitiator.value = true;
+  } else {
+    userIsAdmin.value = false;
+  }
+}
+
+checkEditStatusFunction();
 
 const ideas = ref<Idea[]>([]);
 
@@ -348,6 +524,9 @@ const viewedIdea = ref<Partial<Idea>>({});
 const editingIdea = ref(false);
 const newComments = ref<Record<number, string>>({});
 const ideaSearchText = ref('');
+const showStatusERROR = ref(false);
+const showStatusOK = ref(false);
+const timerId = ref();
 
 const filteredIdeasClock = ref(0);
 
@@ -359,11 +538,24 @@ const filteredIdeas = computed(() => {
     idea.problem.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
     idea.solution.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
     idea.result.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
-    idea.resource.toLowerCase().includes(ideaSearchText.value.toLowerCase())
+    idea.resource.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
+    idea.status.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
+    idea.initiator.firstname.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
+    idea.initiator.lastname.toLowerCase().includes(ideaSearchText.value.toLowerCase())
   );
 });
 
 async function addIdea() {
+  const tempSession = localStorage.getItem('ttm-session')
+  if (!tempSession) {
+    return;
+  }
+  const parsedSession = JSON.parse(tempSession);
+  if (!parsedSession) {
+    console.error('Ошибка при получении информации о сессии');
+    return;
+  }
+
   currentIdea.value = {
     id: null as unknown as number,
     name: '',
@@ -371,8 +563,9 @@ async function addIdea() {
     solution: '',
     result: '',
     resource: '',
-    author: '',
-    date: ''
+    initiator: {id: parsedSession.userId, firstname: parsedSession.firstname, lastname: parsedSession.lastname},
+    createdAt: '',
+    status: StatusIdea.new,
   };
 
   editingIdea.value = false;
@@ -385,9 +578,13 @@ async function editIdea(idea: Idea) {
   showAddIdeaModal.value = true;
 };
 
-const showIdeaDetails = (idea: Idea) => {
+async function showIdeaDetails(idea: Idea) {
   viewedIdea.value = { ...idea };
   showIdeaDetailsModal.value = true;
+  await isUserInitiator();
+  if (userIsInitiator.value) {
+    checkEditStatus.value = true;
+  }
 };
 
 async function saveIdea() {
@@ -441,7 +638,6 @@ async function saveIdea() {
     const response = await api.createIdea(createIdeaDto);
 
     if (response) {
-      console.log(response);
       ideas.value = [response as Idea, ...ideas.value]
     } else {
       return null;
@@ -506,7 +702,6 @@ async function addComment(ideaId: number) {
     const response = await api.createComment(createCommentDto);
 
     if (!response) {
-      console.log('response равен null при создании Comment');
       return;
     }
 
@@ -573,7 +768,6 @@ async function editComment(comment: Comment) {
       const response = await api.editComment(comment.id, updateCommentDto);
 
       if (!response) {
-        console.log('Проблема с редактированием коммента');
         return;
       }
 
@@ -595,8 +789,6 @@ async function deleteComment(commentId: number, ideaId: number) {
       const response = await api.deleteComment(commentId);
 
       if (!response) {
-        
-        console.log('Не удалось удалить комментарий');
         return;
       }
 
@@ -614,7 +806,7 @@ const sortedComments = (comments: Comment[]) => {
   return [...comments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
-const formatCommentDate = (createdAt: string) => {
+const formatDate = (createdAt: string) => {
   const date = new Date(createdAt);
 
   const day = String(date.getDate()).padStart(2, '0');
@@ -628,6 +820,60 @@ const formatCommentDate = (createdAt: string) => {
 </script>
 
 <style scoped>
+.status-ok-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(9, 138, 9, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 10000;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.status-ok-message.hidden {
+  opacity: 0;
+}
+
+.status-error-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(233, 11, 11, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 10001;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.status-error-message.hidden {
+  opacity: 0;
+}
+
+.dark-blue-text {
+  color: darkblue;
+}
+
+.bold-text {
+  font-weight: bold;
+}
+
+.semi-bold {
+  font-weight: 600;
+}
+
 .ideas-container {
   max-width: 1200px;
   margin: 0 auto;
