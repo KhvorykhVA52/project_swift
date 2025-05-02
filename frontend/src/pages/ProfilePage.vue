@@ -53,9 +53,9 @@
           <span class="value" v-if="!editing.phone && user.phone">{{ user.phone }}</span>
           <q-input v-else v-model="user.phone" dense />
         </div>
-        <div class="info-item">
+        <div v-if="user.createdAt" class="info-item">
           <span class="label">Дата регистрации:</span>
-          <span class="value">{{ user.registrationDate }}</span>
+          <span class="value">{{ formDate(user.createdAt) }}</span>
         </div>
       </div>
 
@@ -118,7 +118,7 @@ export default {
         email: '',
         group: '',
         phone: '',
-        registrationDate: new Date().toISOString(),
+        createdAt: '',
         avatarUrl: null,
         competence: []
       },
@@ -185,15 +185,18 @@ export default {
     }
   },
   methods: {
-     formatDate(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('ru-RU');
+    formDate(createdAt) {
+      console.log(createdAt);
+      const date = new Date(createdAt);
+
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+      const year = date.getFullYear();
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
     },
-
-
-
-
 
     handleImageError(e) {
     console.error('Image load error:', e);
@@ -436,9 +439,7 @@ export default {
             email: userData.email || '',
             group: userData.group || '',
             phone: userData.telephone || '',
-            registrationDate: userData.createdAt 
-              ? this.formatDate(userData.createdAt)
-              : this.formatDate(new Date().toISOString()),
+            createdAt: userData.createdAt,
             avatarUrl: userData.avatarUrl || null,
             competence: userData.competence || []
           };
