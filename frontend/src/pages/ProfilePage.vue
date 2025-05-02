@@ -78,29 +78,107 @@
 
     <!-- Модальное окно для редактирования стека технологий -->
     <q-dialog v-model="showTechStack">
-      <q-card class="tech-stack-dialog">
-        <q-card-section>
+      <div>
+        
+      </div>
+      <q-card class="tech-stack-dialog" style="background-color: rgba(216, 221, 255);">
+        <q-card-section style="position: sticky; top: 0; z-index: 10000; background-color: rgba(216, 221, 255); border-bottom: 1px solid rgb(128, 128, 128)">
+
+          <div style="display: flex; justify-content: center; align-items: center;">
+            <q-btn flat label="Отмена" color="black" style="
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: inline-block;
+            background-color: rgba(255, 0, 0, 0.63);
+            "
+            v-close-popup />
+            <q-btn flat label="Сохранить" color="black" style="
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: inline-block;
+            margin-left: 8px;
+            background-color: rgba(0, 255, 0, 0.63);
+            "
+            @click="saveTechStack" v-close-popup />
+          </div>
+
           <div class="text-h6">Ваш стек технологий</div>
+          <q-input 
+            v-model="searchtechnology"
+            outlined
+            dense
+            placeholder="Найти..."
+            class="search-input"
+            color="black"
+            style="padding;"
+          />
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <div class="tech-category" v-for="(category, name) in techStack" :key="name">
+          <div class="tech-category" v-for="(category, name) in filteredtechStack" :key="name">
             <h3>{{ getCategoryName(name) }}</h3>
-            <div class="tech-items">
-              <q-checkbox
-                v-for="item in category"
-                :key="item.name"
-                v-model="item.selected"
-                :label="item.name"
-              />
+            <div v-if="getCategoryName(name) == 'Языки разработки'">
+              <div class="tech-items">
+                <q-checkbox
+                  v-for="item in category"
+                  :key="item.name"
+                  v-model="item.selected"
+                  :label="''"
+                  class="styled-checkbox checkbox-left"
+                >
+                  <template v-slot:default>
+                    <span class="word-background languages-background" style="background-size: 75% 100%;">{{ item.name }}</span>
+                  </template>
+                </q-checkbox>
+              </div>
+            </div>
+            <div v-if="getCategoryName(name) == 'Фреймворки'">
+              <div class="tech-items">
+                <q-checkbox
+                  v-for="item in category"
+                  :key="item.name"
+                  v-model="item.selected"
+                  :label="''"
+                  class="styled-checkbox checkbox-left"
+                >
+                  <template v-slot:default>
+                    <span class="word-background frameworks-background">{{ item.name }}</span>
+                  </template>
+                </q-checkbox>
+              </div>
+            </div>
+            <div v-if="getCategoryName(name) == 'Базы данных'">
+              <div class="tech-items">
+                <q-checkbox
+                  v-for="item in category"
+                  :key="item.name"
+                  v-model="item.selected"
+                  :label="''"
+                  class="styled-checkbox checkbox-left"
+                >
+                  <template v-slot:default>
+                    <span class="word-background databases-background" style="background-size: 100% 100%;">{{ item.name }}</span>
+                  </template>
+                </q-checkbox>
+              </div>
+            </div>
+            <div v-if="getCategoryName(name) == 'DevOps'">
+              <div class="tech-items">
+                <q-checkbox
+                  v-for="item in category"
+                  :key="item.name"
+                  v-model="item.selected"
+                  :label="''"
+                  class="styled-checkbox checkbox-left"
+                >
+                  <template v-slot:default>
+                    <span class="word-background devops-background">{{ item.name }}</span>
+                  </template>
+                </q-checkbox>
+              </div>
             </div>
           </div>
         </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="Отмена" color="negative" v-close-popup />
-          <q-btn flat label="Сохранить" color="positive" @click="saveTechStack" v-close-popup />
-        </q-card-actions>
       </q-card>
     </q-dialog>
   </div>
@@ -112,6 +190,7 @@ import { getCurrentUser, updateProfile, uploadAvatar, deleteAvatar } from '../ap
 export default {
   data() {
     return {
+      searchtechnology: '',
       user: {
         firstname: '',
         lastname: '',
@@ -131,35 +210,144 @@ export default {
       },
       techStack: {
         languages: [
-           { name: 'PHP', selected: false },
-          { name: 'Blueprint', selected: false },
-          { name: 'GOLANG', selected: false },
-          { name: 'Rust', selected: false },
+          { name: 'Python', selected: false },
           { name: 'JavaScript', selected: false },
           { name: 'TypeScript', selected: false },
-          { name: 'Python', selected: false }
+          { name: 'Java', selected: false },
+          { name: 'C#', selected: false },
+          { name: 'C++', selected: false },
+          { name: 'C', selected: false },
+          { name: 'PHP', selected: false },
+          { name: 'Swift', selected: false },
+          { name: 'Kotlin', selected: false },
+          { name: 'GOLANG', selected: false },
+          { name: 'Rust', selected: false },
+          { name: 'Ruby', selected: false },
+          { name: 'HTML', selected: false },
+          { name: 'CSS', selected: false },
+          { name: 'Dart', selected: false },
+          { name: 'Scala', selected: false },
+          { name: 'Lua', selected: false },
+          { name: 'R', selected: false },
+          { name: 'Groovy', selected: false },
+          { name: 'Objective-C', selected: false },
+          { name: 'Assembly', selected: false },
+          { name: 'Delphi', selected: false },
+          { name: 'Pascal', selected: false },
+          { name: 'Visual Basic .NET', selected: false },
+          { name: 'Elixir', selected: false },
+          { name: 'Haskell', selected: false },
+          { name: 'Fortran', selected: false },
+          { name: 'COBOL', selected: false },
+          { name: 'MATLAB', selected: false },
+          { name: 'Ada', selected: false },
+          { name: 'Lisp', selected: false },
+          { name: 'Scheme', selected: false },
+          { name: 'Julia', selected: false },
+          { name: 'Erlang', selected: false },
+          { name: 'Scratch', selected: false },
+          { name: 'Prolog', selected: false },
+          { name: 'Clojure', selected: false },
+          { name: 'Blueprint', selected: false },
+          { name: 'Objective-J', selected: false }
         ],
         frameworks: [
-           { name: 'Node.js', selected: false },
-          { name: 'Vue', selected: false },
           { name: 'React', selected: false },
+          { name: 'Vue', selected: false },
           { name: 'Angular', selected: false },
+          { name: 'Next.js', selected: false },
+          { name: 'Express.js', selected: false },
+          { name: 'NestJS', selected: false },
+          { name: 'Svelte', selected: false },
           { name: 'Django', selected: false },
-          { name: 'Laravel', selected: false }
+          { name: 'Flask', selected: false },
+          { name: 'FastAPI', selected: false },
+          { name: 'Laravel', selected: false },
+          { name: 'Symfony', selected: false },
+          { name: 'CodeIgniter', selected: false },
+          { name: 'Spring Boot', selected: false },
+          { name: 'Spring MVC', selected: false },
+          { name: 'ASP.NET Core', selected: false },
+          { name: 'Gin', selected: false },
+          { name: 'Echo', selected: false },
+          { name: 'SwiftUI', selected: false },
+          { name: 'UIKit', selected: false },
+          { name: 'Flutter', selected: false },
+          { name: 'Ember.js', selected: false },
+          { name: 'Backbone.js', selected: false },
+          { name: 'Meteor', selected: false },
+          { name: 'AdonisJS', selected: false },
+          { name: 'Nuxt.js', selected: false },
+          { name: 'Remix', selected: false },
+          { name: 'Phoenix', selected: false },
+          { name: 'Sinatra', selected: false },
+          { name: 'Koa.js', selected: false },
+          { name: 'Dropwizard', selected: false },
+          { name: 'Yii', selected: false },
+          { name: 'CakePHP', selected: false },
+          { name: 'GraphQL Yoga', selected: false }
         ],
         databases: [
-            { name: 'MongoDB', selected: false },
-          { name: 'SQL', selected: false },
           { name: 'PostgreSQL', selected: false },
+          { name: 'MySQL', selected: false },
+          { name: 'MongoDB', selected: false },
           { name: 'Redis', selected: false },
-          { name: 'Firebase', selected: false }
+          { name: 'Microsoft SQL Server', selected: false },
+          { name: 'SQLite', selected: false },
+          { name: 'Oracle', selected: false },
+          { name: 'MariaDB', selected: false },
+          { name: 'DynamoDB', selected: false },
+          { name: 'Cassandra', selected: false },
+          { name: 'Cloud Firestore', selected: false },
+          { name: 'Couchbase', selected: false },
+          { name: 'InfluxDB', selected: false },
+          { name: 'ArangoDB', selected: false },
+          { name: 'Neo4j', selected: false },
+          { name: 'Amazon Aurora', selected: false },
+          { name: 'Memcached', selected: false },
+          { name: 'IBM Db2', selected: false },
+          { name: 'RethinkDB', selected: false },
+          { name: 'Cosmos DB', selected: false },
+          { name: 'Elasticsearch', selected: false },
+          { name: 'ClickHouse', selected: false },
+          { name: 'HBase', selected: false },
+          { name: 'RavenDB', selected: false },
+          { name: 'ObjectDB', selected: false },
+          { name: 'OrientDB', selected: false },
+          { name: 'Percona Server', selected: false },
+          { name: 'TiDB', selected: false },
+          { name: 'Greenplum', selected: false }
         ],
         devops: [
-           { name: 'Git', selected: false },
+          { name: 'Git', selected: false },
           { name: 'Docker', selected: false },
           { name: 'Kubernetes', selected: false },
           { name: 'CI/CD', selected: false },
-          { name: 'Terraform', selected: false }
+          { name: 'Terraform', selected: false },
+          { name: 'Jenkins', selected: false },
+          { name: 'Ansible', selected: false },
+          { name: 'AWS CloudFormation', selected: false },
+          { name: 'Azure DevOps', selected: false },
+          { name: 'Google Cloud Build', selected: false },
+          { name: 'Chef', selected: false },
+          { name: 'Puppet', selected: false },
+          { name: 'Prometheus', selected: false },
+          { name: 'Grafana', selected: false },
+          { name: 'Nagios', selected: false },
+          { name: 'Consul', selected: false },
+          { name: 'Vault', selected: false },
+          { name: 'Splunk', selected: false },
+          { name: 'PagerDuty', selected: false },
+          { name: 'New Relic', selected: false },
+          { name: 'Datadog', selected: false },
+          { name: 'Sentry', selected: false },
+          { name: 'Sumo Logic', selected: false },
+          { name: 'CloudWatch', selected: false },
+          { name: 'Azure Monitor', selected: false },
+          { name: 'Google Cloud Monitoring', selected: false },
+          { name: 'JFrog Artifactory', selected: false },
+          { name: 'Nexus Repository', selected: false },
+          { name: 'SonarQube', selected: false }
         ]
       },
       showTechStack: false,
@@ -169,6 +357,28 @@ export default {
     }
   },
   computed: {
+    filteredtechStack() {
+      if (!this.searchtechnology){
+        return this.techStack;
+      }
+      
+      const mainFiltered = {};
+      
+      for (const tempCategory in this.techStack) {
+        if (this.techStack.hasOwnProperty(tempCategory)) {
+          const temp2Category = this.techStack[tempCategory];
+          if (Array.isArray(temp2Category)) {
+            const filtered = temp2Category.filter(item =>
+              item.name.toLowerCase().includes(this.searchtechnology.toLowerCase())
+            );
+            if (filtered.length > 0) {
+              mainFiltered[tempCategory] = filtered;
+            }
+          }
+        }
+      }
+      return mainFiltered;
+    },
     avatarStyle() {
       return {
         'background-color': this.user.avatarUrl ? 'transparent' : this.avatarColor
@@ -218,6 +428,10 @@ export default {
         this.fallbackToDefaultAvatar();
       }
     }, 300);
+  },
+  watch: {
+    searchtechnology() {{}
+    },
   },
 
   isValidAvatarUrl(url) {
@@ -485,6 +699,75 @@ export default {
 </script>
 
 <style scoped>
+.search-input {
+  background-color: rgba(0, 174, 255, 0.43) !important;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.checkbox-left .q-checkbox__inner {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-left .q-checkbox__inner--left {
+  order: 0;
+  margin-right: 8px;
+}
+
+.checkbox-left .q-checkbox__inner--label {
+  order: 1;
+  flex-grow: 1;
+}
+
+.languages-background {
+  background-image: url('../assets/background_languages.png');
+}
+
+.frameworks-background {
+  background-image: url('../assets/background_frameworks.png');
+}
+
+.databases-background {
+  background-image: url('../assets/background_databases.png');
+}
+
+.devops-background {
+  background-image: url('../assets/background_DevOps.png');
+}
+
+.word-background {
+  padding: 2px 30px;
+  color: black;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100%;
+  font-size: 16px;
+}
+
+.styled-checkbox .q-checkbox__bg{
+    background: none;
+    border: none;
+}
+
+.styled-checkbox .q-checkbox__inner::before {
+    background: none;
+    border: 1px solid;
+}
+
+.styled-checkbox .q-checkbox__inner.q-checkbox__inner--falsy::before {
+    border: 1px solid #999;
+}
+
+.styled-checkbox .q-checkbox__inner.q-checkbox__inner--truthy::before {
+    border: 1px solid green;
+    background-color: green;
+}
+
+.styled-checkbox .q-checkbox__label {
+  margin-left: 0;
+}
+
 .profile-container {
   max-width: 800px;
   margin: 0 auto;
