@@ -77,7 +77,7 @@ export class IdeaService {
     async getAll2() {
         try{
             const ideas = await this.ideaRepository.find({
-                relations: ['comments', 'comments.author'],
+                relations: ['initiator', 'comments', 'comments.author'],
                 loadEagerRelations: false,
             });
             console.log(`OK: idea.service.getAll2()`);
