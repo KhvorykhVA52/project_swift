@@ -1,5 +1,5 @@
 <template>
-  <div class="profile-container">
+  <div class="profile-container" :class="{'admin-profile': isAdmin}">
     <div class="profile-header">
       <div class="avatar-container">
         <div class="avatar" :style="avatarStyle">
@@ -25,7 +25,9 @@
       </div>
       <h1>{{ user.firstname }} {{ user.lastname }}</h1>
       <p class="email">{{ user.email }}</p>
+      <div v-if="isAdmin" class="admin-badge">Администратор</div>
     </div>
+
     <div class="profile-info">
       <div class="info-section">
         <h2>Основная информация</h2>
@@ -43,10 +45,10 @@
           <span class="label">Почта:</span>
           <span class="value">{{ user.email }}</span>
         </div>
-        <div class="info-item">
+    <div class="info-item" v-if="!isAdmin"> <!-- Только это поле изменено -->
           <span class="label">Группа:</span>
-          <span class="value" v-if="!editing.group && user.group">{{ user.group }}</span>
-          <q-input v-else v-model="user.group" dense />
+           <span class="value" v-if="!editing.group && user.group">{{ user.group }}</span>
+      <q-input v-else v-model="user.group" dense />
         </div>
         <div class="info-item">
           <span class="label">Телефон:</span>
@@ -59,14 +61,15 @@
         </div>
       </div>
 
-      <div class="action-buttons">
-        <template v-if="!isEditing">
-          <q-btn color="primary" label="Редактировать" @click="startEditing" />
-          <q-btn
-            color="secondary"
-            label="Изменить стек"
-            @click="showTechStack = true"
-            class="q-ml-sm"
+       <div class="action-buttons">
+    <template v-if="!isEditing">
+      <q-btn color="primary" label="Редактировать" @click="startEditing" />
+      <q-btn
+        color="secondary"
+        label="Изменить стек"
+        @click="showTechStack = true"
+        class="q-ml-sm"
+        v-if="!isAdmin"
           />
         </template>
         <template v-else>
@@ -76,8 +79,7 @@
       </div>
     </div>
 
-    <!-- Модальное окно для редактирования стека технологий -->
-    <q-dialog v-model="showTechStack">
+    <q-dialog v-model="showTechStack" v-if="!isAdmin">
       <q-card class="tech-stack-dialog">
         <q-card-section>
           <div class="text-h6">Ваш стек технологий</div>
@@ -120,7 +122,8 @@ export default {
         phone: '',
         registrationDate: new Date().toISOString(),
         avatarUrl: null,
-        competence: []
+        competence: [],
+        roles: []
       },
       originalUser: {},
       editing: {
@@ -131,7 +134,7 @@ export default {
       },
       techStack: {
         languages: [
-           { name: 'PHP', selected: false },
+          { name: 'PHP', selected: false },
           { name: 'Blueprint', selected: false },
           { name: 'GOLANG', selected: false },
           { name: 'Rust', selected: false },
@@ -140,7 +143,7 @@ export default {
           { name: 'Python', selected: false }
         ],
         frameworks: [
-           { name: 'Node.js', selected: false },
+          { name: 'Node.js', selected: false },
           { name: 'Vue', selected: false },
           { name: 'React', selected: false },
           { name: 'Angular', selected: false },
@@ -148,14 +151,14 @@ export default {
           { name: 'Laravel', selected: false }
         ],
         databases: [
-            { name: 'MongoDB', selected: false },
+          { name: 'MongoDB', selected: false },
           { name: 'SQL', selected: false },
           { name: 'PostgreSQL', selected: false },
           { name: 'Redis', selected: false },
           { name: 'Firebase', selected: false }
         ],
         devops: [
-           { name: 'Git', selected: false },
+          { name: 'Git', selected: false },
           { name: 'Docker', selected: false },
           { name: 'Kubernetes', selected: false },
           { name: 'CI/CD', selected: false },
@@ -165,7 +168,8 @@ export default {
       showTechStack: false,
       avatarColor: this.generateRandomColor(),
       isLoading: false,
-      avatarUploadError: null
+      avatarUploadError: null,
+      isAdmin: false
     }
   },
   computed: {
@@ -185,63 +189,55 @@ export default {
     }
   },
   methods: {
-     formatDate(dateString) {
+    formatDate(dateString) {
       if (!dateString) return '';
       const date = new Date(dateString);
       return date.toLocaleDateString('ru-RU');
     },
 
-
-
-
-
     handleImageError(e) {
-    console.error('Image load error:', e);
-    
-    // Если URL аватара недействительный, сразу переходим к стандартному аватару
-    if (!this.user.avatarUrl || !this.isValidAvatarUrl(this.user.avatarUrl)) {
-      this.fallbackToDefaultAvatar();
-      return;
-    }
-
-    // Попробуем загрузить без параметров кеширования
-    const cleanUrl = this.user.avatarUrl.split('?')[0];
-    this.user.avatarUrl = `${cleanUrl}?retry=${Date.now()}`;
-
-    // Даем небольшой таймаут перед проверкой
-    setTimeout(() => {
-      const img = this.$refs.avatarImage;
-      if (!img || img.naturalWidth === 0) {
+      console.error('Image load error:', e);
+      
+      if (!this.user.avatarUrl || !this.isValidAvatarUrl(this.user.avatarUrl)) {
         this.fallbackToDefaultAvatar();
+        return;
       }
-    }, 300);
-  },
 
-  isValidAvatarUrl(url) {
-    if (!url) return false;
-    // Проверяем, что URL выглядит корректно
-    return url.startsWith('/uploads/avatars/') || 
-           url.startsWith('http://') || 
-           url.startsWith('https://');
-  },
+      const cleanUrl = this.user.avatarUrl.split('?')[0];
+      this.user.avatarUrl = `${cleanUrl}?retry=${Date.now()}`;
 
-  fallbackToDefaultAvatar() {
-    this.user.avatarUrl = null;
-    this.$q.notify({
-      type: 'warning',
-      message: 'Не удалось загрузить аватар. Используется стандартное изображение',
-      timeout: 2000
-    });
-  },
+      setTimeout(() => {
+        const img = this.$refs.avatarImage;
+        if (!img || img.naturalWidth === 0) {
+          this.fallbackToDefaultAvatar();
+        }
+      }, 300);
+    },
 
-  getFullAvatarUrl(avatarPath) {
-    if (!avatarPath) return '';
-    if (avatarPath.startsWith('http')) return avatarPath;
-    
-    const baseUrl = process.env.VUE_APP_API_URL || 'http://localhost:3000';
-    const cleanPath = avatarPath.replace(/^\//, '');
-    return `${baseUrl}/${cleanPath}?t=${Date.now()}`;
-  },
+    isValidAvatarUrl(url) {
+      if (!url) return false;
+      return url.startsWith('/uploads/avatars/') || 
+             url.startsWith('http://') || 
+             url.startsWith('https://');
+    },
+
+    fallbackToDefaultAvatar() {
+      this.user.avatarUrl = null;
+      this.$q.notify({
+        type: 'warning',
+        message: 'Не удалось загрузить аватар. Используется стандартное изображение',
+        timeout: 2000
+      });
+    },
+
+    getFullAvatarUrl(avatarPath) {
+      if (!avatarPath) return '';
+      if (avatarPath.startsWith('http')) return avatarPath;
+      
+      const baseUrl = process.env.VUE_APP_API_URL || 'http://localhost:3000';
+      const cleanPath = avatarPath.replace(/^\//, '');
+      return `${baseUrl}/${cleanPath}?t=${Date.now()}`;
+    },
 
     generateRandomColor() {
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
@@ -272,7 +268,6 @@ export default {
           this.user.competence = selectedCompetence;
           localStorage.setItem('userProfile', JSON.stringify(this.user));
           
-          // Обновляем чекбоксы после успешного сохранения
           this.updateTechStackCheckboxes();
           
           this.$q.notify({
@@ -304,7 +299,7 @@ export default {
       this.editing = {
         firstname: true,
         lastname: true,
-        group: true,
+        group: !this.isAdmin, // Для админа не редактируем группу
         phone: true
       };
     },
@@ -315,19 +310,21 @@ export default {
         const payload = {
           firstname: this.user.firstname,
           lastname: this.user.lastname,
-          telephone: this.user.phone,
-          group: this.user.group
+          telephone: this.user.phone
         };
+        
+        if (!this.isAdmin) {
+          payload.group = this.user.group;
+        }
 
         const updatedUser = await updateProfile(payload);
-         if (updatedUser) {
-          // Обновляем все поля из ответа сервера
+        if (updatedUser) {
           this.user = { 
             ...this.user,
             firstname: updatedUser.firstname || this.user.firstname,
             lastname: updatedUser.lastname || this.user.lastname,
             telephone: updatedUser.telephone || this.user.phone,
-            group: updatedUser.group || this.user.group
+            group: this.isAdmin ? this.user.group : (updatedUser.group || this.user.group)
           };
           
           localStorage.setItem('userProfile', JSON.stringify(this.user));
@@ -340,7 +337,7 @@ export default {
         }
       } catch (error) {
         console.error('Ошибка сохранения:', error);
-         this.$q.notify({
+        this.$q.notify({
           type: 'negative',
           message: 'Ошибка при сохранении данных',
           timeout: 2000
@@ -370,63 +367,60 @@ export default {
       document.getElementById('avatar-upload').click();
     },
 
-     async handleAvatarUpload(event) {
-    const file = event.target.files[0];
-  if (!file) return;
+    async handleAvatarUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-  try {
-    this.isLoading = true;
-    const response = await uploadAvatar(file);
-    
-    if (response?.avatarUrl) {
-      // Обновляем URL аватара с временной меткой
-      this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
-      
-      // Сохраняем в localStorage
-      localStorage.setItem('userProfile', JSON.stringify(this.user));
-      
-      this.$q.notify({
-        type: 'positive',
-        message: 'Аватар успешно обновлен',
-        timeout: 2000
+      try {
+        this.isLoading = true;
+        const response = await uploadAvatar(file);
+        
+        if (response?.avatarUrl) {
+          this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
+          localStorage.setItem('userProfile', JSON.stringify(this.user));
+          
+          this.$q.notify({
+            type: 'positive',
+            message: 'Аватар успешно обновлен',
+            timeout: 2000
+          });
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: error.response?.data?.message || 'Ошибка загрузки аватара',
+          timeout: 3000
+        });
+      } finally {
+        event.target.value = '';
+        this.isLoading = false;
+      }
+    },
+
+    async removeAvatar() {
+      try {
+        await deleteAvatar();
+        this.user.avatarUrl = null;
+        localStorage.setItem('userProfile', JSON.stringify(this.user));
+        
+        this.$q.notify({
+          type: 'positive',
+          message: 'Аватар удален',
+          timeout: 2000
+        });
+      } catch (error) {
+        console.error('Delete error:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: 'Не удалось удалить аватар',
+          timeout: 2000
         });
       }
-    } catch (error) {
-       console.error('Upload error:', error);
-    this.$q.notify({
-      type: 'negative',
-      message: error.response?.data?.message || 'Ошибка загрузки аватара',
-      timeout: 3000
-      });
-    } finally {
-      event.target.value = '';
-    this.isLoading = false;
-  }
-},
-
-     async removeAvatar() {
-    try {
-      await deleteAvatar();
-      this.user.avatarUrl = null;
-      localStorage.setItem('userProfile', JSON.stringify(this.user));
-      
-      this.$q.notify({
-        type: 'positive',
-        message: 'Аватар удален',
-        timeout: 2000
-      });
-    } catch (error) {
-      console.error('Delete error:', error);
-      this.$q.notify({
-        type: 'negative',
-        message: 'Не удалось удалить аватар',
-        timeout: 2000
-      });
-    }
-  },
+    },
 
     async loadUserProfile() {
-        try {
+      try {
         const userData = await getCurrentUser();
         if (userData) {
           this.user = {
@@ -439,21 +433,22 @@ export default {
               ? this.formatDate(userData.createdAt)
               : this.formatDate(new Date().toISOString()),
             avatarUrl: userData.avatarUrl || null,
-            competence: userData.competence || []
+            competence: userData.competence || [],
+            roles: userData.roles || []
           };
 
-          // Сохраняем оригинальные данные
-            this.originalUser = { ...this.user };
+        this.isAdmin = this.user.roles.includes('admin'); 
+                console.log('Is admin:', this.isAdmin); // Для отладки
+
+          this.originalUser = { ...this.user };
           localStorage.setItem('userProfile', JSON.stringify(this.user));
 
-          // Обновляем чекбоксы технологий
-           Object.values(this.techStack).forEach(items => {
+          Object.values(this.techStack).forEach(items => {
             items.forEach(item => {
               item.selected = this.user.competence.includes(item.name);
-                        this.updateTechStackCheckboxes();
-
             });
           });
+          this.updateTechStackCheckboxes();
 
           this.$emit('user-updated', {
             firstname: this.user.firstname,
@@ -466,10 +461,11 @@ export default {
       }
     },
 
-      async loadSavedProfile() {
+    async loadSavedProfile() {
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
         this.user = JSON.parse(savedProfile);
+        this.isAdmin = this.user.roles?.includes('admin') || false;
         this.originalUser = { ...this.user };
         this.updateTechStackCheckboxes();
       }
@@ -489,9 +485,25 @@ export default {
   padding: 20px;
 }
 
+.profile-container.admin-profile {
+  border-left: 4px solid #f44336;
+}
+
 .profile-header {
   text-align: center;
   margin-bottom: 30px;
+  position: relative;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #f44336;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 5px;
 }
 
 .avatar-container {
