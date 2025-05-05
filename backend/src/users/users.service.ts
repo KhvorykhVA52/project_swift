@@ -98,7 +98,7 @@ export class UsersService {
     return this.userRepository.findOne({
       where: { id },
       relations: ['team', 'ledTeam'],
-      select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone', 'avatarUrl', 'competence', 'createdAt']
+      select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone', 'avatarUrl']
     });
   }
 
