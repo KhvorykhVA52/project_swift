@@ -1,6 +1,6 @@
 <template>
-  <div class="profile-container">
-    <div class="profile-header">
+  <div class="profile-container" :class="{'admin-profile': isAdmin}">
+     <div class="profile-header">
       <div class="avatar-container">
         <div class="avatar" :style="avatarStyle">
           <img
@@ -11,7 +11,7 @@
              @error="handleImageError"
              ref="avatarImage"
           >
-          <span v-else class="avatar-initials">{{ userInitials }}</span>
+           <span v-else class="avatar-initials">{{ userInitials }}</span>
         </div>
         <input type="file" id="avatar-upload" accept="image/*" @change="handleAvatarUpload" style="display: none;">
         <button class="change-avatar-btn" @click="triggerAvatarUpload">Изменить аватар</button>
@@ -43,7 +43,7 @@
           <span class="label">Почта:</span>
           <span class="value">{{ user.email }}</span>
         </div>
-        <div class="info-item">
+        <div class="info-item" v-if="!isAdmin"> <!-- Скрыто для админа -->
           <span class="label">Группа:</span>
           <span class="value" v-if="!editing.group && user.group">{{ user.group }}</span>
           <q-input v-else v-model="user.group" dense />
@@ -67,6 +67,7 @@
             label="Изменить стек"
             @click="showTechStack = true"
             class="q-ml-sm"
+            v-if="!isAdmin"
           />
         </template>
         <template v-else>
@@ -120,7 +121,9 @@ export default {
         phone: '',
         registrationDate: new Date().toISOString(),
         avatarUrl: null,
-        competence: []
+        competence: [],
+        roles: [],
+        isAdmin: false
       },
       originalUser: {},
       editing: {
@@ -440,11 +443,15 @@ export default {
               ? this.formatDate(userData.createdAt)
               : this.formatDate(new Date().toISOString()),
             avatarUrl: userData.avatarUrl || null,
-            competence: userData.competence || []
+
+            competence: userData.competence || [],
+            roles: Array.isArray(userData.roles) ? userData.roles : [userData.roles]
           };
 
-          // Сохраняем оригинальные данные
-            this.originalUser = { ...this.user };
+           this.isAdmin = this.user.roles.some(role => role.toLowerCase() === 'admin');
+      console.log('User roles:', this.user.roles, 'Is admin:', this.isAdmin); // Для отладки
+
+          this.originalUser = { ...this.user };
           localStorage.setItem('userProfile', JSON.stringify(this.user));
 
           // Обновляем чекбоксы технологий
@@ -470,9 +477,12 @@ export default {
       async loadSavedProfile() {
       const savedProfile = localStorage.getItem('userProfile');
       if (savedProfile) {
-        this.user = JSON.parse(savedProfile);
         this.originalUser = { ...this.user };
         this.updateTechStackCheckboxes();
+        this.user = JSON.parse(savedProfile);
+        this.isAdmin = Array.isArray(this.user.roles) 
+       ? this.user.roles.some(role => role.toLowerCase() === 'admin')
+       : false;
       }
     }
   },
@@ -489,6 +499,7 @@ export default {
   margin: 0 auto;
   padding: 20px;
 }
+
 
 .profile-header {
   text-align: center;
