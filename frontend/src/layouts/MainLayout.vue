@@ -19,34 +19,36 @@
           </span>
         </div>
       </div>
+      <div class="profile-dropdown">
+          <router-link to="/profile" class="profile-btn">
+            <span class="profile-avatar">{{ userName.charAt(0) }}</span>
+            <span>{{ userName }}</span>
+          </router-link>
+        </div>
       <div class="app-header-right">
-        <button class="header-icon-btn mode-switch" @click="toggleDarkMode" :class="{ 'active': darkMode }">
-          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="mode-switch" @click="toggleDarkMode" :class="{ 'active': darkMode }">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 5C8.13401 5 5 8.13401 5 12C5 15.866 8.13401 19 12 19C15.171 19 18.1395 17.1814 19 14.2899" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M19 14C18.8319 14 18.6652 13.9941 18.5 13.9824C12.5 15 9.50001 11.5 12 5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
 
-        <button class="header-icon-btn bell-btn" @click="toggleBellNotifications">
-          <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button class="bell-btn" @click="toggleBellNotifications">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6.48149 9.07777C6.39886 5.86945 8.89127 3 12.1007 3V3C15.24 3 17.656 5.74275 17.5341 8.87969C17.5127 9.42969 17.5 9.97677 17.5 10.5C17.5 13.7812 21 18 21 18H3C3 18 6.5 14.7188 6.5 10.5C6.5 10.0122 6.49331 9.5369 6.48149 9.07777Z" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M10 21C10.4886 21.6132 11.2035 22 12 22C12.7965 22 13.5114 21.6132 14 21" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <span class="bell-badge" v-if="bellNotifications > 0">{{ bellNotifications }}</span>
         </button>
 
-        <div class="profile-dropdown">
-          <button class="profile-btn" @click="toggleProfileDropdown">
-            <span class="profile-avatar">{{ userName.charAt(0) }}</span>
-            <span>{{ userName }}</span>
-          </button>
-          <div class="dropdown-menu" v-if="showProfileDropdown">
-            <router-link to="/profile" class="dropdown-item">Мой профиль</router-link>
-            <router-link to="/settings" class="dropdown-item">Настройки</router-link>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item logout" @click="logout">Выйти</button>
-          </div>
-        </div>
+        <button class="logout-btn" @click="logout">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.5 12L17 12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.5 9L17 12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.5 15L17 12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17 17C17 19.2091 15.2091 20 13 20H10C7.79086 20 6 18.2091 6 16V8C6 5.79086 7.79086 4 10 4H13C15.2091 4 17 4.79086 17 7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -292,34 +294,43 @@ export default {
   height: 20px;
 }
 
-.header-icon-btn {
+.mode-switch {
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
+  margin-left: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  position: relative;
-  margin: 0 4px;
 }
 
-.header-icon-btn:hover {
+.mode-switch:hover {
   background-color: var(--link-color-hover);
 }
 
-.header-icon {
-  width: 24px;
-  height: 24px;
+.bell-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+.bell-btn:hover {
+  background-color: var(--link-color-hover);
 }
 
 .bell-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: -5px;
+  right: -5px;
   background-color: #ff4757;
   color: white;
   border-radius: 50%;
@@ -332,7 +343,6 @@ export default {
 }
 
 .profile-dropdown {
-  position: relative;
   margin-left: 16px;
 }
 
@@ -344,6 +354,8 @@ export default {
   cursor: pointer;
   padding: 8px 12px;
   border-radius: 20px;
+  text-decoration: none;
+  color: var(--main-color);
 }
 
 .profile-btn:hover {
@@ -362,41 +374,20 @@ export default {
   margin-right: 8px;
 }
 
-.dropdown-menu {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  background-color: var(--more-list-bg);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px var(--more-list-shadow);
-  min-width: 200px;
-  z-index: 100;
-  overflow: hidden;
-}
-
-.dropdown-item {
-  display: block;
-  padding: 12px 16px;
-  text-decoration: none;
-  color: var(--main-color);
-}
-
-.dropdown-item:hover {
-  background-color: var(--more-list-bg-hover);
-}
-
-.dropdown-divider {
-  height: 1px;
-  background-color: var(--message-box-border);
-}
-
-.logout {
-  color: #ff4757;
-  width: 100%;
-  text-align: left;
-  background: none;
+.logout-btn {
+  background: transparent;
   border: none;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-btn:hover {
+  background-color: var(--link-color-hover);
 }
 
 .app-content {
