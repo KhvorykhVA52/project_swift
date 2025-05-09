@@ -1,459 +1,267 @@
 <template>
-  <div class="teams-container">
-    <!-- Заголовок и кнопка создания команды -->
-    <div class="teams-header">
-      <h2 class="teams-title">Мои команды</h2>
+  <div>
+    <!-- Панель управления командой -->
+    <div class="team-management-panel">
       <button class="create-team-btn" @click="showCreateTeamModal = true">
         Создать команду
       </button>
     </div>
 
-    <!-- Основной контент с сеткой команд и фильтрами -->
-    <div class="teams-content">
-      <!-- Блок с командами -->
-      <div class="teams-grid-container">
-        <div class="teams-grid">
-          <div 
-            v-for="(team, index) in filteredTeams" 
-            :key="index" 
-            class="team-card"
-            :class="{ 'leader-team': isLeader(currentUser, team.leader) }"
-            @click="openTeamDetails(team)"
-          >
-            <div class="team-card-header">
-              <div class="team-name">{{ team.name }}</div>
-              <div v-if="isLeader(currentUser, team.leader)" class="team-leader-badge">Лидер</div>
-            </div>
-            <div class="team-description">{{ truncatedDescription(team.description, 80) }}</div>
-            
-            <div class="tech-stack">
-              <div 
-                class="tech-tag" 
-                v-for="(tech, techIndex) in team.techStack" 
-                :key="techIndex"
-                :style="{ backgroundColor: getTechColor(tech) }"
-              >
-                {{ tech }}
-              </div>
-            </div>
-            
-            <div class="team-meta">
-              <div class="team-meta-item">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" fill="none" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                <span>{{ team.members.length }} участников</span>
-              </div>
-              <div class="team-meta-item">
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <line x1="8" y1="2" x2="8" y2="6" fill="none" stroke="currentColor" stroke-width="2"/>
-                  <line x1="3" y1="10" x2="21" y2="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                </svg>
-                <span>До {{ team.deadline }}</span>
-              </div>
-            </div>
-            
-            <div class="team-members">
-              <div 
-                v-for="(member, memberIndex) in limitedMembers(team.members)" 
-                :key="memberIndex" 
-                class="member-avatar"
-                :style="{ backgroundColor: getMemberColor(member) }"
-              >
-                {{ getMemberInitials(member) }}
-              </div>
-              <div v-if="team.members.length > 5" class="more-members">+{{ team.members.length - 5 }}</div>
-            </div>
+    <!-- Основное окно со списком команд -->
+    <div v-for="(team, index) in teams" :key="index" class="team-block q-mb-md" @click="openTeamDetails(team)">
+      <div class="team-name text-h6 text-weight-bold text-grey-9">{{ team.name }}</div>
+      <div class="team-description text-grey-7">
+        {{ truncatedDescription(team.description, 100) }}
+      </div>
+      <div class="team-members row q-mt-sm">
+        <div
+          v-for="(member, memberIndex) in limitedMembers(team.members)"
+          :key="memberIndex"
+          class="member-block col-auto q-pa-sm"
+          :class="memberIndex % 2 === 0 ? 'bg-grey-2' : 'bg-grey-3'"
+          :style="{ marginLeft: memberIndex > 0 ? '12px' : '0px' }"
+        >
+          <div class="member-firstname text-grey-8">
+            {{ truncatedText(member.firstname, 12) }}
+          </div>
+          <div class="member-lastname text-grey-8">
+            {{ truncatedText(member.lastname, 12) }}
           </div>
         </div>
+        <div v-if="team.members.length > 7" class="text-grey-7 q-ml-sm">...</div>
       </div>
+    </div>
 
-      <!-- Блок фильтров (теперь справа) -->
-      <div class="filters-sidebar">
-        <div class="filters-container">
-          <div class="teams-filters">
-            <div class="filter-section">
-              <h3 class="filter-title">Фильтры</h3>
-              
-              <div class="filter-group">
-                <label class="filter-label">Поиск по названию</label>
-                <input 
-                  type="text" 
-                  class="filter-input" 
-                  v-model="filters.searchQuery" 
-                  placeholder="Введите название"
-                >
-              </div>
+    <!-- Модальное окно с информацией о команде -->
+    <div v-if="selectedTeam" class="team-details-modal">
+      <div class="team-details-modal-content">
+        <button @click="closeTeamDetails" class="team-details-close-button">Закрыть</button>
+        <button @click="openInviteDialog" class="team-invite-invite-button">Пригласить в команду</button>
+        <div class="team-details-team-info-container">
+          <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
+          <div class="team-details-team-description-wrapper">
+            <p class="team-details-team-description-text">{{ selectedTeam.description }}</p>
+          </div>
+        </div>
 
-              <div class="filter-group">
-                <label class="filter-label">Статус</label>
-                <select class="filter-select" v-model="filters.status">
-                  <option value="all">Все команды</option>
-                  <option value="leader">Я лидер</option>
-                  <option value="member">Я участник</option>
-                </select>
-              </div>
-
-              <div class="filter-group">
-                <label class="filter-label">Технологии</label>
-                <div class="tech-filter-tags">
-                  <span 
-                    class="tech-filter-tag"
-                    v-for="tech in allTechnologies"
-                    :key="tech"
-                    :class="{ active: filters.selectedTechs.includes(tech) }"
-                    @click="toggleTechFilter(tech)"
-                    :style="{ backgroundColor: getTechColor(tech) }"
-                  >
-                    {{ tech }}
-                  </span>
-                </div>
-              </div>
-
-              <button class="reset-filters-btn" @click="resetFilters">
-                Сбросить фильтры
-              </button>
+        <div class="team-details-members-container">
+          <div class="team-details-leader-wrapper">
+            <div v-if="leader" class="team-details-member-box leader-box">
+              <div class="team-details-member-firstname">{{ leader.firstname }}</div>
+              <div class="team-details-member-lastname">{{ leader.lastname }}</div>
+              <div class="team-details-leader-label">Тимлидер</div>
             </div>
+          </div>
+
+          <div v-for="(member, index) in filteredMembersWithoutLeader" :key="index" class="member-box">
+            <div class="team-details-member-firstname">{{ member.firstname }}</div>
+            <div class="team-details-member-lastname">{{ member.lastname }}</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Модальное окно информации о команде -->
-    <div v-if="selectedTeam" class="modal-overlay" @click.self="closeTeamDetails">
-      <div class="modal-content team-details-modal">
-        <div class="modal-header">
-          <h3>{{ selectedTeam.name }}</h3>
-          <button class="close-btn" @click="closeTeamDetails">
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="team-info-section">
-            <h4>Описание проекта</h4>
-            <p class="team-description">{{ selectedTeam.description || 'Нет описания' }}</p>
+    <!-- Модальное окно приглашения в команду -->
+    <div v-if="showInviteDialog" class="invite-dialog">
+      <div class="invite-dialog-content">
+        <h3>Пригласить участника</h3>
+        <input type="text" v-model="searchQuery" placeholder="Поиск">
+        <div class="user-list">
+          <div v-for="(user, index) in filteredUsers" :key="index" class="user-block" @click="selectUser(user)" style="cursor: pointer;">
+            <div class="user-info">{{ truncate(user.firstname) }}</div>
+            <div class="user-info">{{ truncate(user.lastname) }}</div>
+            <div class="user-info">{{ truncate(user.group) }}</div>
+            <hr v-if="index < filteredUsers.length - 1">
           </div>
-          
-          <div class="team-info-section">
-            <h4>Стек технологий</h4>
-            <div class="tech-stack">
-              <div 
-                class="tech-tag" 
-                v-for="(tech, techIndex) in selectedTeam.techStack" 
-                :key="techIndex"
-                :style="{ backgroundColor: getTechColor(tech) }"
-              >
-                {{ tech }}
-              </div>
-            </div>
-          </div>
-          
-          <div class="team-info-section">
-            <h4>Участники</h4>
-            <div class="members-list">
-              <div v-if="leader" class="member-item leader">
-                <div class="member-avatar" :style="{ backgroundColor: getMemberColor(leader) }">
-                  {{ getMemberInitials(leader) }}
-                </div>
-                <div class="member-info">
-                  <div class="member-name">{{ leader.firstname }} {{ leader.lastname }}</div>
-                  <div class="member-role">Лидер</div>
-                </div>
-              </div>
-              
-              <div 
-                v-for="(member, index) in filteredMembersWithoutLeader" 
-                :key="index" 
-                class="member-item"
-              >
-                <div class="member-avatar" :style="{ backgroundColor: getMemberColor(member) }">
-                  {{ getMemberInitials(member) }}
-                </div>
-                <div class="member-info">
-                  <div class="member-name">{{ member.firstname }} {{ member.lastname }}</div>
-                  <div class="member-role">Участник</div>
-                </div>
-              </div>
-            </div>
+          <div v-if="filteredUsers.length === 0" class="no-results">
+            Ничего не найдено.
           </div>
         </div>
-        
-        <div class="modal-footer">
-          <button v-if="isCurrentUserLeader" class="delete-btn" @click="confirmDeleteTeam">
-            Удалить команду
-          </button>
-          <button class="close-btn-secondary" @click="closeTeamDetails">
-            Закрыть
-          </button>
+        <div class="dialog-buttons">
+          <button @click="closeInviteDialog">Отмена</button>
         </div>
       </div>
     </div>
+
+    <!-- Модальное окно подтверждения отправки приглашения -->
+    <div v-if="showInviteCheck" class="invite-check-modal">
+      <div class="invite-check-content">
+        <h3>Отправить приглашение в команду?</h3>
+        <p>Имя: {{ selectedUser.firstname }}</p>
+        <p>Фамилия: {{ selectedUser.lastname }}</p>
+        <p>Группа: {{ selectedUser.group }}</p>
+        <div>
+          <button @click="sendInvitation" class="invite-check-send-button">Отправить</button>
+          <button @click="closeInviteCheck" class="invite-check-deny-button">Отмена</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="confirmationModalVisible" class="modal-backdrop"></div>
+
+    <!-- Модальное временное окно по показу удачного отправки приглашения -->
+    <div v-if="showInviteOK" :class="['invite-ok-message', { 'hidden': !showInviteOK }]">
+      Приглашение отправлено!
+    </div>
+
+    <!-- Модальное временное окно по показу ошибки отправки приглашения -->
+    <div v-if="showInviteERROR" :class="['invite-error-message', { 'hidden': !showInviteERROR }]">
+      Не получилось отправить приглашение
+    </div>
+
 
     <!-- Модальное окно создания команды -->
-    <div v-if="showCreateTeamModal" class="modal-overlay" @click.self="showCreateTeamModal = false">
-      <div class="modal-content create-team-modal">
-        <div class="modal-header">
-          <h3>Создать команду</h3>
-          <button class="close-btn" @click="showCreateTeamModal = false">
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
-            </svg>
-          </button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="teamName">Название команды *</label>
-            <input 
-              type="text" 
-              id="teamName" 
-              v-model="newTeam.name" 
-              placeholder="Введите название команды"
-              required
-            />
-          </div>
-          
-          <div class="form-group">
-            <label for="teamDescription">Описание команды</label>
-            <textarea 
-              id="teamDescription" 
-              v-model="newTeam.description" 
-              placeholder="Добавьте описание команды"
-              rows="4"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="teamDeadline">Дата окончания проекта *</label>
-            <input 
-              type="text" 
-              id="teamDeadline"
-              v-model="newTeam.deadline" 
-              placeholder="ДД.ММ.ГГГГ"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Стек технологий (через запятую)</label>
-            <input 
-              type="text" 
-              v-model="newTeam.techStackInput" 
-              placeholder="Vue, TypeScript, Node.js"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Участники команды</label>
-            <div class="members-input-container">
-              <div v-for="(member, index) in newTeam.members" :key="index" class="member-input-row">
-                <input
-                  type="text"
-                  v-model="member.fullname"
-                  placeholder="Фамилия Имя"
-                  class="member-input"
-                />
-                <select v-model="member.role" class="role-select">
-                  <option value="member">Участник</option>
-                  <option value="leader">Лидер</option>
-                </select>
-                <button @click="removeMember(index)" class="remove-member-btn">
-                  <svg viewBox="0 0 24 24" width="16" height="16">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>
-                  </svg>
-                </button>
-              </div>
-              <button @click="addMember" class="add-member-btn">
-                + Добавить участника
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          <button class="save-btn" @click="saveTeam">
-            Создать
-          </button>
-          <button class="cancel-btn" @click="showCreateTeamModal = false">
-            Отмена
-          </button>
-        </div>
-      </div>
-    </div>
+    <div v-if="showCreateTeamModal" class="modal-overlay">
+       <div class="modal-content create-team-modal">
+         <h3>Создать команду</h3>
+         <div class="form-group">
+           <label for="teamName">Название команды:</label>
+           <input type="text" id="teamName" v-model="newTeam.name" />
+         </div>
+         <div class="form-group">
+           <label for="teamDescription">Описание команды:</label>
+           <textarea id="teamDescription" v-model="newTeam.description"></textarea>
+         </div>
+         <div class="modal-actions">
+           <button class="save-btn" @click="saveTeam">Сохранить</button>
+           <button class="cancel-btn" @click="showCreateTeamModal = false">
+             Отмена
+           </button>
+         </div>
+       </div>
+     </div>
   </div>
 </template>
+
+
 
 <script>
 import * as api from '../api/teams.api';
 import { defineComponent } from 'vue';
 import { CreateTeamDto } from '../../../backend/src/teams/dto/create-team.dto';
+import { CreateInviteDto } from '../../../backend/src/teams/dto/create-invite.dto';
 
 export default defineComponent({
   name: 'TeamsPage',
   data() {
     return {
-      teams: [
-        {
-          id: 1,
-          name: 'Портал для университета',
-          description: 'Создание кабинета студента/преподавателя для учета посещаемости, оценок и расписания.',
-          members: [
-            { firstname: 'Иван', lastname: 'Иванов' },
-            { firstname: 'Петр', lastname: 'Петров' },
-            { firstname: 'Сергей', lastname: 'Сергеев' },
-          ],
-          leader: { firstname: 'Иван', lastname: 'Иванов' },
-          owner: { firstname: 'Иван', lastname: 'Иванов' },
-          techStack: ['Vue', 'TypeScript', 'Quasar', 'Node.js', 'PostgreSQL'],
-          deadline: '15.06.2026'
-        },
-        {
-          id: 2,
-          name: 'Мобильное приложение',
-          description: 'Разработка кроссплатформенного мобильного приложения для заказа еды.',
-          members: [
-            { firstname: 'Иван', lastname: 'Иванов' },
-            { firstname: 'Алексей', lastname: 'Алексеев' },
-          ],
-          leader: { firstname: 'Алексей', lastname: 'Алексеев' },
-          owner: { firstname: 'Алексей', lastname: 'Алексеев' },
-          techStack: ['Flutter', 'Dart', 'Firebase'],
-          deadline: '30.11.2026'
-        },
-        {
-          id: 3,
-          name: 'Аналитика данных',
-          description: 'Проект по анализу больших данных для образовательных целей.',
-          members: [
-            { firstname: 'Иван', lastname: 'Иванов' },
-            { firstname: 'Мария', lastname: 'Петрова' },
-            { firstname: 'Дмитрий', lastname: 'Сидоров' },
-          ],
-          leader: { firstname: 'Иван', lastname: 'Иванов' },
-          owner: { firstname: 'Иван', lastname: 'Иванов' },
-          techStack: ['Python', 'Pandas', 'NumPy', 'Matplotlib'],
-          deadline: '20.09.2026'
-        },
-        {
-          id: 4,
-          name: 'Веб-портал',
-          description: 'Разработка корпоративного веб-портала для внутреннего использования.',
-          members: [
-            { firstname: 'Иван', lastname: 'Иванов' },
-            { firstname: 'Елена', lastname: 'Иванова' },
-            { firstname: 'Андрей', lastname: 'Смирнов' },
-          ],
-          leader: { firstname: 'Елена', lastname: 'Иванова' },
-          owner: { firstname: 'Елена', lastname: 'Иванова' },
-          techStack: ['React', 'TypeScript', 'Node.js', 'MongoDB'],
-          deadline: '10.12.2026'
-        }
-      ],
-      filters: {
-        searchQuery: '',
-        status: 'all',
-        selectedTechs: []
-      },
+      teams: null,
       showCreateTeamModal: false,
-      newTeam: {
-        name: '',
-        description: '',
-        deadline: '',
-        techStackInput: '',
-        members: [
-          {
-            fullname: '',
-            role: 'member'
-          }
-        ]
-      },
+      newTeam: null,
       selectedTeam: null,
-      currentUser: { firstname: 'Иван', lastname: 'Иванов' },
-      allTechnologies: ['Vue', 'TypeScript', 'Node.js', 'PostgreSQL', 'Flutter', 'Dart', 'Python', 'React']
+      showInviteDialog: false,
+      users: null,
+      truncate: null,
+      searchQuery: '',
+      selectedUser: null,
+      showInviteCheck: false,
+      showInviteOK: false,
+      showInviteERROR: false,
+      timerId: null,
     };
-  },
-  computed: {
-    leader() {
-      return this.selectedTeam ? this.selectedTeam.leader : null;
-    },
-    filteredMembersWithoutLeader() {
-      if (!this.selectedTeam) return [];
-      return this.selectedTeam.members.filter(member => 
-        !this.isLeader(member, this.selectedTeam.leader))
-    },
-    isCurrentUserLeader() {
-      if (!this.selectedTeam) return false;
-      return this.isLeader(this.currentUser, this.selectedTeam.leader);
-    },
-    filteredTeams() {
-      return this.teams.filter(team => {
-        const matchesSearch = team.name.toLowerCase().includes(
-          this.filters.searchQuery.toLowerCase()
-        );
-        
-        const matchesStatus = 
-          this.filters.status === 'all' ||
-          (this.filters.status === 'leader' && this.isLeader(this.currentUser, team.leader)) ||
-          (this.filters.status === 'member' && !this.isLeader(this.currentUser, team.leader));
-        
-        const matchesTech = this.filters.selectedTechs.length === 0 || 
-          this.filters.selectedTechs.some(tech => team.techStack.includes(tech));
-        
-        return matchesSearch && matchesStatus && matchesTech;
-      }).sort((a, b) => {
-        const aIsLeader = this.isLeader(this.currentUser, a.leader);
-        const bIsLeader = this.isLeader(this.currentUser, b.leader);
-        return bIsLeader - aIsLeader;
-      });
-    }
   },
   async mounted() {
     await this.loadTeams();
-    this.newTeam = {
-      ...new CreateTeamDto(),
-      techStackInput: '',
-      members: [
-        {
-          fullname: '',
-          role: 'member'
-        }
-      ]
-    };
+    await this.loadUsers();
+
+  },
+  computed: {
+    leader() {
+        return this.selectedTeam ? this.selectedTeam.leader : null;
+    },
+    filteredMembersWithoutLeader() {
+      if (!this.selectedTeam) {
+        return [];
+      }
+      return this.selectedTeam.members.filter(member => !this.isOwner(member, this.selectedTeam.owner) && !this.isLeader(member, this.selectedTeam.leader));
+    },
+    filteredUsers() {
+      if (!this.users) {
+        return []; // или return [], чтобы вернуть пустой массив
+      }
+
+      const query = this.searchQuery.toLowerCase();
+      const searchTerms = query.split(' ').filter(term => term !== ''); // Разделяем запрос на слова и убираем пустые строки
+
+      let filteredResults = this.users; // Начинаем с полного списка пользователей
+
+      for (const term of searchTerms) {
+        filteredResults = filteredResults.filter(user => {
+          const firstname = (user.firstname || '').toLowerCase();
+          const lastname = (user.lastname || '').toLowerCase();
+          const group = (user.group || '').toLowerCase();
+
+          return (
+            firstname.includes(term) ||
+            lastname.includes(term) ||
+            group.includes(term)
+          );
+        });
+      }
+
+      return filteredResults;
+    },
   },
   methods: {
-    getTechColor(tech) {
-      const colors = {
-        'Vue': '#42b983',
-        'TypeScript': '#3178c6',
-        'Quasar': '#1976d2',
-        'Node.js': '#68a063',
-        'PostgreSQL': '#336791',
-        'Flutter': '#02569b',
-        'Dart': '#00b4ab',
-        'Firebase': '#ffca28',
-        'Python': '#3776ab',
-        'Pandas': '#150458',
-        'NumPy': '#4d77cf',
-        'Matplotlib': '#11557c',
-        'React': '#61dafb',
-        'MongoDB': '#47a248'
-      };
-      return colors[tech] || '#666';
+    async sendInvitation() {
+      const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
+      if (!parsedSession) {
+        console.error('Ошибка при получении информации о сессии:'. error);
+        return;
+      }
+
+      console.log(this.selectedUser);
+
+      const createInviteDto = new CreateInviteDto();
+
+      createInviteDto.inviteeId = this.selectedUser.id;
+      createInviteDto.teamId = this.selectedTeam.id;
+
+      const response = await api.invite(parsedSession.id, createInviteDto);
+      console.log(response);
+      if (response=='OK') {
+        this.showInviteCheck = false;
+        this.showInviteOK = true;
+
+        if (this.timerId) {
+          clearTimeout(this.timerId);
+        }
+
+        this.timerId = setTimeout(() => {
+          this.showInviteOK = false;
+          this.timerId = null;
+        }, 2000);
+        
+      } else {
+        this.showInviteERROR = true;
+        if (this.timerId) {
+          clearTimeout(this.timerId);
+        }
+
+        this.timerId = setTimeout(() => {
+          this.showInviteERROR = false;
+          this.timerId = null;
+        }, 2000);
+        
+      }
     },
-    getMemberInitials(member) {
-      if (!member) return '';
-      return (member.firstname.charAt(0) + (member.lastname ? member.lastname.charAt(0) : ''));
+    closeInviteCheck() {
+      this.showInviteCheck = false;
+    },
+    selectUser(user) {
+      this.selectedUser = user;
+      this.showInviteCheck = true;
+    },
+    openInviteDialog(){
+      this.showInviteDialog = true;
+    },
+    closeInviteDialog() {
+      this.showInviteDialog = false;
+    },
+    isOwner(member, owner) {
+      return member.firstname === owner.firstname && member.lastname === owner.lastname;
     },
     isLeader(member, leader) {
-      if (!leader) return false;
+        if (!leader) return false;
       return member.firstname === leader.firstname && member.lastname === leader.lastname;
     },
     openTeamDetails(team) {
@@ -463,429 +271,425 @@ export default defineComponent({
       this.selectedTeam = null;
     },
     truncatedDescription(text, maxLength) {
-      if (!text) return '';
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    },
+    truncatedText(text, maxLength) {
       return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     },
     limitedMembers(members) {
-      if (!Array.isArray(members)) return [];
-      return members.slice(0, 5);
-    },
-    getMemberColor(member) {
-      if (!member) return '#ccc';
-      const colors = ['#186EFF', '#4CAF50', '#FF9800', '#9C27B0', '#E91E63', '#00BCD4'];
-      const hash = member.firstname.length + (member.lastname ? member.lastname.length : 0);
-      return colors[hash % colors.length];
-    },
-    toggleTechFilter(tech) {
-      const index = this.filters.selectedTechs.indexOf(tech);
-      if (index === -1) {
-        this.filters.selectedTechs.push(tech);
-      } else {
-        this.filters.selectedTechs.splice(index, 1);
+      if (!Array.isArray(members)) {
+        return [];
       }
+      const filteredMembers = members.filter(member => member.ownedTeams == null);
+      return filteredMembers;
     },
-    resetFilters() {
-      this.filters = {
-        searchQuery: '',
-        status: 'all',
-        selectedTechs: []
-      };
-    },
-    async loadTeams() {
+    async loadUsers() {
       try {
-        const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
-        if (!parsedSession) {
-          console.error('Ошибка при получении информации о сессии');
-          return;
-        }
-        const response = await api.getTeams(parsedSession.userId);
-        if (response) {
-          this.teams = response.map(team => ({
-            ...team,
-            techStack: team.techStack || [],
-            deadline: team.deadline || '31.12.2026'
-          }));
-        }
-      } catch (error) {
-        console.error('Ошибка при загрузке команд:', error);
-      }
-    },
-    addMember() {
-      this.newTeam.members.push({
-        fullname: '',
-        role: 'member'
-      });
-    },
-    removeMember(index) {
-      this.newTeam.members.splice(index, 1);
-    },
-    parseMember(fullname) {
-      const parts = fullname.trim().split(' ');
-      return {
-        firstname: parts[1] || '',
-        lastname: parts[0] || ''
-      };
-    },
-    async saveTeam() {
-      try {
-        // Валидация обязательных полей
-        if (!this.newTeam.name || !this.newTeam.deadline) {
-          alert('Пожалуйста, заполните все обязательные поля');
-          return;
-        }
-
-        // Парсим участников
-        const members = this.newTeam.members
-          .filter(m => m.fullname.trim())
-          .map(m => {
-            const member = this.parseMember(m.fullname);
-            return {
-              ...member,
-              role: m.role
-            };
-          });
-
-        if (members.length === 0) {
-          alert('Добавьте хотя бы одного участника');
-          return;
-        }
-
-        // Находим лидера (если не указан, берем первого участника)
-        const leader = members.find(m => m.role === 'leader') || members[0];
-        leader.role = 'leader'; // Гарантируем что у лидера правильная роль
-
-        // Формируем данные команды
-        const teamData = {
-          name: this.newTeam.name,
-          description: this.newTeam.description,
-          deadline: this.newTeam.deadline,
-          techStack: this.newTeam.techStackInput.split(',').map(item => item.trim()).filter(item => item),
-          members: members.map(m => ({ firstname: m.firstname, lastname: m.lastname })),
-          leader: { firstname: leader.firstname, lastname: leader.lastname }
+        this.truncate = (str) => {
+        if (!str) return '';
+          return str.length > 50 ? str.substring(0, 50) + '...' : str;
         };
 
-        // Сохранение через API
-        const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
-        if (!parsedSession) {
-          console.error('Ошибка при получении информации о сессии');
-          return;
-        }
-
-        const response = await api.create(parsedSession.userId, teamData);
-        if (response) {
-          this.teams.push({
-            ...response,
-            techStack: teamData.techStack,
-            deadline: teamData.deadline,
-            members: teamData.members,
-            leader: teamData.leader
-          });
-
-          // Закрываем модальное окно и сбрасываем форму
-          this.showCreateTeamModal = false;
-          this.newTeam = {
-            name: '',
-            description: '',
-            deadline: '',
-            techStackInput: '',
-            members: [
-              {
-                fullname: '',
-                role: 'member'
-              }
-            ]
-          };
-        }
-      } catch (error) {
-        console.error('Ошибка при создании команды:', error);
+        const response = await api.getAll();
+        console.log(response);
+        this.users = response.filter(user => !user.team);
+      } catch(error) {
+        console.log(error);
+        this.users = [];
       }
     },
-    async confirmDeleteTeam() {
-      if (confirm('Вы уверены, что хотите удалить эту команду?')) {
-        await this.deleteTeam();
-      }
-    },
-    async deleteTeam() {
-      if (!this.selectedTeam || !this.isCurrentUserLeader) return;
-      
+    async loadTeams() { 
       try {
+        this.newTeam = new CreateTeamDto();
+
         const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
         if (!parsedSession) {
-          console.error('Ошибка при получении информации о сессии');
-          return;
+          console.error('Ошибка при получении информации о сессии:'. error);
         }
-        
-        const response = await api.deleteTeam(parsedSession.userId, this.selectedTeam.id);
-        if (response) {
-          this.teams = this.teams.filter(team => team.id !== this.selectedTeam.id);
-          this.selectedTeam = null;
-        }
+        const response = await api.getTeams(parsedSession.userId);     
+        this.teams = response;
+        console.error('Teams data:', this.teams);
       } catch (error) {
-        console.error('Ошибка при удалении команды:', error);
+        console.error('Ошибка при загрузке объектов "Team":', error);
       }
-    }
-  }
+    },
+    async saveTeam() {
+      const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
+      if (!parsedSession) {
+        console.error('Ошибка при получении информации о сессии:'. error);
+      }
+
+      const response = await api.create(parsedSession.userId, this.newTeam);
+
+      if (!response) {
+        console.error('Error: saveTeam(): не удалось создать команду:', error);
+      }
+
+      if (this.teams.length < 2){
+        this.teams.push({name: this.newTeam.name, description: this.newTeam.description, members: []});
+      }
+      
+      this.showCreateTeamModal = false;
+
+      this.newTeam = {
+        name: '',
+        description: '',
+      };
+    },
+  },
 });
 </script>
 
 <style scoped>
-.teams-container {
+
+.invite-ok-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(10, 235, 10, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 6;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.invite-ok-message.hidden {
+  opacity: 0;
+}
+
+.invite-error-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(233, 11, 11, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 7;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.invite-error-message.hidden {
+  opacity: 0;
+}
+
+.invite-check-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 5;
 }
 
-.teams-header {
+.invite-check-content {
+  text-align: center;
+}
+
+.invite-check-send-button {
+  margin-top: 20px; /* Сохраняем верхний отступ */
+  display: inline-block; /* Важно для применения margin между элементами */
+  padding: 10px 20px; /* Добавляем внутренний отступ для текста */
+  font-size: 16px; /* Размер текста */
+  font-weight: bold; /* Жирный текст */
+  color: white; /* Цвет текста */
+  background-color: #4CAF50; /* Зеленый фон (пример) */
+  border: none; /* Убираем рамку */
+  border-radius: 5px; /* Скругляем углы */
+  cursor: pointer; /* Меняем курсор на "руку" при наведении */
+  transition: background-color 0.3s ease; /* Плавный переход цвета фона */
+  margin-right: 10px; /* Добавляем отступ справа для разделения кнопок */
+  text-decoration: none; /* Убираем подчеркивание (если это ссылка) */
+}
+
+.invite-check-send-button:hover {
+  background-color: #367c39; /* Более темный зеленый при наведении */
+}
+
+.invite-check-deny-button {
+  margin-top: 20px; /* Сохраняем верхний отступ */
+  display: inline-block; /* Важно для применения margin между элементами */
+  padding: 10px 20px; /* Добавляем внутренний отступ для текста */
+  font-size: 16px; /* Размер текста */
+  font-weight: bold; /* Жирный текст */
+  color: white; /* Цвет текста */
+  background-color:rgb(241, 6, 38); /* Зеленый фон (пример) */
+  border: none; /* Убираем рамку */
+  border-radius: 5px; /* Скругляем углы */
+  cursor: pointer; /* Меняем курсор на "руку" при наведении */
+  transition: background-color 0.3s ease; /* Плавный переход цвета фона */
+  margin-right: 10px; /* Добавляем отступ справа для разделения кнопок */
+  text-decoration: none; /* Убираем подчеркивание (если это ссылка) */
+}
+
+.invite-check-deny-button:hover {
+  background-color:rgb(139, 4, 4); /* Более темный зеленый при наведении */
+}
+
+.invite-check-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 4
+}
+.invite-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 16px;
+  z-index: 3;
 }
 
-.teams-content {
-  display: flex;
-  gap: 24px;
+.invite-dialog-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 700px;
+  max-width: 80vw;
 }
 
-.teams-grid-container {
-  flex: 1;
+.user-block {
+  padding: 10px;
+  margin-bottom: 5px;
 }
 
-.filters-sidebar {
-  width: 280px;
+.user-info {
+  margin-bottom: 5px;
+  font-size: 14px;
 }
 
-.filters-container {
-  background-color: var(--projects-section);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 20px;
+.user-list {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-.teams-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--main-color);
+.no-results {
+  text-align: center;
 }
 
-.create-team-btn {
-  background-color: #186EFF;
+.dialog-buttons {
+  text-align: right;
+  margin-top: 10px;
+}
+
+.team-invite-invite-button {
+  background-color:rgb(106, 220, 53);
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
 }
 
-.create-team-btn:hover {
-  background-color: #1359D2;
-}
-
-.teams-filters {
+.team-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-}
-
-.filter-section {
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
 }
 
-.filter-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--main-color);
-  margin-bottom: 8px;
+.team-details-modal-content {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 80%;
+  max-width: 600px;
 }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.filter-label {
-  font-size: 14px;
-  color: var(--secondary-color);
-  font-weight: 500;
-}
-
-.filter-input, .filter-select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--message-box-border);
-  border-radius: 6px;
-  background-color: var(--search-area-bg);
-  color: var(--main-color);
-}
-
-.tech-filter-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tech-filter-tag {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  color: white;
-  transition: all 0.2s;
-}
-
-.tech-filter-tag.active {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.reset-filters-btn {
-  width: 100%;
-  padding: 10px 16px;
-  background-color: #6c757d;
+.team-details-close-button {
+  background-color: #dc3545; /* Красный цвет */
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 8px;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+  margin-right: 10px;
 }
 
-.reset-filters-btn:hover {
-  background-color: #5a6268;
-  transform: translateY(-1px);
+.team-details-close-button:hover {
+  background-color: #c82333;
 }
 
-.dark .reset-filters-btn {
-  background-color: #5c636a;
-}
-
-.dark .reset-filters-btn:hover {
-  background-color: #4e555b;
-}
-
-.teams-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.team-card {
-  background-color: var(--projects-section);
+.team-details-team-info-container {
+  background-color: #f8f9fa;
+  padding: 15px;
   border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s;
-  cursor: pointer;
+  margin-bottom: 20px;
 }
 
-.team-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.team-details-team-name-header {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #343a40;
 }
 
-.team-card-header {
+.team-details-team-description-text {
+  font-size: 16px;
+  color: #495057;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  margin: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.team-details-members-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.team-details-member-box {
+  background-color: #e9ecef;
+  border-radius: 8px;
+  padding: 10px;
+  width: calc(50% - 10px);
+  text-align: center;
+}
+
+.team-details-member-firstname {
+  font-size: 14px;
+  font-weight: bold;
+  color: #343a40;
+  margin-bottom: 5px;
+}
+
+.team-details-member-lastname {
+  font-size: 14px;
+  color: #495057;
+}
+
+.team-details-leader-label {
+  background-color: #ffc107; /* Желтый цвет */
+  color: #212529; /* Темный цвет текста */
+  padding: 3px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.team-details-leader-box {
+  order: -1;
+  background-color: #d0e9c6;
+}
+
+.team-details-leader-wrapper {
+  width: 100%;
+  display: flex;    
+  justify-content: flex-start; 
+  margin-bottom: 10px;
+}
+
+.team-details-team-description-wrapper {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.team-description-text {
+  font-size: 16px;
+  color: #495057;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: auto;
+}
+
+.team-block {
+  background-color: #fff; /* RGB(255, 255, 255) */
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .team-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--main-color);
-}
-
-.team-leader-badge {
-  background-color: #4CAF50;
-  color: white;
-  font-size: 12px;
-  padding: 3px 8px;
-  border-radius: 12px;
+  color: #1f1c2e; /* RGB(31, 28, 46) */
 }
 
 .team-description {
-  font-size: 14px;
-  color: var(--secondary-color);
-  margin-bottom: 12px;
-  line-height: 1.4;
-}
-
-.tech-stack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.tech-tag {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-}
-
-.team-meta {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 12px;
-  font-size: 14px;
-  color: var(--secondary-color);
-}
-
-.team-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.team-meta-item svg {
-  color: var(--secondary-color);
+  color: #4a4a4a; /*  A lighter shade of grey for the description  */
 }
 
 .team-members {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  margin-top: 16px;
 }
 
-.member-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: 500;
+.member-block {
+  padding: 8px;
+  border-radius: 4px;
+  text-align: center;
 }
 
-.more-members {
-  font-size: 12px;
-  color: var(--secondary-color);
+.member-firstname,
+.member-lastname {
+  color: #1f1c2e; /* RGB(31, 28, 46) */
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap; /* Prevent text from wrapping */
+  overflow: hidden;        /* Hide overflowing text */
+  text-overflow: ellipsis;  /* Add ellipsis (...) */
 }
 
+.bg-grey-1 {
+  background-color: #f3f6fd; /* RGB(243, 246, 253) */
+}
+
+.bg-grey-2 {
+  background-color: #e0e3e9; /* A slightly lighter shade than #c1c4c9 */
+}
+
+.bg-grey-3 {
+  background-color: #d0d3d9; /* A slightly darker shade than #c1c4c9 */
+}
+
+/* Стили для модальных окон */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
@@ -894,259 +698,92 @@ export default defineComponent({
 }
 
 .modal-content {
-  background-color: var(--projects-section);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  width: 600px;
+  max-width: 90%;
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid var(--message-box-border);
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--secondary-color);
-  padding: 4px;
-}
-
-.close-btn:hover {
-  color: var(--main-color);
-}
-
-.modal-body {
-  padding: 16px;
-}
-
-.team-info-section {
-  margin-bottom: 20px;
-}
-
-.team-info-section h4 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.team-description {
-  color: var(--secondary-color);
-  line-height: 1.5;
-}
-
-.members-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.member-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.member-item.leader {
-  background-color: rgba(76, 175, 80, 0.1);
-  padding: 8px;
-  border-radius: 6px;
-}
-
-.member-info {
-  flex: 1;
-}
-
-.member-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--main-color);
-}
-
-.member-role {
-  font-size: 12px;
-  color: var(--secondary-color);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px;
-  border-top: 1px solid var(--message-box-border);
-  gap: 10px;
-}
-
-.delete-btn {
-  background-color: #FF5252;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: auto;
-}
-
-.delete-btn:hover {
-  background-color: #E53935;
-}
-
-.close-btn-secondary {
-  background-color: #186EFF;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.close-btn-secondary:hover {
-  background-color: #1359D2;
-}
-
-.save-btn {
-  background-color: #186EFF;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.save-btn:hover {
-  background-color: #1359D2;
-}
-
-.cancel-btn {
-  background-color: #f5f5f5;
-  color: #333;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.cancel-btn:hover {
-  background-color: #e0e0e0;
-}
-
-.dark .cancel-btn {
-  background-color: #424242;
-  color: #fff;
-}
-
-.dark .cancel-btn:hover {
-  background-color: #616161;
+.create-team-modal {
+  /* Дополнительные стили для модального окна создания команды */
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 15px;
 }
 
-.form-group label {
+label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--main-color);
+  font-weight: bold;
+  margin-bottom: 5px;
 }
 
-.form-group input,
-.form-group textarea {
+textarea {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--message-box-border);
-  border-radius: 6px;
-  background-color: var(--search-area-bg);
-  color: var(--main-color);
-}
-
-.form-group textarea {
-  min-height: 100px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  height: 200px;
   resize: vertical;
 }
 
-/* Новые стили для формы создания команды */
-.members-input-container {
-  margin-top: 10px;
-}
-
-.member-input-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  align-items: center;
-}
-
-.member-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--message-box-border);
-  border-radius: 6px;
-  background-color: var(--search-area-bg);
-  color: var(--main-color);
-}
-
-.role-select {
-  width: 120px;
-  padding: 8px 12px;
-  border: 1px solid var(--message-box-border);
-  border-radius: 6px;
-  background-color: var(--search-area-bg);
-  color: var(--main-color);
-}
-
-.remove-member-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--secondary-color);
-  padding: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.remove-member-btn:hover {
-  color: var(--main-color);
-}
-
-.add-member-btn {
-  background-color: #f5f5f5;
-  color: #333;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+input[type="text"],
+textarea {
   width: 100%;
-  margin-top: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
-.add-member-btn:hover {
-  background-color: #e0e0e0;
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
-.dark .add-member-btn {
-  background-color: #424242;
-  color: #fff;
+.save-btn,
+.cancel-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
 }
 
-.dark .add-member-btn:hover {
-  background-color: #616161;
+.save-btn {
+  background-color: #4caf50;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+/* Стили для панели управления командой */
+.team-management-panel {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  text-align: left;
+}
+
+/* Стили для кнопки "Создать команду" */
+.create-team-btn {
+  background-color: blue; /* Синий цвет */
+  color: white; /* Белый цвет текста (для контраста) */
+  font-size: 1.2em; /* Увеличенный размер шрифта */
+  padding: 10px 20px; /* Увеличиваем внутренние отступы, чтобы кнопка была больше */
+  border: none; /* Убираем обводку */
+  border-radius: 5px; /* Закругленные углы */
+  cursor: pointer; /* Меняем курсор на "руку" при наведении */
+}
+
+.create-team-btn:hover {
+  /* Добавляем эффект при наведении (опционально) */
+  background-color: dodgerblue;
 }
 </style>

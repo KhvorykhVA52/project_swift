@@ -616,20 +616,17 @@ async function saveIdea() {
     }
   } else {
     const tempSession = localStorage.getItem('ttm-session')
-    if (!tempSession) return;
-    
+    if (!tempSession) {
+      return;
+    }
     const parsedSession = JSON.parse(tempSession);
     if (!parsedSession) {
       console.error('Ошибка при получении информации о сессии');
       return;
     }
-
-    if (!currentIdea.value.name || !currentIdea.value.problem || 
-        !currentIdea.value.solution || !currentIdea.value.result || 
-        !currentIdea.value.resource) {
+    if (!currentIdea.value.name || !currentIdea.value.problem || !currentIdea.value.solution || !currentIdea.value.result || !currentIdea.value.resource) {
       return;
     }
-
     const createIdeaDto = new CreateIdeaDto();
     createIdeaDto.name = currentIdea.value.name;
     createIdeaDto.problem = currentIdea.value.problem;
@@ -643,16 +640,16 @@ async function saveIdea() {
     if (response) {
       // Создаем полный объект идеи вручную
       const fullIdea: Idea = {
-        ...response,
-        initiator: {
-          id: parsedSession.userId,
-          firstname: parsedSession.firstname,
-          lastname: parsedSession.lastname
-        },
-        comments: [],
-        createdAt: new Date().toISOString(),
-        status: StatusIdea.new,
-        customer: ''
+      ...response,
+      initiator: {
+        id: parsedSession.userId,
+        firstname: parsedSession.firstname,
+        lastname: parsedSession.lastname
+      },
+      comments: [],
+      createdAt: new Date().toISOString(),
+      status: StatusIdea.new,
+      customer: ''
       };
       
       ideas.value = [fullIdea, ...ideas.value];
@@ -661,6 +658,8 @@ async function saveIdea() {
       if (showIdeaDetailsModal.value) {
         viewedIdea.value = { ...fullIdea };
       }
+    } else {
+      return null;
     }
   }
   showAddIdeaModal.value = false;

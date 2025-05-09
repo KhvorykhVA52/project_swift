@@ -32,7 +32,7 @@ export class UsersService {
   async findOne(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'firstname', 'lastname', 'passwordHash', 'roles', 'status']
+      select: ['id', 'email', 'firstname', 'lastname', 'passwordHash', 'roles', 'status', 'competence']
     });
   }
 
@@ -98,7 +98,7 @@ export class UsersService {
     return this.userRepository.findOne({
       where: { id },
       relations: ['team', 'ledTeam'],
-      select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone', 'avatarUrl']
+      select: ['id', 'email', 'firstname', 'lastname', 'roles', 'status', 'group', 'telephone', 'avatarUrl', 'competence']
     });
   }
 
