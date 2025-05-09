@@ -2,7 +2,6 @@ import { api } from './axios';
 import { UpdateCommentDto } from '../../../backend/src/comments/dto/update-comment.dto';
 import { CreateCommentDto } from '../../../backend/src/comments/dto/create-comment.dto';
 import { CreateIdeaDto } from '../../../backend/src/idea/dto/create-idea.dto';
-import { StatusIdea } from '../../../backend/src/common/types';
 
 export async function getAll2() {
     const response = await api.get('ideas/getall2');
@@ -124,8 +123,9 @@ export async function editIdearesource(id: number, data: string) {
     return null;
 }
 
-export async function editIdeastatus(id: number, data: StatusIdea) {
-    const response = await api.post('ideas/changestatus', {id: id, data: data});
+/*
+export async function editIdeastatus(id: number, data: string) {
+    const response = await api.post('ideas/change', {id: id, data: data});
 
     if (response.status == 201) {
         return response.data;
@@ -133,6 +133,7 @@ export async function editIdeastatus(id: number, data: StatusIdea) {
 
     return null;
 }
+*/
 
 export async function editIdeacustomer(id: number, customerId: number) {
     const response = await api.post('ideas/changecustomer', {id: id, data: customerId});

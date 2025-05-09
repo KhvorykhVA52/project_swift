@@ -394,7 +394,6 @@ export default {
         timeout: 2000
         });
       }
-      this.loadUserProfile();
     } catch (error) {
        console.error('Upload error:', error);
     this.$q.notify({
