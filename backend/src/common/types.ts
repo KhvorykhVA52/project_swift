@@ -19,7 +19,7 @@ export enum StatusIdea {
   new = 'Новое',
   underEditing = 'Дорабатывается',
   underApproval = 'Ожидает проверки',
-  approved = 'Утверждено',
+  searchTeam = 'Поиск команды',
   deny = 'Отклонено',
   underDiscussion = 'Обсуждается',
 }

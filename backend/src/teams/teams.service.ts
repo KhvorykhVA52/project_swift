@@ -345,4 +345,16 @@ export class TeamsService {
     console.log(`OK: teams.service.getTeams(User.id=${id})`);
     return user.ownedTeams;
   }
+
+  async getAllTeams() {
+    const teams = this.teamRepository.find();
+
+    if (!teams) {
+      console.log(`ERROR: teams.service.getAllTeams(): не удалось найти Team[]`);
+      return null;
+    }
+
+    console.log(`OK: teams.service.getAllTeams()`);
+    return teams;
+  }
 }

@@ -17,7 +17,8 @@ import { Comments } from './orm/comment.entity';
 import { Task } from './orm/task.entity';
 import { TeamsModule } from './teams/teams.module';
 import { IdeaModule } from './idea/idea.module';
-import {CommentModule } from './comments/comment.module';
+import { CommentModule } from './comments/comment.module';
+import { IdeaInvite } from './orm/idea-invite.entity';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import {CommentModule } from './comments/comment.module';
           Idea,
           Portfolio,
           Project,
-          Task
+          Task,
+          IdeaInvite
         ],
         synchronize: true,
       }),

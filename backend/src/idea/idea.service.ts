@@ -3,8 +3,10 @@ import { Idea } from 'src/orm/idea.entity';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { User } from 'src/orm/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { StatusIdea } from 'src/common/types';
+import { IdeaInvite } from 'src/orm/idea-invite.entity';
+import { Team } from 'src/orm/team.entity';
 
 @Injectable()
 export class IdeaService {
@@ -13,6 +15,10 @@ export class IdeaService {
         private ideaRepository: Repository<Idea>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        @InjectRepository(IdeaInvite)
+        private ideaInviteRepository: Repository<IdeaInvite>,
+        @InjectRepository(Team)
+        private teamRepository: Repository<Team>,
     ) {}
     
     async createIdea(input: CreateIdeaDto ) {
@@ -225,5 +231,79 @@ export class IdeaService {
 
         console.log(`OK: idea.service.addCustomer(id:${input.id}, customerId:${input.customerId})`);
         return `OK`;
+    }
+
+    async createInvite(input: {ideaId: number, teamId: number, isInitiatorInviter: boolean}) {
+        const idea = await this.ideaRepository.findOneBy({id: input.ideaId});
+
+        if (!idea) {
+            console.log(`ERROR: idea.service.createInvite(): не найден Idea при Idea.id=${input.ideaId}`);
+            return null;
+        }
+
+        const team = await this.teamRepository.findOneBy({id: input.teamId});
+
+        if (!team) {
+            console.log(`ERROR: idea.service.createInvite(): не найден Team при Team.id=${input.teamId}`);
+            return null;
+        }
+
+        const invite = await this.ideaInviteRepository.findOne({
+            where: {idea: {id: input.ideaId}, team: {id: input.teamId}},
+        })
+
+        if (invite) {
+            console.log(`ERROR: idea.service.createInvite(): Уже существует такой Invite: Invite.id=${invite.id}`);
+            return null;
+        }
+
+        const ideaInvite = new IdeaInvite();
+        
+        ideaInvite.idea = idea;
+        ideaInvite.team = team;
+        ideaInvite.isInitiatorInviter = input.isInitiatorInviter;
+
+        const response = await this.ideaInviteRepository.save(ideaInvite);
+        console.log(`OK: idea.service.createInvite(ideaId=${input.ideaId}); teamId=${input.teamId}; isInitiatorInviter=${input.isInitiatorInviter}`);
+        return true;
+    }
+
+    async getIdeaInvites(input: {ideaId: number}) {
+        const idea = await this.ideaRepository.find({
+            where: {id: input.ideaId},
+        });
+
+        if (!idea) {
+            console.log(`ERROR: idea.service.getIdeaInvites(): не найден Idea при Idea.id=${input.ideaId}`);
+            return null;
+        }
+
+        const invite = await this.ideaInviteRepository.find({
+            where: {idea: {id: input.ideaId}},
+            relations: ['team.owner']
+        });
+
+        console.log(`OK: idea.service.getIdeaInvites(ideaId=${input.ideaId})`);
+
+        if (!invite) {
+            return null;
+        }
+
+        return invite;
+    }
+
+    async getAllAccepted() {
+        try{
+            const ideas = await this.ideaRepository.find({
+                relations: ['initiator', 'team'],
+                loadEagerRelations: false,
+                where: {status: In([StatusIdea.searchTeam])},
+            });
+            console.log(`OK: idea.service.getAllAccepted()`);
+            return ideas;
+        } catch(error) {
+            console.log(`ERROR: idea.service.getAllAccepted(): ${error}`);
+            return `ERROR`;
+        }
     }
 }

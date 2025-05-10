@@ -12,6 +12,7 @@ import SignupPage from 'pages/SignupPage.vue';
 import ErrorNotFound from 'pages/ErrorNotFound.vue';
 import ProfilePage from 'pages/ProfilePage.vue';
 import InvitesPage from 'pages/InvitesPage.vue';
+import AcceptedIdeasPage from 'pages/AcceptedIdeasPage.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -26,6 +27,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'listofmyteams', name: 'listofmyteams', component: ListOfMyTeamsPage },
       { path: 'profile', name: 'profile', component: ProfilePage },
       { path: 'invites', name: 'invites', component: InvitesPage },
+      { path: 'acceptedideas', name: 'acceptedideas', component: AcceptedIdeasPage},
     ],
   },
   {

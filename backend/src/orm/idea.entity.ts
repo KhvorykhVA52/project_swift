@@ -9,6 +9,7 @@ import {
   import { User } from './user.entity';
   import { Competence, StatusIdea } from '../common/types'; 
   import { Comments } from './comment.entity';
+  import { Team } from './team.entity';
   
   
   @Entity()
@@ -51,4 +52,7 @@ import {
     // Инициатор идеи
     @ManyToOne(() => User, (user) => user.initiatedIdeas, { eager: true, onDelete: 'CASCADE' })
     initiator: User;
+
+    @ManyToOne(() => Team, (team) => team.ideas, { eager: true, onDelete: 'CASCADE', nullable: true })
+    team: Team;
   }

@@ -67,4 +67,18 @@ export class IdeaController {
         return this.ideaService.changeCustomer(body);
     }
 
+    @Post('invite/create')
+    createInvite(@Body() body) {
+        return this.ideaService.createInvite(body);
+    }
+
+    @Get('invite/getBy')
+    getInvites(@Body() body) {
+        return this.ideaService.getIdeaInvites(body);
+    }
+
+    @Get('getallaccepted')
+    getAllAccapted() {
+        return this.ideaService.getAllAccepted();
+    }
 }

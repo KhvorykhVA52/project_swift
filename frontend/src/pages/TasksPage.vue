@@ -200,7 +200,8 @@
           <div class="row items-center justify-between">
             <div class="text-h6">{{ viewedIdea.name }}</div>
             <div class="row items-center justify-end">
-              <q-btn v-if="checkEditStatus" flat class="bg-yellow-10 text-white q-mr-sm" label="Изменить статус" color="primary" @click="openEditStatus" />
+              <q-btn v-if="!checkIfCantSetStatus" flat class="bg-yellow-10 text-white q-mr-sm" label="Изменить статус" color="primary" @click="openEditStatus" />
+              <q-btn v-if="checkIfCantSetStatus" flat class="bg-grey-6 text-white q-mr-sm" label="Изменить статус" color="primary" @click="ifCantSetStatus" />
               <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
             </div>
           </div>
@@ -229,7 +230,13 @@
 
                   <q-item clickable v-ripple>
                     <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Утверждено" label="Утвердить" />
+                      <q-radio v-model="selectedStatus" val="Обсуждается" label="На обсуждении" />
+                    </q-item-section>
+                  </q-item>
+
+                  <q-item clickable v-ripple>
+                    <q-item-section>
+                      <q-radio v-model="selectedStatus" val="Поиск команды" label="Утвердить" />
                     </q-item-section>
                   </q-item>
                 </div>
@@ -341,7 +348,7 @@
 
     <!-- Модальное временное окно по показу ошибки смены статуса инициатором -->
     <div v-if="showStatusERROR" :class="['status-error-message', { 'hidden': !showStatusERROR }]">
-      Не получилось изменить статус - идея уже обсуждается
+      {{ statusErrorMessage }}
     </div>
   </div>
 </template>
@@ -391,9 +398,52 @@ const showEditStatus = ref(false);
 const selectedStatus = ref<StatusIdea>();
 const userIsAdmin = ref(false);
 const userIsInitiator = ref(false);
+const statusErrorMessage = ref(' ');
+const checkIfCantSetStatus = ref(false);
 
 function openEditStatus() {
   showEditStatus.value = true;
+}
+
+function CheckIfCantSetStatus() {
+  if (!viewedIdea.value.status || !viewedIdea.value.id) {
+    checkIfCantSetStatus.value = true;
+    return;
+  }
+
+  if (!userIsAdmin.value && (viewedIdea.value.status === StatusIdea.underDiscussion || viewedIdea.value.status === StatusIdea.deny || viewedIdea.value.status === StatusIdea.searchTeam)) {
+    checkIfCantSetStatus.value = true;
+    return;
+  }
+
+  checkIfCantSetStatus.value = false;
+}
+
+function ifCantSetStatus() {
+  console.log('there');
+  if (!viewedIdea.value.status || !viewedIdea.value.id) {
+    return;
+  }
+
+  if (viewedIdea.value.status === StatusIdea.underDiscussion) {
+    statusErrorMessage.value =  'Идея на обсуждении';
+  } else if (viewedIdea.value.status === StatusIdea.deny) {
+    statusErrorMessage.value = 'Идея была отклонена';
+  } else if (viewedIdea.value.status === StatusIdea.searchTeam) {
+    statusErrorMessage.value = 'Идея была утверждена';
+  }
+  showStatusERROR.value = true;
+  if (timerId.value) {
+    clearTimeout(timerId.value);
+  }
+
+  timerId.value = setTimeout(() => {
+    showStatusERROR.value = false;
+    timerId.value = null;
+  }, 2000);
+  showStatusOK.value = false;
+  
+  return;
 }
 
 async function SetStatus() {
@@ -401,8 +451,14 @@ async function SetStatus() {
     return;
   }
 
-  if (!userIsAdmin.value && viewedIdea.value.status === StatusIdea.underDiscussion) {
-    console.log('э куда?');
+  if (!userIsAdmin.value && (viewedIdea.value.status === StatusIdea.underDiscussion || viewedIdea.value.status === StatusIdea.deny || viewedIdea.value.status === StatusIdea.searchTeam)) {
+    if (viewedIdea.value.status === StatusIdea.underDiscussion) {
+      statusErrorMessage.value =  'Идея на обсуждении';
+    } else if (viewedIdea.value.status === StatusIdea.deny) {
+      statusErrorMessage.value = 'Идея была отклонена';
+    } else if (viewedIdea.value.status === StatusIdea.searchTeam) {
+      statusErrorMessage.value = 'Идея была утверждена';
+    }
     showStatusERROR.value = true;
     if (timerId.value) {
       clearTimeout(timerId.value);
@@ -579,12 +635,14 @@ async function editIdea(idea: Idea) {
 };
 
 async function showIdeaDetails(idea: Idea) {
+  
   viewedIdea.value = { ...idea };
   showIdeaDetailsModal.value = true;
   await isUserInitiator();
   if (userIsInitiator.value) {
     checkEditStatus.value = true;
   }
+  CheckIfCantSetStatus();
 };
 
 async function saveIdea() {
