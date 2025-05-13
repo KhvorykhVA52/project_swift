@@ -87,7 +87,8 @@
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="team in teams" :key="team.id" class="team-block row items-center no-wrap">
-                    <q-btn icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckSendingModal(team)" />
+                    <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckSendingModal(team)" />
+                    <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="cantSendInvite" />
                     <div>
                         <div class="text-subtitle1 perenos-text">Название: {{ team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ team.description }}</div>
@@ -101,9 +102,6 @@
     <q-dialog v-model="showCheckSendingModal" @hide="CloseCheckSendingModal">
         <q-card-section style="max-height: 500px; overflow-y: auto;">
             <div class="team-block">
-                <div q-if="errorMessage">
-                    <div class="text-subtitle1 perenos-text" style="color: red; font-size: 30px;"> {{ errorMessage }} </div>
-                </div>
                 <div class="text-subtitle1 perenos-text"> Вы уверены? </div>
                 <q-btn color="positive" @click="createInvite">Да</q-btn>
                 <q-btn color="negative" class="space-element" @click="CloseCheckSendingModal">Нет</q-btn>
@@ -123,7 +121,7 @@
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="invite in invites" :key="invite.team.id" class="team-block row items-center no-wrap">
                     <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click="ShowCheckCancelingModal(invite)"/>
-                    <q-btn v-if="!invite.isInitiatorInviter" color="grey-14" class="send-invite-button" style="font-size: 18px; height: 25px; width: 50px; padding: 0; line-height: 0.8; min-height: 0;" @click="cantCancelInvite">!</q-btn>
+                    <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="cantCancelInvite"></q-btn>
                     <div>
                         <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
@@ -166,6 +164,21 @@
 
 <script setup lang="ts">
 
+async function cantSendInvite() {
+    showERROR.value = true;
+    message.value = 'Ошибка: данная команда уже в списке кандидатов';
+
+    if (timerId.value) {
+        clearTimeout(timerId.value);
+    }
+
+    timerId.value = setTimeout(() => {
+        showERROR.value = false;
+        message.value = '';
+        timerId.value = null;
+    }, 2000);
+}
+
 async function cantCancelInvite() {
     showERROR.value = true;
     message.value = 'Ошибка: это не приглашение';
@@ -187,6 +200,7 @@ async function CloseCheckCancelingModal() {
 
 async function ShowCheckCancelingModal(invite: InviteList) {
     viewedInvite.value = invite;
+
     showCheckCancelingModal.value = true;
 }
 
@@ -252,16 +266,28 @@ async function createInvite() {
         const invite: Invite = {ideaId: viewedIdea.value.id, teamId: viewedTeam.value.id, isInitiatorInviter: true};
         const response = await api.createInvite(invite);
         if (response) {
-            errorMessage.value = '';
+            showOK.value = true;
+            message.value = 'Приглашение отправлено!';
+
+            if (timerId.value) {
+                clearTimeout(timerId.value);
+            }
+
+            timerId.value = setTimeout(() => {
+                showOK.value = false;
+                message.value = '';
+                timerId.value = null;
+            }, 2000);
+
+            await canInviteCheck();
+
             showCheckSendingModal.value = false;
             return;
         }
     }
-    errorMessage.value = 'Ошибка';
 }
 
 function CloseCheckSendingModal() {
-    errorMessage.value = '';
     showCheckSendingModal.value = false;
 }
 
@@ -270,7 +296,18 @@ function ShowCheckSendingModal(team: Team) {
     showCheckSendingModal.value = true;
 }
 
-function ShowSendInviteModal() {
+async function canInviteCheck() {
+    await getInvitesBy();
+    
+    teams.value.forEach(team => {
+        team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
+    });
+}
+
+async function ShowSendInviteModal() {
+
+    await canInviteCheck();
+    
     showSendInviteModal.value = true;
 }
 
@@ -322,6 +359,7 @@ interface Team {
     id: number;
     name: string;
     description: string;
+    canInvite: boolean;
 }
 
 const ideas = ref<Idea[]>([]);
@@ -332,7 +370,6 @@ const showSendInviteModal = ref(false);
 const teams = ref<Team[]>([]);
 const viewedTeam =  ref<Partial<Team>>({});
 const showCheckSendingModal = ref(false);
-const errorMessage = ref('');
 const invites = ref<InviteList[]>([]);
 const showInvitesModal = ref(false);
 const showCheckCancelingModal = ref(false);
