@@ -1,6 +1,7 @@
 export enum Role {
   admin = 'admin',
   user = 'user',
+  teamowner = 'teamowner'
 }
 
 export enum UserAccountStatus {

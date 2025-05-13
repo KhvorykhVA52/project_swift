@@ -262,28 +262,29 @@ export class IdeaService {
         ideaInvite.idea = idea;
         ideaInvite.team = team;
         ideaInvite.isInitiatorInviter = input.isInitiatorInviter;
+        ideaInvite.status = 'Ожидание';
 
         const response = await this.ideaInviteRepository.save(ideaInvite);
         console.log(`OK: idea.service.createInvite(ideaId=${input.ideaId}); teamId=${input.teamId}; isInitiatorInviter=${input.isInitiatorInviter}`);
         return true;
     }
 
-    async getIdeaInvites(input: {ideaId: number}) {
+    async getIdeaInvites(id: number) {
         const idea = await this.ideaRepository.find({
-            where: {id: input.ideaId},
+            where: {id: id},
         });
 
         if (!idea) {
-            console.log(`ERROR: idea.service.getIdeaInvites(): не найден Idea при Idea.id=${input.ideaId}`);
+            console.log(`ERROR: idea.service.getIdeaInvites(): не найден Idea при Idea.id=${id}`);
             return null;
         }
 
         const invite = await this.ideaInviteRepository.find({
-            where: {idea: {id: input.ideaId}},
+            where: {idea: {id: id}},
             relations: ['team.owner']
         });
 
-        console.log(`OK: idea.service.getIdeaInvites(ideaId=${input.ideaId})`);
+        console.log(`OK: idea.service.getIdeaInvites(id=${id})`);
 
         if (!invite) {
             return null;
@@ -305,5 +306,21 @@ export class IdeaService {
             console.log(`ERROR: idea.service.getAllAccepted(): ${error}`);
             return `ERROR`;
         }
+    }
+
+    async cancelInvite(input: {id: number}) {
+        const invite = await this.ideaInviteRepository.findOne({
+            where: {id: input.id}
+        })
+
+        if (!invite) {
+            console.log(`ERROR: idea.service.cancelInvite(): не найден ideaInvite при ideaInvite.id=${input.id}`);
+            return false;
+        }
+
+        await this.ideaInviteRepository.remove(invite);
+
+        console.log(`OK: idea.service.cancelInvite(${input.id})`);
+        return true;
     }
 }

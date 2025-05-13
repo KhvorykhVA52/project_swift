@@ -22,4 +22,7 @@ export class IdeaInvite {
 
     @Column()
     isInitiatorInviter: boolean;
+
+    @Column()
+    status: string;
 }

@@ -5,7 +5,7 @@
         v-for="(idea, index) in ideas"
         :key="index"
         class="col-xs-12 col-sm-6"
-        style="width: calc((100% - 240px)/2);"
+        style="width: calc((100% - 33px)/2);"
         >
             <q-card
                 :ref="(el: QCard | null) => ideaCards[index] = el"
@@ -15,11 +15,11 @@
                 @click="ShowIdeaDetailsModal(idea)"
             >
                 <q-card-section class="q-mb-md">
-                    <div class="text-h6">{{ slicedStr({str: idea.name, length: 50}) }}</div>
+                    <div class="text-h6">{{ slicedStr({str: idea.name, length: 54}) }}</div>
                 </q-card-section>
 
                 <q-card-section class="q-pt-none perenos-text">
-                    {{ slicedStr({str: idea.solution, length: 200}) }}
+                    {{ slicedStr({str: idea.solution, length: 300}) }}
                 </q-card-section>
 
                 <q-card-section style="margin-top: auto">
@@ -36,7 +36,6 @@
                         {{ idea.status }}
                     </span>
                 </q-card-section>
-
             </q-card>
         </div>
     </div>
@@ -48,8 +47,9 @@
                 <div class="row items-center justify-between">
                     <div class="text-h6 perenos-text">{{ viewedIdea.name }}</div>
                     <div class="row items-center justify-end">
-                    <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
-                    <q-btn flat class="bg-yellow-10 text-white space-element" label="Пригласить команду" color="primary" @click="ShowSendInviteModal" />
+                        <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
+                        <q-btn flat class="bg-green-10 text-white space-element" label="Список кандидатов" color="primary" @click="ShowInvitesModal" />
+                        <q-btn flat class="bg-yellow-10 text-white space-element" label="Пригласить команду" color="primary" @click="ShowSendInviteModal" />                    
                     </div>
                 </div>
             </q-card-section>
@@ -82,7 +82,7 @@
     <q-dialog v-model="showSendInviteModal">
         <q-card style="width: 500px; max-width: 80vw;">
             <q-card-section>
-                <div class="text-h6 text-blue-9">Команды</div>
+                <div class="text-h6 text-blue-14">Команды</div>
             </q-card-section>
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
@@ -112,9 +112,127 @@
             </div>
         </q-card-section>
     </q-dialog>
+
+    <!-- Модальное окно просмотра приглашений -->
+    <q-dialog v-model="showInvitesModal">
+        <q-card style="width: 500px; max-width: 80vw;">
+            <q-card-section>
+                <div class="text-h6 text-blue-14">Команды</div>
+            </q-card-section>
+
+            <q-card-section style="max-height: 500px; overflow-y: auto;">
+                <div v-for="invite in invites" :key="invite.team.id" class="team-block row items-center no-wrap">
+                    <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click="ShowCheckCancelingModal(invite)"/>
+                    <q-btn v-if="!invite.isInitiatorInviter" color="grey-14" class="send-invite-button" style="font-size: 18px; height: 25px; width: 50px; padding: 0; line-height: 0.8; min-height: 0;" @click="cantCancelInvite">!</q-btn>
+                    <div>
+                        <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
+                        <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
+                    </div>
+                </div>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+
+    <!-- Модальное окно "Вы уверены?" при отмене приглашения (инициатор) -->
+    <q-dialog v-model="showCheckCancelingModal" @hide="CloseCheckCancelingModal">
+        <q-card-section style="max-height: 500px; overflow-y: auto;">
+            <div class="team-block">
+                <div class="text-subtitle1 perenos-text"> Отозвать приглашение? </div>
+                <q-btn color="positive" @click="cancelInvite">Да</q-btn>
+                <q-btn color="negative" class="space-element" @click="CloseCheckCancelingModal">Нет</q-btn>
+                <div v-if="viewedInvite.team" class="text-subtitle1 perenos-text">Название: {{ viewedInvite.team.name }}</div>
+                <div v-if="viewedInvite.team" class="text-caption perenos-text">Описание: {{ viewedInvite.team.description }}</div>
+            </div>
+        </q-card-section>
+    </q-dialog>
+
+    <!-- Модальное временное окно ОК -->
+    <div v-if="showOK" :class="['status-ok-message', { 'hidden': !showOK }]">
+      {{ message }}
+    </div>
+
+    <!-- Модальное временное окно Ошибка -->
+    <div v-if="showERROR" :class="['status-error-message', { 'hidden': !showERROR }]">
+      {{ message }}
+    </div>
 </template>
 
 <script setup lang="ts">
+
+async function cantCancelInvite() {
+    showERROR.value = true;
+    message.value = 'Ошибка: это не приглашение';
+
+    if (timerId.value) {
+        clearTimeout(timerId.value);
+    }
+
+    timerId.value = setTimeout(() => {
+        showERROR.value = false;
+        message.value = '';
+        timerId.value = null;
+    }, 2000);
+}
+
+async function CloseCheckCancelingModal() {
+    showCheckCancelingModal.value = false;
+}
+
+async function ShowCheckCancelingModal(invite: InviteList) {
+    viewedInvite.value = invite;
+    showCheckCancelingModal.value = true;
+}
+
+async function cancelInvite() {
+    if (!viewedInvite.value || !viewedInvite.value.isInitiatorInviter || !viewedInvite.value.id || !viewedInvite.value.team || !viewedInvite.value.team.name) {
+        return null;
+    }
+    
+    const response = await api.cancelInvite(viewedInvite.value.id);
+
+    if (response) {
+        showOK.value = true;
+        message.value = 'Приглашение команды "' + viewedInvite.value?.team?.name + '" отозвано';
+
+        if (timerId.value) {
+            clearTimeout(timerId.value);
+        }
+
+        timerId.value = setTimeout(() => {
+            showOK.value = false;
+            message.value = '';
+            timerId.value = null;
+        }, 2000);
+
+        invites.value = invites.value.filter(invite => invite.id !== viewedInvite.value.id);
+        showCheckCancelingModal.value = false;
+    }
+
+    return null;
+}
+
+async function ShowInvitesModal() {
+    const response = await getInvitesBy();
+
+    if (response) {
+        showInvitesModal.value = true;
+    }
+}
+
+async function getInvitesBy() {
+    if (!viewedIdea.value.id) {
+        return null;
+    }
+
+    const response = await api.getInvitesBy(viewedIdea.value.id);
+
+    if (response) {
+        invites.value = [ ...response ];
+        return true;
+    }
+
+    return false;
+}
 
 interface Invite {
     ideaId: number;
@@ -185,6 +303,13 @@ interface Idea {
     createdAt: string;
 }
 
+interface InviteList {
+    id: number;
+    idea: Idea;
+    team: Team;
+    isInitiatorInviter: boolean;
+}
+
 interface Team {
     id: number;
     name: string;
@@ -200,6 +325,34 @@ const teams = ref<Team[]>([]);
 const viewedTeam =  ref<Partial<Team>>({});
 const showCheckSendingModal = ref(false);
 const errorMessage = ref('');
+const invites = ref<InviteList[]>([]);
+const showInvitesModal = ref(false);
+const showCheckCancelingModal = ref(false);
+const viewedInvite = ref<Partial<InviteList>>({});
+const userIsTeamOwner = ref(false);
+const message = ref('');
+const timerId = ref();
+const showOK = ref(false);
+const showERROR = ref(false);
+
+async function isUserTeamOwner() {
+  const tempSession = localStorage.getItem('ttm-session')
+  if (!tempSession) {
+    return false;
+  }
+  const parsedSession = JSON.parse(tempSession);
+
+  if (!parsedSession) {
+    console.error('Ошибка при получении информации о сессии');
+    return false;
+  }
+
+  console.log(parsedSession.roles);
+
+  userIsTeamOwner.value = parsedSession.roles.includes('teamowner');
+}
+
+isUserTeamOwner();
 
 async function getAllTeams() {
     const response = await api.getAllTeams();
@@ -231,9 +384,51 @@ onMounted(() => {
 
 <style>
 
+.status-ok-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(9, 138, 9, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 10000;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.status-ok-message.hidden {
+  opacity: 0;
+}
+
+.status-error-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(233, 11, 11, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 10001;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
+}
+
+.status-error-message.hidden {
+  opacity: 0;
+}
+
 .two-columns-grid {
   grid-template-columns: repeat(2, 1fr);
-  grid-gap: 10px; /* Отступы между блоками */
+  grid-gap: 10px;
 }
 
 .send-invite-button {

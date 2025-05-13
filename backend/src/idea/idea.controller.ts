@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { Idea } from 'src/orm/idea.entity';
 import { CreateIdeaDto } from './dto/create-idea.dto';
 import { IdeaService } from './idea.service';
@@ -72,13 +72,18 @@ export class IdeaController {
         return this.ideaService.createInvite(body);
     }
 
-    @Get('invite/getBy')
-    getInvites(@Body() body) {
+    @Get('invite/getby/:id')
+    getInvites(@Param('id') body) {
         return this.ideaService.getIdeaInvites(body);
     }
 
     @Get('getallaccepted')
     getAllAccapted() {
         return this.ideaService.getAllAccepted();
+    }
+
+    @Delete('invite/cancelinvite/:id')
+    cancelInvite(@Param('id') body) {
+        return this.ideaService.cancelInvite({id: body});
     }
 }

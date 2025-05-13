@@ -23,8 +23,30 @@ export async function getAllTeams() {
 
 export async function createInvite(input: {ideaId: number, teamId: number, isInitiatorInviter: boolean}) {
     const response = await api.post('ideas/invite/create', input)
+
     if (response) {
         return response.data;
     }
+
+    return null;
+}
+
+export async function getInvitesBy(id: number) {
+    const response = await api.get('ideas/invite/getby/' + id);
+
+    if (response) {
+        return response.data;
+    }
+
+    return null;
+}
+
+export async function cancelInvite(id: number) {
+    const response = await api.delete('ideas/invite/cancelinvite/' + id);
+
+    if (response) {
+        return response.data;
+    }
+
     return null;
 }
