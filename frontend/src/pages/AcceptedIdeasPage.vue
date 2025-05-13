@@ -127,6 +127,13 @@
                     <div>
                         <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
+                        <span class="text-subtitle2 text-weight-medium q-mb-sm text-orange-14 bold-text">
+                            Статус:
+                        </span>
+
+                        <span class="q-mb-md semi-bold">
+                            {{ invite.status }}
+                        </span>
                     </div>
                 </div>
             </q-card-section>
@@ -308,6 +315,7 @@ interface InviteList {
     idea: Idea;
     team: Team;
     isInitiatorInviter: boolean;
+    status: string;
 }
 
 interface Team {
