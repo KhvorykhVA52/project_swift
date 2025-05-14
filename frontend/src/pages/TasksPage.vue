@@ -37,8 +37,8 @@
           >
             <q-card-section class="idea-header-section">
               <div class="row items-center no-wrap">
-                <div class="col">
-                  <div class="text-h6 text-weight-bold">{{ idea.name }}</div>
+                <div class="col idea-value">
+                  <div class="text-h6 text-weight-bold">{{ truncateText(idea.name, 80) }}</div>
                 </div>
                 <div class="col-auto">
                   <q-btn-group flat rounded>
@@ -133,6 +133,7 @@
             outlined
             color="teal"
             :rules="[val => !!val || 'Обязательное поле']"
+            autogrow
             @keydown.enter.prevent="handleIdeaEnter($event)"
           />
           
@@ -198,7 +199,7 @@
       <q-card style="min-width: 800px; max-width: 1000px">
         <q-card-section class="bg-blue-6 text-white q-pa-md">
           <div class="row items-center justify-between">
-            <div class="text-h6">{{ viewedIdea.name }}</div>
+            <div class="text-h6 perenos-text">{{ viewedIdea.name }}</div>
             <div class="row items-center justify-end">
               <q-btn v-if="!checkIfCantSetStatus" flat class="bg-yellow-10 text-white q-mr-sm" label="Изменить статус" color="primary" @click="openEditStatus" />
               <q-btn v-if="checkIfCantSetStatus" flat class="bg-grey-6 text-white q-mr-sm" label="Изменить статус" color="primary" @click="ifCantSetStatus" />
@@ -271,17 +272,17 @@
           <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
           <div class="q-mb-md"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
 
-          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Проблема</div>
-          <div class="q-mb-md">{{ viewedIdea.problem || '—' }}</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" autogrow>Проблема</div>
+          <div class="q-mb-md perenos-text">{{ viewedIdea.problem || '—' }}</div>
           
-          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Решение</div>
-          <div class="q-mb-md">{{ viewedIdea.solution || '—' }}</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" autogrow>Решение</div>
+          <div class="q-mb-md perenos-text">{{ viewedIdea.solution || '—' }}</div>
           
-          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Ожидаемый результат</div>
-          <div class="q-mb-md">{{ viewedIdea.result || '—' }}</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" autogrow>Ожидаемый результат</div>
+          <div class="q-mb-md perenos-text">{{ viewedIdea.result || '—' }}</div>
           
-          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Необходимые ресурсы</div>
-          <div class="q-mb-md">{{ viewedIdea.resource || '—' }}</div>
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" >Необходимые ресурсы</div>
+          <div class="q-mb-md perenos-text">{{ viewedIdea.resource || '—' }}</div>
 
           <q-separator class="q-my-md" />
 
@@ -897,6 +898,12 @@ const formatDate = (createdAt: string) => {
 </script>
 
 <style scoped>
+.perenos-text {
+    width: 100%;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
 .status-ok-message {
   position: fixed;
   bottom: 20px;
