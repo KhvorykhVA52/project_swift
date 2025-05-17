@@ -346,6 +346,36 @@ export class TeamsService {
     return user.ownedTeams;
   }
 
+  async getTeamAsMember(id: number) {
+    const user = await this.userRepository.findOne({
+      where: {id: id},
+      relations: ['team'],
+    });
+
+    if (!user) {
+      console.log(`ERROR: teams.service.getTeamAsMember(): не найден User при User.id=${id}`);
+      return null;
+    }
+
+    if (!user.team) {
+      console.log(`OK: teams.service.getTeamAsMember(id=${id})`);
+      return null;
+    }
+
+    const team = await this.teamRepository.findOne({
+      where: {id: user.team.id},
+      relations: ['members', 'leader', 'owner'],
+    })
+
+    if (!team) {
+      console.log(`!!!CRITICAL ERROR!!!: teams.service.getTeamAsMember(): не найдена Team при User.id=${id}`);
+      return null;
+    }
+
+    console.log(`OK: teams.service.getTeamAsMember(id=${id})`);
+    return team;
+  }
+
   async getAllTeams() {
     const teams = this.teamRepository.find();
 

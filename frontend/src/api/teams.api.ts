@@ -67,3 +67,13 @@ export async function invite(inviterId: number, dto: CreateInviteDto) {
   }
   return 'ERROR';
 }
+
+export async function getTeamAsMember(id: number) {
+  const response = await api.get('/teams/getteamasmember/' + id);
+
+  if (response) {
+    return response.data;
+  }
+
+  return null;
+}

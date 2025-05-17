@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="isTeamowner">
     <!-- Панель управления командой -->
     <div class="team-management-panel">
       <button class="create-team-btn" @click="showCreateTeamModal = true">
@@ -130,6 +130,34 @@
        </div>
      </div>
   </div>
+
+  <div v-if="!isTeamowner">
+    <div v-if="selectedTeam" class="team-details-notowner-modal">
+      <div class="team-details-modal-content">
+        <div class="team-details-team-info-container">
+          <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
+          <div class="team-details-team-description-wrapper">
+            <p class="team-details-team-description-text">{{ selectedTeam.description }}</p>
+          </div>
+        </div>
+
+        <div class="team-details-members-container">
+          <div class="team-details-leader-wrapper">
+            <div v-if="leader" class="team-details-member-box leader-box">
+              <div class="team-details-member-firstname">{{ leader.firstname }}</div>
+              <div class="team-details-member-lastname">{{ leader.lastname }}</div>
+              <div class="team-details-leader-label">Тимлидер</div>
+            </div>
+          </div>
+
+          <div v-for="(member, index) in filteredMembersWithoutLeader" :key="index" class="member-box">
+            <div class="team-details-member-firstname">{{ member.firstname }}</div>
+            <div class="team-details-member-lastname">{{ member.lastname }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 
@@ -157,12 +185,13 @@ export default defineComponent({
       showInviteOK: false,
       showInviteERROR: false,
       timerId: null,
+      isTeamowner: false,
     };
   },
   async mounted() {
+    await this.IsTeamowner();
     await this.loadTeams();
     await this.loadUsers();
-
   },
   computed: {
     leader() {
@@ -202,6 +231,26 @@ export default defineComponent({
     },
   },
   methods: {
+    async IsTeamowner() {
+      const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
+      if (!parsedSession) {
+        console.error('Ошибка при получении информации о сессии:'. error);
+        return;
+      }
+      if (parsedSession.roles.includes('teamowner')) {
+        this.isTeamowner = true;
+      } else {
+        this.isTeamowner = false;
+        const response = await api.getTeamAsMember(parsedSession.userId);
+
+        console.log(response);
+
+        if (response) {
+          this.teams = [ response ];
+          this.selectedTeam = response;
+        }
+      }
+    },
     async sendInvitation() {
       const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
       if (!parsedSession) {
@@ -300,6 +349,9 @@ export default defineComponent({
     },
     async loadTeams() { 
       try {
+        if (this.isTeamowner == false) {
+          return;
+        }
         this.newTeam = new CreateTeamDto();
 
         const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
@@ -516,6 +568,13 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   z-index: 2;
+}
+
+.team-details-notowner-modal {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .team-details-modal-content {
