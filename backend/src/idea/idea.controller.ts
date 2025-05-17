@@ -86,4 +86,9 @@ export class IdeaController {
     cancelInvite(@Param('id') body) {
         return this.ideaService.cancelInvite({id: body});
     }
+
+    @Post('invite/responseinvite/:id')
+    responseInvite(@Param('id') id, @Body() body) {
+        return this.ideaService.responseInvite(id, body.data.response)
+    }
 }

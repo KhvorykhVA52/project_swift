@@ -80,7 +80,7 @@
 
     <!-- Модальное окно отправки приглашения -->
     <q-dialog v-model="showSendInviteModal">
-        <q-card style="width: 500px; max-width: 80vw;">
+        <q-card style="width: 800px; max-width: 80vw;">
             <q-card-section>
                 <div class="text-h6 text-blue-14">Команды</div>
             </q-card-section>
@@ -88,10 +88,10 @@
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="team in teams" :key="team.id" class="team-block row items-center no-wrap">
                     <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckSendingModal(team)" />
-                    <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="cantSendInvite" />
-                    <div>
-                        <div class="text-subtitle1 perenos-text">Название: {{ team.name }}</div>
-                        <div class="text-caption perenos-text">Описание: {{ team.description }}</div>
+                    <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal('Ошибка: данная команда уже в списке кандидатов')" />
+                    <div style="height: 140px" class="perenos-text">
+                        <div class="text-subtitle1" style="width: 500px; height: 20px; overflow: hidden;">Название: {{ team.name }}</div>
+                        <div class="text-caption" style="margin-top: 5px;">Описание: {{ team.description }}</div>
                     </div>
                 </div>
             </q-card-section>
@@ -113,15 +113,15 @@
 
     <!-- Модальное окно просмотра приглашений -->
     <q-dialog v-model="showInvitesModal">
-        <q-card style="width: 500px; max-width: 80vw;">
+        <q-card style="width: 800px; max-width: 80vw;">
             <q-card-section>
                 <div class="text-h6 text-blue-14">Команды</div>
             </q-card-section>
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
-                <div v-for="invite in invites" :key="invite.team.id" class="team-block row items-center no-wrap">
+                <div v-for="invite in invites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
                     <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click="ShowCheckCancelingModal(invite)"/>
-                    <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="cantCancelInvite"></q-btn>
+                    <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" style="cursor: not-allowed;" @click="showERRORmodal('Ошибка: это не приглашение')"></q-btn>
                     <div>
                         <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
@@ -132,6 +132,18 @@
                         <span class="q-mb-md semi-bold">
                             {{ invite.status }}
                         </span>
+                    </div>
+
+                    <div v-if="!ideaGotTeam" style="position: absolute; right: 2px; display: flex; flex-direction: column; align-items: flex-end;">
+                        <q-btn v-if="!invite.isInitiatorInviter" size="sm" class="send-invite-button bg-green-6" style="width: 80px; box-sizing: border-box;" @click="ShowCheckAcceptingTeamModal(invite)">Принять</q-btn>
+                        <q-btn v-if="!invite.isInitiatorInviter" size="sm" class="send-invite-button bg-red-6" style="margin-top: 5px; width: 80px; box-sizing: border-box;" @click="ShowCheckDenyingTeamModal(invite)">Отклонить</q-btn>
+                        <q-btn v-if="invite.isInitiatorInviter" size="sm" class="send-invite-button bg-grey-6" style="width: 80px; box-sizing: border-box; text-decoration: line-through; cursor: not-allowed; opacity: 0.7; font-style: italic;" @click="showERRORmodal('Ошибка: это приглашённая команда')">Принять</q-btn>
+                        <q-btn v-if="invite.isInitiatorInviter" size="sm" class="send-invite-button bg-grey-6" style="margin-top: 5px; width: 80px; box-sizing: border-box; text-decoration: line-through; cursor: not-allowed; opacity: 0.7; font-style: italic;" @click="showERRORmodal('Ошибка: это приглашённая команда')">Отклонить</q-btn>
+                    </div>
+
+                    <div v-if="ideaGotTeam" style="position: absolute; right: 2px; display: flex; flex-direction: column; align-items: flex-end;">
+                        <q-btn size="sm" class="send-invite-button bg-grey-6" style="width: 80px; box-sizing: border-box; text-decoration: line-through; cursor: not-allowed; opacity: 0.7; font-style: italic;" @click="showERRORmodal('Ошибка: команда уже найдена')">Принять</q-btn>
+                        <q-btn size="sm" class="send-invite-button bg-grey-6" style="margin-top: 5px; width: 80px; box-sizing: border-box; text-decoration: line-through; cursor: not-allowed; opacity: 0.7; font-style: italic;" @click="showERRORmodal('Ошибка: команда уже найдена')">Отклонить</q-btn>
                     </div>
                 </div>
             </q-card-section>
@@ -160,13 +172,92 @@
     <div v-if="showERROR" :class="['status-error-message', { 'hidden': !showERROR }]">
       {{ message }}
     </div>
+
+    <!-- Модальное окно "Вы уверены?" при отказе от команды -->
+    <q-dialog v-model="showCheckDenyingTeamModal">
+        <q-card-section style="max-height: 500px; overflow-y: auto;">
+            <div class="team-block">
+                <div class="text-subtitle1 perenos-text"> Отказаться от данной команды? </div>
+                <q-btn color="positive" @click="denyTeam">Да</q-btn>
+                <q-btn color="negative" class="space-element" @click="closeCheckDenyingTeamModal">Нет</q-btn>
+                <div v-if="viewedInvite.team" class="text-subtitle1 perenos-text">Название: {{ viewedInvite.team.name }}</div>
+                <div v-if="viewedInvite.team" class="text-caption perenos-text">Описание: {{ viewedInvite.team.description }}</div>
+            </div>
+        </q-card-section>
+    </q-dialog>
+
+    <!-- Модальное окно "Вы уверены?" при принятии команды -->
+    <q-dialog v-model="showCheckAcceptingTeamModal">
+        <q-card-section style="max-height: 500px; overflow-y: auto;">
+            <div class="team-block">
+                <div class="text-subtitle1 perenos-text"> Принять данную команду? </div>
+                <q-btn color="positive" @click="acceptTeam">Да</q-btn>
+                <q-btn color="negative" class="space-element" @click="closeCheckAcceptingTeamModal">Нет</q-btn>
+                <div v-if="viewedInvite.team" class="text-subtitle1 perenos-text">Название: {{ viewedInvite.team.name }}</div>
+                <div v-if="viewedInvite.team" class="text-caption perenos-text">Описание: {{ viewedInvite.team.description }}</div>
+            </div>
+        </q-card-section>
+    </q-dialog>
 </template>
 
 <script setup lang="ts">
 
-async function cantSendInvite() {
+async function closeCheckAcceptingTeamModal() {
+    showCheckAcceptingTeamModal.value = false;
+}
+
+async function ShowCheckAcceptingTeamModal(invite: InviteList) {
+    viewedInvite.value = invite;
+    showCheckAcceptingTeamModal.value = true;
+}
+
+async function acceptTeam() {
+    if(!viewedInvite.value.id) {
+        return null;
+    }
+
+    const response = await api.responseInvite(viewedInvite.value.id, 'Принято');
+
+    if (response) {
+        await showOKmodal('Команда принята: ' + viewedInvite.value.team?.name);
+        await getInvitesBy();
+        await loadIdeas();
+        showCheckAcceptingTeamModal.value = false;
+    }
+}
+
+async function denyTeam() {
+    if(!viewedInvite.value.id) {
+        return null;
+    }
+
+    const response = await api.responseInvite(viewedInvite.value.id, 'Отклонено');
+
+    if (response) {
+        await showOKmodal('Команда отклонена: ' + viewedInvite.value.team?.name);
+        await getInvitesBy();
+        showCheckDenyingTeamModal.value = false;
+    }
+}
+
+async function showOKmodal(text: string) {
+    showOK.value = true;
+    message.value = text;
+
+    if (timerId.value) {
+        clearTimeout(timerId.value);
+    }
+
+    timerId.value = setTimeout(() => {
+        showOK.value = false;
+        message.value = '';
+        timerId.value = null;
+    }, 2000);
+}
+
+async function showERRORmodal(text: string) {
     showERROR.value = true;
-    message.value = 'Ошибка: данная команда уже в списке кандидатов';
+    message.value = text;
 
     if (timerId.value) {
         clearTimeout(timerId.value);
@@ -179,19 +270,13 @@ async function cantSendInvite() {
     }, 2000);
 }
 
-async function cantCancelInvite() {
-    showERROR.value = true;
-    message.value = 'Ошибка: это не приглашение';
+async function closeCheckDenyingTeamModal() {
+    showCheckDenyingTeamModal.value = false;
+}
 
-    if (timerId.value) {
-        clearTimeout(timerId.value);
-    }
-
-    timerId.value = setTimeout(() => {
-        showERROR.value = false;
-        message.value = '';
-        timerId.value = null;
-    }, 2000);
+async function ShowCheckDenyingTeamModal(invite: InviteList) {
+    viewedInvite.value = invite;
+    showCheckDenyingTeamModal.value = true;
 }
 
 async function CloseCheckCancelingModal() {
@@ -212,18 +297,7 @@ async function cancelInvite() {
     const response = await api.cancelInvite(viewedInvite.value.id);
 
     if (response) {
-        showOK.value = true;
-        message.value = 'Приглашение команды "' + viewedInvite.value?.team?.name + '" отозвано';
-
-        if (timerId.value) {
-            clearTimeout(timerId.value);
-        }
-
-        timerId.value = setTimeout(() => {
-            showOK.value = false;
-            message.value = '';
-            timerId.value = null;
-        }, 2000);
+        await showOKmodal('Приглашение команды "' + viewedInvite.value?.team?.name + '" отозвано');
 
         invites.value = invites.value.filter(invite => invite.id !== viewedInvite.value.id);
         showCheckCancelingModal.value = false;
@@ -248,7 +322,26 @@ async function getInvitesBy() {
     const response = await api.getInvitesBy(viewedIdea.value.id);
 
     if (response) {
-        invites.value = [ ...response ];
+        const invitesIs: InviteList[] = [];
+        const invitesIsNot: InviteList[] = [];
+
+        for (const invite of response) {
+            if (invite.isInitiatorInviter) {
+                invitesIs.push(invite);
+                continue;
+            }
+            invitesIsNot.push(invite);            
+        }
+
+
+        invites.value = [ ...invitesIs, ...invitesIsNot ];
+
+        if (viewedIdea.value.status == StatusIdea.teamIsFinded) {
+            ideaGotTeam.value = true;
+        } else {
+            ideaGotTeam.value = false;
+        }
+
         return true;
     }
 
@@ -267,17 +360,7 @@ async function createInvite() {
         const response = await api.createInvite(invite);
         if (response) {
             showOK.value = true;
-            message.value = 'Приглашение отправлено!';
-
-            if (timerId.value) {
-                clearTimeout(timerId.value);
-            }
-
-            timerId.value = setTimeout(() => {
-                showOK.value = false;
-                message.value = '';
-                timerId.value = null;
-            }, 2000);
+            await showOKmodal('Приглашение отправлено!');
 
             await canInviteCheck();
 
@@ -334,6 +417,7 @@ function getAuthor(author: {firstname: string, lastname: string}) {
 import { QCard } from 'quasar';
 import * as api from '../api/acceptedideas.api';
 import { ref, onMounted } from 'vue';
+import { StatusIdea } from '../../../backend/src/common/types';
 
 interface Idea {
     id: number;
@@ -379,6 +463,9 @@ const message = ref('');
 const timerId = ref();
 const showOK = ref(false);
 const showERROR = ref(false);
+const showCheckDenyingTeamModal = ref(false);
+const showCheckAcceptingTeamModal = ref(false);
+const ideaGotTeam = ref(false);
 
 async function isUserTeamOwner() {
   const tempSession = localStorage.getItem('ttm-session')
@@ -494,7 +581,9 @@ onMounted(() => {
 .perenos-text {
     width: 100%;
     white-space: normal;
+    word-break: break-all;
     word-wrap: break-word;
+    overflow: hidden;
 }
 
 .dark-blue-text {

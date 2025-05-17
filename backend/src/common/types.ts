@@ -23,6 +23,7 @@ export enum StatusIdea {
   searchTeam = 'Поиск команды',
   deny = 'Отклонено',
   underDiscussion = 'Обсуждается',
+  teamIsFinded = 'Команда найдена',
 }
 
 export enum StatusProject {

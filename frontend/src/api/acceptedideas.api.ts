@@ -50,3 +50,13 @@ export async function cancelInvite(id: number) {
 
     return null;
 }
+
+export async function responseInvite(id: number, response: string) {
+    const responseBackend = await api.post('ideas/invite/responseinvite/' + id, {data: {response: response}});
+
+    if (responseBackend) {
+        return responseBackend.data;
+    }
+
+    return null;
+}

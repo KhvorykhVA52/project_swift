@@ -298,7 +298,7 @@ export class IdeaService {
             const ideas = await this.ideaRepository.find({
                 relations: ['initiator', 'team'],
                 loadEagerRelations: false,
-                where: {status: In([StatusIdea.searchTeam])},
+                where: {status: In([StatusIdea.searchTeam, StatusIdea.teamIsFinded])},
             });
             console.log(`OK: idea.service.getAllAccepted()`);
             return ideas;
@@ -321,6 +321,39 @@ export class IdeaService {
         await this.ideaInviteRepository.remove(invite);
 
         console.log(`OK: idea.service.cancelInvite(${input.id})`);
+        return true;
+    }
+
+    async responseInvite(id: number, response: string) {
+        const invite = await this.ideaInviteRepository.findOne({
+            where: {id: id}
+        });
+
+        if (!invite) {
+            console.log(`ERROR: idea.service.responseInvite(): не найден Invite при Invite.id=${id}`);
+            return false;
+        }
+
+        invite.status = response;
+
+        if (response == 'Принято') {
+            const idea = await this.ideaRepository.findOne({
+                where: {id: invite.idea.id}
+            });
+    
+            if (!idea) {
+                console.log(`!!!CRITICAL ERROR!!!: idea.service.responseInvite(): не найден Idea при Invite.id=${id}`);
+                return false;
+            }
+
+            idea.status = StatusIdea.teamIsFinded;
+            await this.ideaRepository.save(idea);
+        }
+
+        await this.ideaInviteRepository.save(invite);
+        
+        console.log(`OK: idea.service.responseInvite(id=${id};response=${response})`);
+
         return true;
     }
 }
