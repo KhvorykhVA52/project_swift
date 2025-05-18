@@ -1,8 +1,23 @@
 <template>
     <!-- окно с идеями -->
+    <div class="header q-mb-md row items-center">
+        <q-input 
+            v-model="ideaSearchText"
+            outlined
+            dense
+            placeholder="Поиск идей..."
+            class="search-input"
+            style="width: 600px;"
+            >
+        <template v-slot:append>
+            <q-icon name="search" color="indigo" />
+            </template>
+        </q-input>
+    </div>
+    
     <div class="row q-gutter-md">
         <div
-        v-for="(idea, index) in ideas"
+        v-for="(idea, index) in filteredIdeas"
         :key="index"
         class="col-xs-12 col-sm-6"
         style="width: calc((100% - 33px)/2);"
@@ -85,8 +100,23 @@
                 <div class="text-h6 text-blue-14">Команды</div>
             </q-card-section>
 
+            <div class="header q-mb-md row items-center">
+                <q-input 
+                    v-model="sendingInviteSearchText"
+                    outlined
+                    dense
+                    placeholder="Поиск команд..."
+                    class="search-input"
+                    style="width: max;"
+                    >
+                <template v-slot:append>
+                    <q-icon name="search" color="indigo" />
+                    </template>
+                </q-input>
+            </div>
+
             <q-card-section style="max-height: 500px; overflow-y: auto;">
-                <div v-for="team in teams" :key="team.id" class="team-block row items-center no-wrap">
+                <div v-for="team in filteredTeams" :key="team.id" class="team-block row items-center no-wrap">
                     <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckSendingModal(team)" />
                     <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal('Ошибка: данная команда уже в списке кандидатов')" />
                     <div style="height: 140px" class="perenos-text">
@@ -111,15 +141,30 @@
         </q-card-section>
     </q-dialog>
 
-    <!-- Модальное окно просмотра приглашений -->
+    <!-- Модальное окно просмотра приглашений (кандидатов) -->
     <q-dialog v-model="showInvitesModal">
         <q-card style="width: 800px; max-width: 80vw;">
             <q-card-section>
                 <div class="text-h6 text-blue-14">Команды</div>
             </q-card-section>
 
+            <div class="header q-mb-md row items-center">
+            <q-input 
+                v-model="invitesSearchText"
+                outlined
+                dense
+                placeholder="Поиск команд..."
+                class="search-input"
+                style="width: max;"
+                >
+            <template v-slot:append>
+                <q-icon name="search" color="indigo" />
+                </template>
+            </q-input>
+        </div>
+
             <q-card-section style="max-height: 500px; overflow-y: auto;">
-                <div v-for="invite in invites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
+                <div v-for="invite in filteredInvites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
                     <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click="ShowCheckCancelingModal(invite)"/>
                     <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" style="cursor: not-allowed;" @click="showERRORmodal('Ошибка: это не приглашение')"></q-btn>
                     <div>
@@ -201,6 +246,95 @@
 </template>
 
 <script setup lang="ts">
+
+const filteredTeams = computed(() => {
+    if (!sendingInviteSearchText.value) {
+        return teams.value;
+    }
+
+    const query = sendingInviteSearchText.value.toLowerCase();
+    const searchTerms = query.split(' ').filter(term => term !== '');
+
+    let filteredResults = teams.value;
+
+    for (const term of searchTerms) {
+        filteredResults = filteredResults.filter(team => {
+        const name = (team.name || '').toLowerCase();
+        const description = (team.description || '').toLowerCase();
+
+        return (
+            name.includes(term) ||
+            description.includes(term)
+        );
+        });
+    }
+
+    return filteredResults;
+})
+
+const filteredInvites = computed(() => {
+    if (!invitesSearchText.value) {
+        return invites.value;
+    }
+
+    const query = invitesSearchText.value.toLowerCase();
+    const searchTerms = query.split(' ').filter(term => term !== '');
+
+    let filteredResults = invites.value;
+
+    for (const term of searchTerms) {
+        filteredResults = filteredResults.filter(invite => {
+        const status = (invite.status || '').toLowerCase();
+        const name = (invite.team.name || '').toLowerCase();
+        const description = (invite.team.description || '').toLowerCase();
+
+        return (
+            status.includes(term) ||
+            name.includes(term) ||
+            description.includes(term)
+        );
+        });
+    }
+
+    return filteredResults;
+})
+
+const filteredIdeas = computed(() => {
+    if (!ideaSearchText.value) {
+        return ideas.value;
+    }
+    
+    const query = ideaSearchText.value.toLowerCase();
+    const searchTerms = query.split(' ').filter(term => term !== '');
+
+    let filteredResults = ideas.value;
+
+    for (const term of searchTerms) {
+        filteredResults = filteredResults.filter(idea => {
+        const name = (idea.name || '').toLowerCase();
+        const problem = (idea.problem || '').toLowerCase();
+        const solution = (idea.solution || '').toLowerCase();
+        const result = (idea.result || '').toLowerCase();
+        const resource = (idea.resource || '').toLowerCase();
+        const status = (idea.status || '').toLowerCase();
+        const initiatorFirstname = (idea.initiator.firstname || '').toLowerCase();
+        const initiatorLastname = (idea.initiator.lastname || '').toLowerCase();
+
+        return (
+            name.includes(term) ||
+            problem.includes(term) ||
+            solution.includes(term) ||
+            result.includes(term) ||
+            resource.includes(term) ||
+            status.includes(term) ||
+            initiatorFirstname.includes(term) ||
+            initiatorLastname.includes(term)
+        );
+        });
+    }
+
+    return filteredResults;
+})
 
 async function closeCheckAcceptingTeamModal() {
     showCheckAcceptingTeamModal.value = false;
@@ -416,7 +550,7 @@ function getAuthor(author: {firstname: string, lastname: string}) {
 
 import { QCard } from 'quasar';
 import * as api from '../api/acceptedideas.api';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { StatusIdea } from '../../../backend/src/common/types';
 
 interface Idea {
@@ -466,6 +600,9 @@ const showERROR = ref(false);
 const showCheckDenyingTeamModal = ref(false);
 const showCheckAcceptingTeamModal = ref(false);
 const ideaGotTeam = ref(false);
+const ideaSearchText = ref('');
+const invitesSearchText = ref('');
+const sendingInviteSearchText = ref('');
 
 async function isUserTeamOwner() {
   const tempSession = localStorage.getItem('ttm-session')
@@ -515,6 +652,15 @@ onMounted(() => {
 </script>
 
 <style>
+
+.header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.search-input {
+  border-radius: 20px;
+}
 
 .status-ok-message {
   position: fixed;
