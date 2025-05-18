@@ -4,7 +4,7 @@ import { CreateIdeaDto } from './dto/create-idea.dto';
 import { User } from 'src/orm/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { StatusIdea } from 'src/common/types';
+import { Competence, StatusIdea } from 'src/common/types';
 import { IdeaInvite } from 'src/orm/idea-invite.entity';
 import { Team } from 'src/orm/team.entity';
 
@@ -355,5 +355,35 @@ export class IdeaService {
         console.log(`OK: idea.service.responseInvite(id=${id};response=${response})`);
 
         return true;
+    }
+
+    async updateStack(id: number, stack: Competence[]) {
+        const idea = await this.ideaRepository.findOne({
+            where: {id: id}
+        })
+
+        if (!idea) {
+            console.log(`ERROR: idea.service.updateStack(): не найден Idea при Idea.id=${id}`);
+            return null;
+        }
+
+        idea.stack = stack;
+        
+        console.log(`OK: idea.service.updateStack(id=${id})`);
+        return await this.ideaRepository.save(idea);
+    }
+
+    async getStack(id: number) {
+        const idea = await this.ideaRepository.findOne({
+            where: {id: id},
+        })
+
+        if (!idea) {
+            console.log(`ERROR: idea.service.getIdea(): не найден Idea при Idea.id=${id}`);
+            return null;
+        }
+
+        console.log(`OK: idea.service.getIdea(id=${id})`);
+        return idea.stack || [];
     }
 }

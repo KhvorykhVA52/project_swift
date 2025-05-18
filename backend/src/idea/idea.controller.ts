@@ -91,4 +91,14 @@ export class IdeaController {
     responseInvite(@Param('id') id, @Body() body) {
         return this.ideaService.responseInvite(id, body.data.response)
     }
+
+    @Post('updatestack/:id')
+    updataStack(@Param('id') id, @Body() body) {
+        return this.ideaService.updateStack(id, body.stack);
+    }
+
+    @Get('getstack/:id')
+    getIdea(@Param('id') id) {
+        return this.ideaService.getStack(id);
+    }
 }

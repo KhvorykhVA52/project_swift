@@ -60,3 +60,23 @@ export async function responseInvite(id: number, response: string) {
 
     return null;
 }
+
+export async function updateStack(id: number, stack: string[]) {
+    const response = await api.post('ideas/updatestack/' + id, {stack: stack});
+
+    if (response.status == 201) {
+        return response.data;
+    }
+
+    return null;
+}
+
+export async function getStack(id: number) {
+    const response = await api.get('ideas/getstack/' + id);
+
+    if (response.status == 200) {
+        return response.data;
+    }
+
+    return null;
+}
