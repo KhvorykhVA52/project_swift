@@ -4,12 +4,12 @@
       <div class="avatar-container">
         <div class="avatar" :style="avatarStyle">
           <img
-             v-if="user.avatarUrl"
-             :src="getFullAvatarUrl(user.avatarUrl)"
-             alt="Аватар"
-             class="avatar-image"
-             @error="handleImageError"
-             ref="avatarImage"
+            v-if="user.avatarUrl"
+            :src="getFullAvatarUrl(user.avatarUrl)"
+            alt="Аватар"
+            class="avatar-image"
+            @error="handleImageError"
+            ref="avatarImage"
           >
           <span v-else class="avatar-initials">{{ userInitials }}</span>
         </div>
@@ -191,7 +191,7 @@ import { getCurrentUser, updateProfile, uploadAvatar, deleteAvatar } from '../ap
 export default {
   data() {
     return {
-      searchtechnology: '',
+        searchtechnology: '',
       user: {
         firstname: '',
         lastname: '',
@@ -591,103 +591,121 @@ export default {
     },
 
      async handleAvatarUpload(event) {
-    const file = event.target.files[0];
-  if (!file) return;
+      const file = event.target.files[0];
+      if (!file) return;
 
-  try {
-    this.isLoading = true;
-    const response = await uploadAvatar(file);
-    
-    if (response?.avatarUrl) {
-      // Обновляем URL аватара с временной меткой
-      this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
-      
-      // Сохраняем в localStorage
-      localStorage.setItem('userProfile', JSON.stringify(this.user));
-      
-      this.$q.notify({
-        type: 'positive',
-        message: 'Аватар успешно обновлен',
-        timeout: 2000
-        });
-      }
-      this.loadUserProfile();
-    } catch (error) {
-       console.error('Upload error:', error);
-    this.$q.notify({
-      type: 'negative',
-      message: error.response?.data?.message || 'Ошибка загрузки аватара',
-      timeout: 3000
-      });
-    } finally {
-      event.target.value = '';
-    this.isLoading = false;
-  }
-},
+      try {
+        this.isLoading = true;
+        const response = await uploadAvatar(file);
+        if (response?.avatarUrl) {
+          // Обновляем URL аватара с временной меткой
+          this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
 
-     async removeAvatar() {
-    try {
-      await deleteAvatar();
-      this.user.avatarUrl = null;
-      localStorage.setItem('userProfile', JSON.stringify(this.user));
-      
-      this.$q.notify({
-        type: 'positive',
-        message: 'Аватар удален',
-        timeout: 2000
-      });
-    } catch (error) {
-      console.error('Delete error:', error);
-      this.$q.notify({
-        type: 'negative',
-        message: 'Не удалось удалить аватар',
-        timeout: 2000
-      });
-    }
-  },
-
-    async loadUserProfile() {
-        try {
-        const userData = await getCurrentUser();
-        if (userData) {
-          this.user = {
-            firstname: userData.firstname || '',
-            lastname: userData.lastname || '',
-            email: userData.email || '',
-            group: userData.group || '',
-            phone: userData.telephone || '',
-            createdAt: userData.createdAt,
-            avatarUrl: userData.avatarUrl || null,
-            competence: userData.competence || [],
-             roles: Array.isArray(userData.roles) ? userData.roles : [userData.roles]
-          };
-
-          // Сохраняем оригинальные данные
-          this.isAdmin = this.user.roles.some(role => role.toLowerCase() === 'admin');
-          console.log('User roles:', this.user.roles, 'Is admin:', this.isAdmin); // Для отладки
-
-          this.originalUser = { ...this.user };
+          // Сохраняем в userProfile
           localStorage.setItem('userProfile', JSON.stringify(this.user));
 
-          // Обновляем чекбоксы технологий
-           Object.values(this.techStack).forEach(items => {
-            items.forEach(item => {
-              item.selected = this.user.competence.includes(item.name);
-                        this.updateTechStackCheckboxes();
+          // Обновляем сессию
+          const session = JSON.parse(localStorage.getItem('ttm-session')) || {};
+          session.avatarUrl = this.user.avatarUrl;
+          localStorage.setItem('ttm-session', JSON.stringify(session));
 
-            });
-          });
+          // Для мгновенного обновления верхней панели:
+          window.dispatchEvent(new Event('storage'));
 
-          this.$emit('user-updated', {
-            firstname: this.user.firstname,
-            lastname: this.user.lastname,
-            avatarUrl: this.user.avatarUrl
+          this.$q.notify({
+            type: 'positive',
+            message: 'Аватар успешно обновлен',
+            timeout: 2000
           });
+          this.loadUserProfile();
         }
       } catch (error) {
-        console.error('Ошибка загрузки профиля:', error);
+        console.error('Upload error:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: error.response?.data?.message || 'Ошибка загрузки аватара',
+          timeout: 3000
+        });
+      } finally {
+        event.target.value = '';
+        this.isLoading = false;
       }
     },
+        async removeAvatar() {
+      try {
+        await deleteAvatar();
+        this.user.avatarUrl = null;
+        localStorage.setItem('userProfile', JSON.stringify(this.user));
+
+        // Удаляем из ttm-session
+        const session = JSON.parse(localStorage.getItem('ttm-session')) || {};
+        session.avatarUrl = null;
+        localStorage.setItem('ttm-session', JSON.stringify(session));
+
+        // Для мгновенного обновления верхней панели:
+        window.dispatchEvent(new Event('storage'));
+
+        this.$q.notify({
+          type: 'positive',
+          message: 'Аватар удален',
+          timeout: 2000
+        });
+      } catch (error) {
+        console.error('Delete error:', error);
+        this.$q.notify({
+          type: 'negative',
+          message: 'Не удалось удалить аватар',
+          timeout: 2000
+        });
+      }
+    },
+    async loadUserProfile() {
+  try {
+    const userData = await getCurrentUser();
+    if (userData) {
+      this.user = {
+        firstname: userData.firstname || '',
+        lastname: userData.lastname || '',
+        email: userData.email || '',
+        group: userData.group || '',
+        phone: userData.telephone || '',
+        createdAt: userData.createdAt,
+        avatarUrl: userData.avatarUrl || null,
+        competence: userData.competence || [],
+        roles: Array.isArray(userData.roles) ? userData.roles : [userData.roles]
+      };
+
+      // Сохраняем оригинальные данные
+      this.isAdmin = this.user.roles.some(role => role.toLowerCase() === 'admin');
+      this.originalUser = { ...this.user };
+      localStorage.setItem('userProfile', JSON.stringify(this.user));
+
+      // --- Сохраняем в ttm-session для MainLayout ---
+      const session = JSON.parse(localStorage.getItem('ttm-session')) || {};
+      session.avatarUrl = this.user.avatarUrl;
+      session.firstname = this.user.firstname;
+      session.lastname = this.user.lastname;
+      localStorage.setItem('ttm-session', JSON.stringify(session));
+      // ---------------------------------------------
+
+      // Обновляем чекбоксы технологий
+      Object.values(this.techStack).forEach(items => {
+        items.forEach(item => {
+          item.selected = this.user.competence.includes(item.name);
+          this.updateTechStackCheckboxes();
+        });
+      });
+
+      this.$emit('user-updated', {
+        firstname: this.user.firstname,
+        lastname: this.user.lastname,
+        avatarUrl: this.user.avatarUrl
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки профиля:', error);
+  }
+},
 
       async loadSavedProfile() {
       const savedProfile = localStorage.getItem('userProfile');

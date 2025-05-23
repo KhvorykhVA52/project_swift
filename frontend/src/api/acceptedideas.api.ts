@@ -1,62 +1,61 @@
 import { api } from './axios';
-//import { StatusIdea } from '../../../backend/src/common/types';
 
 export async function getAll() {
-    const response = await api.get('ideas/getallaccepted');
-
-    if (response.status == 200) {
-        return response.data;
+    try {
+        const response = await api.get('ideas/getallaccepted');
+        return response.status === 200 ? response.data : null;
+    } catch (error) {
+        console.error('Ошибка при получении идей:', error);
+        return null;
     }
-
-    return null;
 }
 
 export async function getAllTeams() {
-    const response = await api.get('teams/getallteams');
-
-    if (response.status == 200) {
-        return response.data;
+    try {
+        const response = await api.get('teams/getallteams');
+        return response.status === 200 ? response.data : null;
+    } catch (error) {
+        console.error('Ошибка при получении команд:', error);
+        return null;
     }
-
-    return null;
 }
 
 export async function createInvite(input: {ideaId: number, teamId: number, isInitiatorInviter: boolean}) {
-    const response = await api.post('ideas/invite/create', input)
-
-    if (response) {
-        return response.data;
+    try {
+        const response = await api.post('ideas/invite/create', input);
+        return response?.data ?? null;
+    } catch (error) {
+        console.error('Ошибка при создании приглашения:', error);
+        return null;
     }
-
-    return null;
 }
 
 export async function getInvitesBy(id: number) {
-    const response = await api.get('ideas/invite/getby/' + id);
-
-    if (response) {
-        return response.data;
+    try {
+        const response = await api.get(`ideas/invite/getby/${id}`);
+        return response?.data ?? null;
+    } catch (error) {
+        console.error('Ошибка при получении приглашений:', error);
+        return null;
     }
-
-    return null;
 }
 
 export async function cancelInvite(id: number) {
-    const response = await api.delete('ideas/invite/cancelinvite/' + id);
-
-    if (response) {
-        return response.data;
+    try {
+        const response = await api.delete(`ideas/invite/cancelinvite/${id}`);
+        return response?.data ?? null;
+    } catch (error) {
+        console.error('Ошибка при отмене приглашения:', error);
+        return null;
     }
-
-    return null;
 }
 
-export async function responseInvite(id: number, response: string) {
-    const responseBackend = await api.post('ideas/invite/responseinvite/' + id, {data: {response: response}});
-
-    if (responseBackend) {
-        return responseBackend.data;
+export async function responseInvite(id: number, status: string) {
+    try {
+        const response = await api.post(`ideas/invite/responseinvite/${id}`, { response: status });
+        return response?.data ?? null;
+    } catch (error) {
+        console.error('Ошибка при ответе на приглашение:', error);
+        return null;
     }
-
-    return null;
 }

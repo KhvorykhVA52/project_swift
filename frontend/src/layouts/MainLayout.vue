@@ -36,10 +36,13 @@
         </button>
 
         <div class="profile-dropdown">
-          <button class="profile-btn" @click="toggleProfileDropdown">
-            <span class="profile-avatar">{{ userName.charAt(0) }}</span>
-            <span>{{ userName }}</span>
-          </button>
+    <button class="profile-btn" @click="toggleProfileDropdown">
+      <span class="profile-avatar">
+        <img v-if="avatarUrl" :src="avatarUrl" alt="Аватар" class="avatar-image" @error="handleImageError" />
+        <span v-else>{{ userName.charAt(0) }}</span>
+      </span>
+      <span>{{ userName }}</span>
+    </button>
           <div class="dropdown-menu" v-if="showProfileDropdown">
             <router-link to="/profile" class="dropdown-item">Мой профиль</router-link>
             <router-link to="/settings" class="dropdown-item">Настройки</router-link>
@@ -87,6 +90,7 @@ export default {
       searchQuery: '',
       showProfileDropdown: false,
       userName: 'Иван Иванов',
+      avatarUrl: null, // добавлено
       unreadNotifications: 3,
       bellNotifications: 0,
       sidebarLinks: [
@@ -123,7 +127,8 @@ export default {
       ]
     }
   },
-  methods: {
+
+   methods: {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
@@ -140,11 +145,18 @@ export default {
     logout() {
       this.$router.push('/login');
     },
+
+    handleImageError(event) {
+      console.error('Ошибка загрузки изображения:', event);
+      // Вы можете добавить дополнительную логику для обработки ошибок загрузки изображения
+    },
+
     async setName() {
       try {
         const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
         if (parsedSession) {
-          this.userName = `${parsedSession.firstname} ${parsedSession.lastname}`;
+          this.userName = `${parsedSession.firstname || ''} ${parsedSession.lastname || ''}`.trim() || 'User';
+          this.avatarUrl = parsedSession.avatarUrl || null;
         }
       } catch (error) {
         console.error('Ошибка при получении информации о сессии:', error);
@@ -154,10 +166,10 @@ export default {
       try {
         const parsedSession = JSON.parse(localStorage.getItem('ttm-session')) || {};
         const [firstname, lastname] = newName.split(' ');
-        
+
         parsedSession.firstname = firstname || '';
         parsedSession.lastname = lastname || '';
-        
+
         localStorage.setItem('ttm-session', JSON.stringify(parsedSession));
         this.userName = newName;
       } catch (error) {
@@ -165,14 +177,21 @@ export default {
       }
     }
   },
-  async mounted() {
+ async mounted() {
     if (this.darkMode) {
       document.documentElement.classList.add('dark');
     }
-    await this.setName();
+    this.setName();
+
+    // Чтобы аватар и имя обновлялись без перезагрузки страницы
+    window.addEventListener('storage', this.setName);
+  },
+  beforeUnmount() {
+    window.removeEventListener('storage', this.setName);
   }
 }
 </script>
+
 
 <style>
 :root {
@@ -274,6 +293,13 @@ export default {
   text-transform: uppercase;
 }
 
+.avatar-image-small {
+    width: 40px;          /* нужный размер */
+  height: 40px;
+  border-radius: 50%;   /* делает изображение круглым */
+  object-fit: cover;    /* чтобы картинка не искажалась */
+}
+
 .search-wrapper {
   display: flex;
   align-items: center;
@@ -359,12 +385,19 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 32px; /* Уменьшенный размер */
+  height: 32px; /* Уменьшенный размер */
   background-color: var(--button-bg);
   color: white;
   border-radius: 50%;
   margin-right: 8px;
+  overflow: hidden; /* Добавлено, чтобы изображение не выходило за границы */
+}
+
+.avatar-image {
+   width: 100%; /* Изображение будет занимать всю доступную ширину */
+  height: 100%; /* Изображение будет занимать всю доступную высоту */
+  object-fit: cover; /* Изображение будет масштабироваться, чтобы заполнить контейнер */
 }
 
 .dropdown-menu {

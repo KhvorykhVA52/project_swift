@@ -1,12 +1,21 @@
 import { api } from './axios';
 
-export async function getInvites(id: number) {
-    console.log('teams/user/invites/' + id);
-    const response = await api.get('teams/user/invites/' + id);
-
-    if (response.status == 200) {
-        return response.data;
+export async function getInvites(userId: number) {
+    try {
+        const response = await api.get(`teams/user/invites/${userId}`);
+        return response.status === 200 ? response.data : null;
+    } catch (error) {
+        console.error('Ошибка при получении приглашений:', error);
+        return null;
     }
+}
 
-    return null;
+export async function responseToInvite(inviteId: number, response: 'Принято' | 'Отклонено') {
+    try {
+        const result = await api.post(`teams/invite/response/${inviteId}`, { status: response });
+        return result?.data ?? null;
+    } catch (error) {
+        console.error('Ошибка при ответе на приглашение:', error);
+        return null;
+    }
 }

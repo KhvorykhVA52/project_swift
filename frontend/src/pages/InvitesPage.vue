@@ -8,6 +8,21 @@
         class="invite-item"
       >
         <div class="team-name">{{ invite.team.name }}</div>
+        <div class="invite-actions">
+          <q-btn 
+            color="positive" 
+            size="sm" 
+            label="Принять" 
+            @click="acceptInvite(invite.id)"
+          />
+          <q-btn 
+            color="negative" 
+            size="sm" 
+            label="Отклонить" 
+            @click="rejectInvite(invite.id)"
+            class="q-ml-sm"
+          />
+        </div>
       </li>
     </ul>
   </div>
@@ -42,6 +57,35 @@ export default defineComponent ({
       if (response) {
         this.invites = response;
       }
+    },
+    async acceptInvite(inviteId) {
+      try {
+        const response = await api.responseInvite(inviteId, 'Принято');
+        if (response) {
+          await this.showMessage('Приглашение принято', 'positive');
+          await this.getInvites();
+        }
+      } catch (error) {
+        this.showMessage('Ошибка при принятии приглашения', 'negative');
+      }
+    },
+    async rejectInvite(inviteId) {
+      try {
+        const response = await api.responseInvite(inviteId, 'Отклонено');
+        if (response) {
+          await this.showMessage('Приглашение отклонено', 'positive');
+          await this.getInvites();
+        }
+      } catch (error) {
+        this.showMessage('Ошибка при отклонении приглашения', 'negative');
+      }
+    },
+    showMessage(message, type) {
+      this.$q.notify({
+        message,
+        type,
+        position: 'top',
+      });
     }
   }
 });
@@ -64,10 +108,17 @@ export default defineComponent ({
     padding: 10px;
     border-radius: 5px;
     background-color: #f9f9f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .team-name {
     font-weight: bold;
     margin-bottom: 5px;
+}
+
+.invite-actions {
+    display: flex;
 }
 </style>
