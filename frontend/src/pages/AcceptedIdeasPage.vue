@@ -7,7 +7,7 @@
             dense
             placeholder="Поиск идей..."
             class="search-input"
-            style="width: 600px;"
+            style="width: 600px; margin: 0 auto;"
             >
         <template v-slot:append>
             <q-icon name="search" color="indigo" />
@@ -108,7 +108,7 @@
                     dense
                     placeholder="Поиск команд..."
                     class="search-input"
-                    style="width: max;"
+                    style="width: max; padding: 0px 16px;"
                     >
                 <template v-slot:append>
                     <q-icon name="search" color="indigo" />
@@ -156,7 +156,7 @@
                 dense
                 placeholder="Поиск команд..."
                 class="search-input"
-                style="width: max;"
+                style="width: max; padding: 0px 16px;"
                 >
             <template v-slot:append>
                 <q-icon name="search" color="indigo" />
