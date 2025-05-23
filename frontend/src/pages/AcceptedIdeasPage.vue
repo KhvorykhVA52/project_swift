@@ -281,66 +281,68 @@
 
         <q-card-section class="q-pt-none">
           <div class="tech-category" v-for="(category, name) in filteredtechStack" :key="name">
-            <h3>{{ getCategoryName(name) }}</h3>
-            <div v-if="getCategoryName(name) == 'Языки разработки'">
-              <div class="tech-items">
-                <q-checkbox
-                  v-for="item in category"
-                  :key="item.name"
-                  v-model="item.selected"
-                  :label="''"
-                  class="styled-checkbox checkbox-left"
-                >
-                  <template v-slot:default>
-                    <span class="word-background languages-background" style="background-size: 75% 100%;">{{ item.name }}</span>
-                  </template>
-                </q-checkbox>
-              </div>
-            </div>
-            <div v-if="getCategoryName(name) == 'Фреймворки'">
-              <div class="tech-items">
-                <q-checkbox
-                  v-for="item in category"
-                  :key="item.name"
-                  v-model="item.selected"
-                  :label="''"
-                  class="styled-checkbox checkbox-left"
-                >
-                  <template v-slot:default>
-                    <span class="word-background frameworks-background">{{ item.name }}</span>
-                  </template>
-                </q-checkbox>
-              </div>
-            </div>
-            <div v-if="getCategoryName(name) == 'Базы данных'">
-              <div class="tech-items">
-                <q-checkbox
-                  v-for="item in category"
-                  :key="item.name"
-                  v-model="item.selected"
-                  :label="''"
-                  class="styled-checkbox checkbox-left"
-                >
-                  <template v-slot:default>
-                    <span class="word-background databases-background" style="background-size: 100% 100%;">{{ item.name }}</span>
-                  </template>
-                </q-checkbox>
-              </div>
-            </div>
-            <div v-if="getCategoryName(name) == 'DevOps'">
-              <div class="tech-items">
-                <q-checkbox
-                  v-for="item in category"
-                  :key="item.name"
-                  v-model="item.selected"
-                  :label="''"
-                  class="styled-checkbox checkbox-left"
-                >
-                  <template v-slot:default>
-                    <span class="word-background devops-background">{{ item.name }}</span>
-                  </template>
-                </q-checkbox>
-              </div>
+            <div v-if="category && category.length > 0 && category[0].name">
+                <h3>{{ getCategoryName(name) }}</h3>
+                <div v-if="getCategoryName(name) == 'Языки разработки'">
+                    <div class="tech-items">
+                        <q-checkbox
+                        v-for="item in category"
+                        :key="item.name"
+                        v-model="item.selected"
+                        :label="''"
+                        class="styled-checkbox checkbox-left"
+                        >
+                        <template v-slot:default>
+                            <span class="word-background languages-background" style="background-size: 75% 100%;">{{ item.name }}</span>
+                        </template>
+                        </q-checkbox>
+                    </div>
+                </div>
+                <div v-if="getCategoryName(name) == 'Фреймворки'">
+                    <div class="tech-items">
+                        <q-checkbox
+                        v-for="item in category"
+                        :key="item.name"
+                        v-model="item.selected"
+                        :label="''"
+                        class="styled-checkbox checkbox-left"
+                        >
+                        <template v-slot:default>
+                            <span class="word-background frameworks-background">{{ item.name }}</span>
+                        </template>
+                        </q-checkbox>
+                    </div>
+                </div>
+                <div v-if="getCategoryName(name) == 'Базы данных'">
+                    <div class="tech-items">
+                        <q-checkbox
+                        v-for="item in category"
+                        :key="item.name"
+                        v-model="item.selected"
+                        :label="''"
+                        class="styled-checkbox checkbox-left"
+                        >
+                        <template v-slot:default>
+                            <span class="word-background databases-background" style="background-size: 100% 100%;">{{ item.name }}</span>
+                        </template>
+                        </q-checkbox>
+                    </div>
+                </div>
+                <div v-if="getCategoryName(name) == 'DevOps'">
+                    <div class="tech-items">
+                        <q-checkbox
+                        v-for="item in category"
+                        :key="item.name"
+                        v-model="item.selected"
+                        :label="''"
+                        class="styled-checkbox checkbox-left"
+                        >
+                        <template v-slot:default>
+                            <span class="word-background devops-background">{{ item.name }}</span>
+                        </template>
+                        </q-checkbox>
+                    </div>
+                </div>
             </div>
           </div>
         </q-card-section>
