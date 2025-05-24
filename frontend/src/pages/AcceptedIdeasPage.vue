@@ -26,7 +26,7 @@
                 :ref="(el: QCard | null) => ideaCards[index] = el"
                 :id="'idea-' + index"
                 class="my-card"
-                style="height: 250px; display: flex; flex-direction: column;"
+                style="min-height: 250px; display: flex; flex-direction: column;"
                 @click="ShowIdeaDetailsModal(idea)"
             >
                 <q-card-section class="q-mb-md">
@@ -36,6 +36,26 @@
                 <q-card-section class="q-pt-none perenos-text">
                     {{ slicedStr({str: idea.solution, length: 300}) }}
                 </q-card-section>
+
+                <div v-if="idea && idea.stack && idea.stack.length > 0">
+                    <div v-if="idea && idea.stack && idea.stack.length > 0">
+                        <div style="display: flex; flex-wrap: wrap;">
+                            <span
+                                v-for="(item, index) in idea.stack"
+                                :key="index"
+                                class="word-background-mainwindow"
+                                :class="getBackgroundClass(item)"
+                                :style="getBackgroundStyle(item, index, idea)"
+                                :ref="el => {
+                                    if (!stackRefs[idea.id]) stackRefs[idea.id] = [];
+                                    stackRefs[idea.id][index] = el as HTMLSpanElement;
+                                }"
+                            >
+                                {{ item }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
                 <q-card-section style="margin-top: auto">
                     <span class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text bold-text">Инициатор</span>: 
@@ -351,6 +371,77 @@
 </template>
 
 <script setup lang="ts">
+
+function getBackgroundStyle(item: string, index: number, idea: Idea) {
+    const category = getCategoryByName(item);
+    const extraPadding: Record<string, number> = {
+        languages: 12,
+        frameworks: 45,
+        databases: 31,
+        devops: 25
+    };
+
+    if (!category) {
+        return null;
+    }
+
+    const padding = extraPadding[category] ?? 40;
+
+    let marginLeft = '1px';
+    let marginTop = '2px';
+
+    if (index > 0) {
+        const currentEl = stackRefs.value[idea.id]?.[index];
+        const prevEl = stackRefs.value[idea.id]?.[index - 1];
+
+        let flag = true;
+
+        if (currentEl && prevEl) {
+            if (currentEl.offsetTop !== prevEl.offsetTop) {
+                flag = false;
+            }
+        }
+        if (flag && category == 'frameworks') {
+            const prevCategory = getCategoryByName(idea.stack[index - 1]);
+            if (prevCategory == 'frameworks') {
+                marginLeft = '-30px';
+            }
+        }
+    }
+    
+
+    return {
+        paddingLeft: `${padding}px`,
+        paddingRight: `${padding}px`,
+        marginLeft,
+        marginTop
+    };
+}
+
+function getBackgroundClass(item: string) {
+    const category = getCategoryByName(item);
+    switch (category) {
+        case 'languages':
+            return 'languages-background';
+        case 'frameworks':
+            return 'frameworks-background';
+        case 'databases':
+            return 'databases-background';
+        case 'devops':
+            return 'devops-background';
+        default:
+            return '';
+    }
+}
+
+function getCategoryByName(name: string) {
+  for (const category in baseTechStack) {
+    if (baseTechStack[category as keyof typeof baseTechStack].includes(name)) {
+      return category;
+    }
+  }
+  return null;
+}
 
 async function hidingIdeaDetailsModal() {
     showIdeaDetailsModal.value = false;
@@ -797,7 +888,7 @@ const sendingInviteSearchText = ref('');
 const showTechStack = ref(false);
 const technologySearchText = ref('');
 const selectedStack = ref<string[]>([]);
-
+const stackRefs = ref<Record<number, HTMLSpanElement[]>>({});
 
 const techStack = ref({
 'languages': [
@@ -942,6 +1033,37 @@ const techStack = ref({
 ]
 });
 
+const baseTechStack = {
+  languages: [
+    'Python', 'JavaScript', 'TypeScript', 'Java', 'C#', 'C++', 'C', 'PHP', 'Swift',
+    'Kotlin', 'GOLANG', 'Rust', 'Ruby', 'HTML', 'CSS', 'Dart', 'Scala', 'Lua', 'R',
+    'Groovy', 'Objective-C', 'Assembly', 'Delphi', 'Pascal', 'Visual Basic .NET',
+    'Elixir', 'Haskell', 'Fortran', 'COBOL', 'MATLAB', 'Ada', 'Lisp', 'Scheme',
+    'Julia', 'Erlang', 'Scratch', 'Prolog', 'Clojure', 'Blueprint', 'Objective-J'
+  ],
+  frameworks: [
+    'React', 'Vue', 'Angular', 'Next.js', 'Express.js', 'NestJS', 'Svelte', 'Django',
+    'Flask', 'FastAPI', 'Laravel', 'Symfony', 'CodeIgniter', 'Spring Boot',
+    'Spring MVC', 'ASP.NET Core', 'Gin', 'Echo', 'SwiftUI', 'UIKit', 'Flutter',
+    'Ember.js', 'Backbone.js', 'Meteor', 'AdonisJS', 'Nuxt.js', 'Remix', 'Phoenix',
+    'Sinatra', 'Koa.js', 'Dropwizard', 'Yii', 'CakePHP', 'GraphQL Yoga'
+  ],
+  databases: [
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Microsoft SQL Server', 'SQLite',
+    'Oracle', 'MariaDB', 'DynamoDB', 'Cassandra', 'Cloud Firestore', 'Couchbase',
+    'InfluxDB', 'ArangoDB', 'Neo4j', 'Amazon Aurora', 'Memcached', 'IBM Db2',
+    'RethinkDB', 'Cosmos DB', 'Elasticsearch', 'ClickHouse', 'HBase', 'RavenDB',
+    'ObjectDB', 'OrientDB', 'Percona Server', 'TiDB', 'Greenplum'
+  ],
+  devops: [
+    'Git', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform', 'Jenkins', 'Ansible',
+    'AWS CloudFormation', 'Azure DevOps', 'Google Cloud Build', 'Chef', 'Puppet',
+    'Prometheus', 'Grafana', 'Nagios', 'Consul', 'Vault', 'Splunk', 'PagerDuty',
+    'New Relic', 'Datadog', 'Sentry', 'Sumo Logic', 'CloudWatch', 'Azure Monitor',
+    'Google Cloud Monitoring', 'JFrog Artifactory', 'Nexus Repository', 'SonarQube'
+  ]
+};
+
 async function isUserTeamOwner() {
   const tempSession = localStorage.getItem('ttm-session')
   if (!tempSession) {
@@ -1005,6 +1127,18 @@ onMounted(() => {
 
 .devops-background {
   background-image: url('../assets/background_DevOps.png');
+}
+
+.word-background-mainwindow {
+  hight: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  font-size: 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
 }
 
 .word-background {
