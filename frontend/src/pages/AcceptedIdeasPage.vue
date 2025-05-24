@@ -85,7 +85,7 @@
                         <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
                         <q-btn flat class="bg-green-10 text-white space-element" label="Список кандидатов" color="primary" @click="ShowInvitesModal" />
                         <q-btn flat class="bg-yellow-10 text-white space-element" label="Пригласить команду" color="primary" @click="ShowSendInviteModal" />
-                        <q-btn flat class="bg-yellow-10 text-white space-element" label="Изменить стек" color="primary" @click="ShowTechStackModal" />                                        
+                        <q-btn flat class="bg-green-10 text-white space-element" label="Изменить стек" color="primary" @click="ShowTechStackModal" />                                        
                     </div>
                 </div>
             </q-card-section>
