@@ -10,12 +10,13 @@ export async function getInvites(userId: number) {
     }
 }
 
-export async function responseToInvite(inviteId: number, response: 'Принято' | 'Отклонено') {
+export async function responseToInvite(inviteId: number, response: 'Принято' | 'Отклонено', userId: number) {
     try {
-        const result = await api.post(`teams/invite/response/${inviteId}`, { status: response });
+	const status = (response=='Принято');
+        const result = await api.put(`teams/invite/respond/${inviteId}`, { userId: userId, accept: status});
         return result?.data ?? null;
     } catch (error) {
-        console.error('Ошибка при ответе на приглашение:', error);
+        console.log('Ошибка при ответе на приглашение:', error);
         return null;
     }
 }

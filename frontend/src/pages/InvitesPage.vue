@@ -60,7 +60,13 @@ export default defineComponent ({
     },
     async acceptInvite(inviteId) {
       try {
-        const response = await api.responseInvite(inviteId, 'Принято');
+        const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
+      
+        if (!parsedSession) {
+          console.error('Ошибка при получении информации о сессии:'. error);
+          return;
+        }
+        const response = await api.responseToInvite(inviteId, 'Принято', parsedSession.userId);
         if (response) {
           await this.showMessage('Приглашение принято', 'positive');
           await this.getInvites();
@@ -71,13 +77,14 @@ export default defineComponent ({
     },
     async rejectInvite(inviteId) {
       try {
-        const response = await api.responseInvite(inviteId, 'Отклонено');
+        const response = await api.responseToInvite(inviteId, 'Отклонено');
         if (response) {
           await this.showMessage('Приглашение отклонено', 'positive');
           await this.getInvites();
         }
       } catch (error) {
         this.showMessage('Ошибка при отклонении приглашения', 'negative');
+        console.log(error);
       }
     },
     showMessage(message, type) {
