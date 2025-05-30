@@ -1,13 +1,23 @@
 <template>
     <!-- окно с идеями -->
     <div class="header q-mb-md row items-center">
+        <div class="cool-border">
+            <div>Сначала старые</div>
+            <q-toggle
+                v-model="ideasSorting"
+                color="grey-6"
+                keep-color
+                @click="toggleIdeasSorting"
+            />
+            <div>Сначала новые</div>
+        </div>
         <q-input 
             v-model="ideaSearchText"
             outlined
             dense
             placeholder="Поиск идей..."
             class="search-input"
-            style="width: 600px; margin: 0 auto;"
+            style="width: 600px; margin-left: 8px"
             >
         <template v-slot:append>
             <q-icon name="search" color="indigo" />
@@ -371,6 +381,14 @@
 </template>
 
 <script setup lang="ts">
+
+function toggleIdeasSorting() {
+    if (ideasSorting.value==true) {
+        ideas.value.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else {
+        ideas.value.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+}
 
 function getBackgroundStyle(item: string, index: number, idea: Idea) {
     const category = getCategoryByName(item);
@@ -889,6 +907,7 @@ const showTechStack = ref(false);
 const technologySearchText = ref('');
 const selectedStack = ref<string[]>([]);
 const stackRefs = ref<Record<number, HTMLSpanElement[]>>({});
+const ideasSorting = ref(false);
 
 const techStack = ref({
   'languages': [
@@ -1099,6 +1118,7 @@ async function loadIdeas() {
 
     if (response) {
         ideas.value = [ ...response ];
+        ideas.value.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         return true;
     }
 
@@ -1113,6 +1133,17 @@ onMounted(() => {
 </script>
 
 <style>
+
+.cool-border {
+  border: 1px solid rgba(47, 42, 143, 0.62);
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+}
 
 .languages-background {
   background-image: url('../assets/background_languages.png');
@@ -1177,7 +1208,8 @@ onMounted(() => {
 }
 
 .search-input {
-  border-radius: 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(47, 42, 143, 0.62);
 }
 
 .status-ok-message {
