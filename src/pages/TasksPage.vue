@@ -4,7 +4,7 @@
       <div class="ideas-header q-mb-md row items-center">
         <h2 class="text-h4 text-weight-bold text-blue-8 q-ma-none">Идеи</h2>
         <q-space />
-        <q-input 
+        <q-input
           v-model="ideaSearchText"
           outlined
           dense
@@ -16,9 +16,9 @@
             <q-icon name="search" color="indigo" />
           </template>
         </q-input>
-        <q-btn 
-          icon="add" 
-          label="Предложить идею" 
+        <q-btn
+          icon="add"
+          label="Предложить идею"
           @click="addIdea"
           class="q-ml-md bg-blue-6 text-white"
           unelevated
@@ -27,9 +27,9 @@
 
       <div v-if="ideas && ideas.length > 0">
         <div class="ideas-list">
-          <q-card 
-            v-for="idea in filteredIdeas" 
-            :key="idea.id" 
+          <q-card
+            v-for="idea in filteredIdeas"
+            :key="idea.id"
             class="idea-card q-mb-md idea-border"
             flat
             bordered
@@ -42,24 +42,24 @@
                 </div>
                 <div class="col-auto">
                   <q-btn-group flat rounded>
-                    <q-btn 
-                      flat 
-                      round 
-                      icon="edit" 
+                    <q-btn
+                      flat
+                      round
+                      icon="edit"
                       color="teal-7"
                       @click.stop="editIdea(idea)"
                     />
-                    <q-btn 
-                      flat 
-                      round 
-                      icon="delete" 
+                    <q-btn
+                      flat
+                      round
+                      icon="delete"
                       color="red"
                       @click.stop="deleteIdea(idea.id)"
                     />
-                    <q-btn 
-                      flat 
-                      round 
-                      icon="transform" 
+                    <q-btn
+                      flat
+                      round
+                      icon="transform"
                       color="positive"
                       @click.stop="convertToProject(idea)"
                     />
@@ -91,7 +91,12 @@
 
             <q-card-section class="idea-meta-section">
               <div class="row items-center justify-between">
-                <div v-if="idea && idea.initiator" class="text-caption text-grey-7">
+                <div
+                  v-if="idea && idea.initiator"
+                  class="text-caption text-grey-7"
+                  @click.stop="openUserModal(idea.initiator)"
+                  style="cursor: pointer;"
+                >
                   <q-icon name="person_outline" size="xs" class="q-mr-xs" />
                   {{ idea.initiator.firstname + ' ' + idea.initiator.lastname }}
                   <q-icon name="event" size="xs" class="q-ml-sm q-mr-xs" />
@@ -105,9 +110,9 @@
                 </div>
               </div>
             </q-card-section>
-          </q-card>            
-          </div>
+          </q-card>
         </div>
+      </div>
       <div v-else>
         <div class="text-center q-pa-xl">
           <q-icon name="lightbulb_outline" size="xl" color="grey-5" />
@@ -126,9 +131,9 @@
         </q-card-section>
 
         <q-card-section class="q-pt-lg">
-          <q-input 
-            v-model="currentIdea.name" 
-            label="Название *" 
+          <q-input
+            v-model="currentIdea.name"
+            label="Название *"
             class="q-mb-md"
             outlined
             color="teal"
@@ -136,10 +141,10 @@
             autogrow
             @keydown.enter.prevent="handleIdeaEnter($event)"
           />
-          
-          <q-input 
-            v-model="currentIdea.problem" 
-            label="Проблема" 
+
+          <q-input
+            v-model="currentIdea.problem"
+            label="Проблема"
             type="textarea"
             outlined
             color="teal"
@@ -147,10 +152,10 @@
             autogrow
             @keydown.enter.prevent="handleIdeaEnter($event)"
           />
-          
-          <q-input 
-            v-model="currentIdea.solution" 
-            label="Решение" 
+
+          <q-input
+            v-model="currentIdea.solution"
+            label="Решение"
             type="textarea"
             outlined
             color="teal"
@@ -158,10 +163,10 @@
             autogrow
             @keydown.enter.prevent="handleIdeaEnter($event)"
           />
-          
-          <q-input 
-            v-model="currentIdea.result" 
-            label="Ожидаемый результат" 
+
+          <q-input
+            v-model="currentIdea.result"
+            label="Ожидаемый результат"
             type="textarea"
             outlined
             color="teal"
@@ -169,10 +174,10 @@
             autogrow
             @keydown.enter.prevent="handleIdeaEnter($event)"
           />
-          
-          <q-input 
-            v-model="currentIdea.resource" 
-            label="Необходимые ресурсы" 
+
+          <q-input
+            v-model="currentIdea.resource"
+            label="Необходимые ресурсы"
             type="textarea"
             outlined
             color="teal"
@@ -184,8 +189,8 @@
 
         <q-card-actions align="right" class="bg-grey-1 q-pa-md">
           <q-btn flat label="Отмена" color="grey-7" @click="closeModal" />
-          <q-btn 
-            label="Сохранить" 
+          <q-btn
+            label="Сохранить"
             @click="saveIdea"
             class="text-blue-10"
             unelevated
@@ -267,21 +272,27 @@
 
         <q-card-section class="q-pt-lg">
           <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text bold-text">Инициатор</div>
-          <div class="q-mb-md semi-bold">{{ viewedIdea.initiator?((viewedIdea.initiator.firstname || viewedIdea.initiator.lastname)? (viewedIdea.initiator.firstname || '') + ' ' + (viewedIdea.initiator.lastname || ''): '—'): '—' }}</div>
+          <div
+            class="q-mb-md semi-bold"
+            @click.stop="userModalRef?.open(viewedIdea.initiator)"
+            style="cursor: pointer;"
+          >
+            {{ viewedIdea.initiator?((viewedIdea.initiator.firstname || viewedIdea.initiator.lastname)? (viewedIdea.initiator.firstname || '') + ' ' + (viewedIdea.initiator.lastname || ''): '—'): '—' }}
+          </div>
 
           <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
           <div class="q-mb-md"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
 
           <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" autogrow>Проблема</div>
           <div class="q-mb-md perenos-text">{{ viewedIdea.problem || '—' }}</div>
-          
+
           <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" autogrow>Решение</div>
           <div class="q-mb-md perenos-text">{{ viewedIdea.solution || '—' }}</div>
-          
+
           <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" autogrow>Ожидаемый результат</div>
           <div class="q-mb-md perenos-text">{{ viewedIdea.result || '—' }}</div>
-          
-          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8" >Необходимые ресурсы</div>
+
+          <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Необходимые ресурсы</div>
           <div class="q-mb-md perenos-text">{{ viewedIdea.resource || '—' }}</div>
 
           <q-separator class="q-my-md" />
@@ -296,42 +307,44 @@
               class="q-mb-sm comment-textarea"
               @keydown.enter="handleEnter($event, viewedIdea.id!)"
             />
-            <q-btn 
-              label="Отправить" 
+            <q-btn
+              label="Отправить"
               @click="addComment(viewedIdea.id!)"
               unelevated
               class="q-mb-md bg-blue-5 text-white"
             />
           </div>
 
-
-
-          <div 
-            v-for="comment in sortedComments(viewedIdea.comments || [])" 
-            :key="comment.id" 
+          <div
+            v-for="comment in sortedComments(viewedIdea.comments || [])"
+            :key="comment.id"
             class="comment q-mb-md"
           >
             <div class="comment-bubble">
               <div class="comment-text">
                 {{ comment.comment }}
               </div>
-              <div class="comment-author text-caption text-grey-7 q-mt-xs">
+              <div
+                class="comment-author text-caption text-grey-7 q-mt-xs"
+                @click.stop="userModalRef?.open(comment.author)"
+                style="cursor: pointer;"
+              >
                 — {{ comment.author.firstname + ' ' + comment.author.lastname }}, {{ formatDate(comment.createdAt) }}
               </div>
             </div>
             <div class="comment-actions">
-              <q-btn 
-                flat 
-                dense 
-                icon="edit" 
-                size="sm" 
+              <q-btn
+                flat
+                dense
+                icon="edit"
+                size="sm"
                 color="teal-7"
                 @click.stop="editComment(comment)"
               />
-              <q-btn 
-                flat 
-                dense 
-                icon="delete" 
+              <q-btn
+                flat
+                dense
+                icon="delete"
                 size="sm"
                 color="red"
                 @click.stop="deleteComment(comment.id, viewedIdea.id!)"
@@ -351,6 +364,9 @@
     <div v-if="showStatusERROR" :class="['status-error-message', { 'hidden': !showStatusERROR }]">
       {{ statusErrorMessage }}
     </div>
+
+    <!-- Модальное окно информации о пользователе -->
+    <UserModal ref="userModalRef" />
   </div>
 </template>
 
@@ -362,11 +378,16 @@ import { UpdateCommentDto } from '../../../backend/src/comments/dto/update-comme
 import { CreateCommentDto } from '../../../backend/src/comments/dto/create-comment.dto';
 import { CreateIdeaDto } from '../../../backend/src/idea/dto/create-idea.dto';
 import { StatusIdea } from '../../../backend/src/common/types';
+import UserModal from '../components/UserModal.vue';
 
 interface Author {
   id: number;
   firstname: string;
   lastname: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  skills?: string[];
 }
 
 interface Comment {
@@ -382,25 +403,36 @@ interface Idea {
   createdAt: string;
   customer: string;
   id: number;
-  initiator: {id: number, firstname: string, lastname: string};
+  initiator: Author;
   name: string;
   problem: string;
   resource: string;
   result: string;
-  solution: string;  
+  solution: string;
   status: StatusIdea;
 }
 
 const $q = useQuasar();
-
-// Переменные для функционала идей
-
 const showEditStatus = ref(false);
 const selectedStatus = ref<StatusIdea>();
 const userIsAdmin = ref(false);
 const userIsInitiator = ref(false);
 const statusErrorMessage = ref(' ');
 const checkIfCantSetStatus = ref(false);
+const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
+
+const openUserModal = (user: Author | null) => {
+  if (!user) return;
+  userModalRef.value?.open({
+    id: user.id,
+    firstname: user.firstname,
+    lastname: user.lastname,
+    email: user.email,
+    phone: user.phone,
+    position: user.position,
+    skills: user.skills
+  });
+};
 
 function openEditStatus() {
   showEditStatus.value = true;
@@ -443,7 +475,7 @@ function ifCantSetStatus() {
     timerId.value = null;
   }, 2000);
   showStatusOK.value = false;
-  
+
   return;
 }
 
@@ -590,7 +622,7 @@ const filteredIdeasClock = ref(0);
 const filteredIdeas = computed(() => {
   filteredIdeasClock.value;
   if (!ideaSearchText.value) return ideas.value;
-  return ideas.value.filter(idea => 
+  return ideas.value.filter(idea =>
     idea.name.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
     idea.problem.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
     idea.solution.toLowerCase().includes(ideaSearchText.value.toLowerCase()) ||
@@ -636,7 +668,7 @@ async function editIdea(idea: Idea) {
 };
 
 async function showIdeaDetails(idea: Idea) {
-  
+
   viewedIdea.value = { ...idea };
   showIdeaDetailsModal.value = true;
   await isUserInitiator();
@@ -710,9 +742,9 @@ async function saveIdea() {
       status: StatusIdea.new,
       customer: ''
       };
-      
+
       ideas.value = [fullIdea, ...ideas.value];
-      
+
       // Если открыто модальное окно просмотра
       if (showIdeaDetailsModal.value) {
         viewedIdea.value = { ...fullIdea };
@@ -785,7 +817,6 @@ async function addComment(ideaId: number) {
 
     await getIdeasBy();
 
-    
     viewedIdea.value = { ...ideas.value.find(i => i.id === ideaId) };
 
     newComments.value[ideaId] = '';
@@ -799,9 +830,9 @@ const handleEnter = (event: KeyboardEvent, ideaId: number) => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const value = newComments.value[ideaId] || '';
-    
+
     newComments.value[ideaId] = value.substring(0, start) + '\n' + value.substring(end);
-    
+
     // Обновляем позицию курсора
     setTimeout(() => {
       textarea.selectionStart = textarea.selectionEnd = start + 1;
@@ -816,9 +847,9 @@ const handleIdeaEnter = (event: KeyboardEvent) => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const value = textarea.value || '';
-    
+
     textarea.value = value.substring(0, start) + '\n' + value.substring(end);
-    
+
     // Обновляем позицию курсора
     setTimeout(() => {
       textarea.selectionStart = textarea.selectionEnd = start + 1;
@@ -863,7 +894,7 @@ async function deleteComment(commentId: number, ideaId: number) {
   }).onOk(async () => {
     const idea = ideas.value.find(i => i.id === ideaId);
     if (idea) {
-      
+
       const response = await api.deleteComment(commentId);
 
       if (!response) {

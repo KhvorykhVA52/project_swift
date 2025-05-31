@@ -393,6 +393,10 @@
       </q-card>
     </q-dialog>
 
+    <!-- Компоненты модальных окон -->
+    <UserModal ref="userModalRef" />
+    <TeamModal ref="teamModalRef" />
+
     <!-- Модальное окно отправки заявки на реализацию идеи -->
     <q-dialog v-model="showSendOfferModal">
         <q-card style="width: 800px; max-width: 80vw;">
@@ -427,10 +431,6 @@
             </div>
         </q-card-section>
     </q-dialog>
-
-    <!-- Компоненты модальных окон -->
-    <UserModal ref="userModalRef" />
-    <TeamModal ref="teamModalRef" />
 </template>
 
 <script setup lang="ts">
@@ -988,23 +988,6 @@ function getAuthor(author: {firstname: string, lastname: string}) {
     return((author.firstname?author.firstname+' ':'') + (author.lastname?author.lastname:' '));
 }
 
-async function isUserTeamOwner() {
-  const tempSession = localStorage.getItem('ttm-session')
-  if (!tempSession) {
-    return false;
-  }
-  const parsedSession = JSON.parse(tempSession);
-
-  if (!parsedSession) {
-    console.error('Ошибка при получении информации о сессии');
-    return false;
-  }
-
-  console.log(parsedSession.roles);
-
-  userIsTeamOwner.value = parsedSession.roles.includes('teamowner');
-}
-
 async function getAllTeams() {
     const response = await api.getAllTeams();
 
@@ -1025,12 +1008,6 @@ async function loadIdeas() {
 
     return false;
 }
-
-onMounted(() => {
-    loadIdeas();
-    getAllTeams();
-    isUserTeamOwner();
-});
 
 interface Idea {
     id: number;
@@ -1060,6 +1037,7 @@ interface Team {
     canInvite: boolean;
 }
 
+
 const ideas = ref<Idea[]>([]);
 const ideaCards = ref<(QCard | null)[]>([]);
 const showIdeaDetailsModal = ref(false);
@@ -1072,7 +1050,6 @@ const invites = ref<InviteList[]>([]);
 const showInvitesModal = ref(false);
 const showCheckCancelingModal = ref(false);
 const viewedInvite = ref<Partial<InviteList>>({});
-const userIsTeamOwner = ref(false);
 const message = ref('');
 const timerId = ref();
 const showOK = ref(false);
@@ -1280,47 +1257,6 @@ const baseTechStack = {
     'Vault'
   ]
 };
-
-async function isUserTeamOwner() {
-  const tempSession = localStorage.getItem('ttm-session')
-  if (!tempSession) {
-    return false;
-  }
-  const parsedSession = JSON.parse(tempSession);
-
-  if (!parsedSession) {
-    console.error('Ошибка при получении информации о сессии');
-    return false;
-  }
-
-  console.log(parsedSession.roles);
-
-  userIsTeamOwner.value = parsedSession.roles.includes('teamowner');
-}
-
-isUserTeamOwner();
-
-async function getAllTeams() {
-    const response = await api.getAllTeams();
-
-    if (response) {
-        teams.value = [ ...response ];
-    }
-
-    return null;
-}
-
-async function loadIdeas() {
-    const response = await api.getAll();
-
-    if (response) {
-        ideas.value = [ ...response ];
-        ideas.value.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        return true;
-    }
-
-    return false;
-}
 
 onMounted(() => {
     loadIdeas();
