@@ -386,4 +386,36 @@ export class IdeaService {
         console.log(`OK: idea.service.getIdea(id=${id})`);
         return idea.stack || [];
     }
+
+    async searchInvite(input: {ideaId: number, teamId: number}) {
+        const team = await this.teamRepository.findOne({
+            where: {id: input.teamId}
+        });
+
+        if (!team) {
+            console.log(`ERROR: idea.service.searchInvite(): не найден Team при Team.id=${input.teamId}`);
+            return null;
+        }
+
+        const idea = await this.ideaRepository.findOne({
+            where: {id: input.ideaId}
+        });
+
+        if (!idea) {
+            console.log(`ERROR: idea.service.searchInvite(): не найден Idea при Idea.id=${input.ideaId}`);
+            return null;
+        }
+
+        const invite = await this.ideaInviteRepository.findOne({
+            where: {idea: {id: idea.id}, team: {id: team.id}}
+        });
+
+        if (!invite) {
+            console.log(`OK: idea.service.searchInvite(ideaId=${input.ideaId}, teamId=${input.teamId})`);
+            return false;
+        }
+
+        console.log(`OK: idea.service.searchInvite(ideaId=${input.ideaId}, teamId=${input.teamId})`);
+        return true;
+    }
 }

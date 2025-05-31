@@ -101,4 +101,9 @@ export class IdeaController {
     getIdea(@Param('id') id) {
         return this.ideaService.getStack(id);
     }
+
+    @Post('invite/search/')
+    searchInvite(@Body() body) {
+        return this.ideaService.searchInvite(body);
+    }
 }
