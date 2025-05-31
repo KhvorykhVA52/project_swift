@@ -335,7 +335,7 @@ export class TeamsService {
   async getTeams(id: number) {
     const user = await this.userRepository.findOne({
       where: { id: id },
-      relations: ['ownedTeams', 'ownedTeams.members', 'ownedTeams.leader', 'ownedTeams.owner'],
+      relations: ['ownedTeams', 'ownedTeams.members', 'ownedTeams.leader', 'ownedTeams.owner', 'ownedTeams.idea'],
     });
 
     if (!user) {

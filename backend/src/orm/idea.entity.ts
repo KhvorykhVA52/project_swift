@@ -5,6 +5,8 @@ import {
     CreateDateColumn,
     ManyToOne,
     OneToMany,
+    OneToOne,
+    JoinColumn,
   } from 'typeorm';   
   import { User } from './user.entity';
   import { Competence, StatusIdea } from '../common/types'; 
@@ -53,6 +55,7 @@ import {
     @ManyToOne(() => User, (user) => user.initiatedIdeas, { eager: true, onDelete: 'CASCADE' })
     initiator: User;
 
-    @ManyToOne(() => Team, (team) => team.ideas, { eager: true, onDelete: 'CASCADE', nullable: true })
+    @OneToOne(() => Team, (team) => team.idea, { eager: true, onDelete: 'CASCADE', nullable: true })
+    @JoinColumn()
     team: Team;
   }

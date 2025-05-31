@@ -80,3 +80,25 @@ export async function getStack(id: number) {
 
     return null;
 }
+
+export async function getTeams(id: number) {
+
+  const response = await api.get('/teams/getteams/' + id);
+
+  if (response.status == 200) {
+
+    return response.data;
+
+  }
+
+  return undefined;
+}
+
+export async function searchInvite(ideaId: number, teamId: number) {
+    const response = await api.post('/ideas/invite/search/', {ideaId: ideaId, teamId: teamId});
+
+    if (response.status == 201) {
+        return response.data;
+    }
+    return null;
+}

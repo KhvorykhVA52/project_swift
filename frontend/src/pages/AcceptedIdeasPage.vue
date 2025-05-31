@@ -16,7 +16,7 @@
             outlined
             dense
             placeholder="Поиск идей..."
-            class="search-input"
+            class="search-input-main"
             style="width: 600px; margin-left: 8px"
             >
         <template v-slot:append>
@@ -95,7 +95,8 @@
                         <q-btn flat class="bg-red-8 text-white" label="Закрыть" color="primary" v-close-popup />
                         <q-btn flat class="bg-green-10 text-white space-element" label="Список кандидатов" color="primary" @click="ShowInvitesModal" />
                         <q-btn flat class="bg-yellow-10 text-white space-element" label="Пригласить команду" color="primary" @click="ShowSendInviteModal" />
-                        <q-btn flat class="bg-green-10 text-white space-element" label="Изменить стек" color="primary" @click="ShowTechStackModal" />                                        
+                        <q-btn flat class="bg-green-10 text-white space-element" label="Изменить стек" color="primary" @click="ShowTechStackModal" />
+                        <q-btn flat v-if="isTeamowner" class="bg-yellow-10 text-white space-element" label="Подать заявку" color="primary" @click="ShowSendOfferModal" />                                     
                     </div>
                 </div>
             </q-card-section>
@@ -164,7 +165,7 @@
         <q-card-section style="max-height: 500px; overflow-y: auto;">
             <div class="team-block">
                 <div class="text-subtitle1 perenos-text"> Вы уверены? </div>
-                <q-btn color="positive" @click="createInvite">Да</q-btn>
+                <q-btn color="positive" @click="createInvite(true)">Да</q-btn>
                 <q-btn color="negative" class="space-element" @click="CloseCheckSendingModal">Нет</q-btn>
                 <div class="text-subtitle1 perenos-text">Название: {{ viewedTeam.name }}</div>
                 <div class="text-caption perenos-text">Описание: {{ viewedTeam.description }}</div>
@@ -378,9 +379,115 @@
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <!-- Модальное окно отправки заявки на реализацию идеи -->
+    <q-dialog v-model="showSendOfferModal">
+        <q-card style="width: 800px; max-width: 80vw;">
+            <q-card-section>
+                <div class="text-h6 text-blue-14">Команды</div>
+            </q-card-section>
+
+            <q-card-section style="max-height: 500px; overflow-y: auto;">
+                <div v-for="team in myTeams" :key="team.id" class="team-block row items-center no-wrap">
+                    <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckOfferingModal(team)" />
+                    <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal('Ошибка: данная команда уже в списке кандидатов')" />
+                    <div style="height: 140px" class="perenos-text">
+                        <div class="text-subtitle1" style="width: 500px; height: 20px; overflow: hidden;">Название: {{ team.name }}</div>
+                        <div class="text-caption" style="margin-top: 5px;">Описание: {{ team.description }}</div>
+                    </div>
+                </div>
+            </q-card-section>
+        </q-card>
+    </q-dialog>
+
+    <!-- Модальное окно "Вы уверены?" при отправке заявки на реализацию идеи -->
+    <q-dialog v-model="showCheckOfferingModal">
+        <q-card-section style="max-height: 500px; overflow-y: auto;">
+            <div class="team-block">
+                <div class="text-subtitle1 perenos-text"> Отправить заявку на реализацию </div>
+                <div v-if="viewedIdea.name" class="text-subtitle1 perenos-text"> {{ viewedIdea.name }}</div>
+                <q-btn color="positive" @click="acceptOffer">Да</q-btn>
+                <q-btn color="negative" class="space-element" @click="showCheckOfferingModal = false">Нет</q-btn>
+                <div class="text-subtitle1 perenos-text"> данной командой? </div>
+                <div v-if="viewedTeam.name" class="text-subtitle1 perenos-text">Название: {{ viewedTeam.name }}</div>
+                <div v-if="viewedTeam.description" class="text-caption perenos-text">Описание: {{ viewedTeam.description }}</div>
+            </div>
+        </q-card-section>
+    </q-dialog>
 </template>
 
 <script setup lang="ts">
+
+async function acceptOffer() {
+    if (!viewedIdea.value || !viewedIdea.value.id || !viewedTeam.value || !viewedTeam.value.id) {
+        return;
+    }
+
+    await createInvite(false);
+    showCheckOfferingModal.value = false;
+}
+
+async function ShowCheckOfferingModal(team: Team) {
+    viewedTeam.value = team;
+    showCheckOfferingModal.value = true;
+}
+
+async function ShowSendOfferModal() {
+    if (!viewedIdea.value || !viewedIdea.value.id) {
+        return null;
+    }
+
+    showSendOfferModal.value = true;
+
+    const tempSession = localStorage.getItem('ttm-session')
+    if (!tempSession) {
+        return false;
+    }
+    const parsedSession = JSON.parse(tempSession);
+
+    if (!parsedSession) {
+        console.error('Ошибка при получении информации о сессии');
+        return false;
+    }
+
+    const response = await api.getTeams(parsedSession.userId);
+
+    if (response) {
+        myTeams.value = [];
+        for (let i of response) {
+            const team: Team = {
+                id: i.id,
+                name: i.name,
+                description: i.description,
+                canInvite: i.idea ? false : true
+            };
+
+            const response2 = await api.searchInvite(viewedIdea.value.id, i.id);
+
+            team.canInvite = response2;
+
+            myTeams.value.push(team);
+        }
+    }
+}
+
+async function IsTeamowner() { 
+    const tempSession = localStorage.getItem('ttm-session')
+    if (!tempSession) {
+        return false;
+    }
+    const parsedSession = JSON.parse(tempSession);
+
+    if (!parsedSession) {
+        console.error('Ошибка при получении информации о сессии');
+        return false;
+    }
+    if (parsedSession.roles.includes('teamowner')) {
+        isTeamowner.value = true;
+    } else {
+        isTeamowner.value = false;
+    }
+}
 
 function toggleIdeasSorting() {
     if (ideasSorting.value==true) {
@@ -786,9 +893,9 @@ interface Invite {
     isInitiatorInviter: boolean;
 }
 
-async function createInvite() {
+async function createInvite(isInitiatorInviter: boolean) {
     if (viewedIdea.value.id && viewedTeam.value.id) {
-        const invite: Invite = {ideaId: viewedIdea.value.id, teamId: viewedTeam.value.id, isInitiatorInviter: true};
+        const invite: Invite = {ideaId: viewedIdea.value.id, teamId: viewedTeam.value.id, isInitiatorInviter: isInitiatorInviter};
         const response = await api.createInvite(invite);
         if (response) {
             showOK.value = true;
@@ -908,6 +1015,10 @@ const technologySearchText = ref('');
 const selectedStack = ref<string[]>([]);
 const stackRefs = ref<Record<number, HTMLSpanElement[]>>({});
 const ideasSorting = ref(false);
+const myTeams = ref<Team[]>([]);
+const isTeamowner = ref(false);
+const showSendOfferModal = ref(false);
+const showCheckOfferingModal = ref(false);
 
 const techStack = ref({
   'languages': [
@@ -1128,6 +1239,7 @@ async function loadIdeas() {
 onMounted(() => {
     loadIdeas();
     getAllTeams();
+    IsTeamowner();
 })
 
 </script>
@@ -1209,7 +1321,11 @@ onMounted(() => {
 
 .search-input {
   border-radius: 8px;
-  border: 1px solid rgba(47, 42, 143, 0.62);
+}
+
+.search-input-main {
+    border-radius: 8px;
+    border: 1px solid rgba(47, 42, 143, 0.62);
 }
 
 .status-ok-message {
