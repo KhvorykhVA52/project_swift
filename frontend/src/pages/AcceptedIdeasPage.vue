@@ -21,10 +21,10 @@
             >
         <template v-slot:append>
             <q-icon name="search" color="indigo" />
-            </template>
+        </template>
         </q-input>
     </div>
-    
+
     <div class="row q-gutter-md">
         <div
         v-for="(idea, index) in filteredIdeas"
@@ -48,29 +48,31 @@
                 </q-card-section>
 
                 <div v-if="idea && idea.stack && idea.stack.length > 0">
-                    <div v-if="idea && idea.stack && idea.stack.length > 0">
-                        <div style="display: flex; flex-wrap: wrap;">
-                            <span
-                                v-for="(item, index) in idea.stack"
-                                :key="index"
-                                class="word-background-mainwindow"
-                                :class="getBackgroundClass(item)"
-                                :style="getBackgroundStyle(item, index, idea)"
-                                :ref="el => {
-                                    if (!stackRefs[idea.id]) stackRefs[idea.id] = [];
-                                    stackRefs[idea.id][index] = el as HTMLSpanElement;
-                                }"
-                            >
-                                {{ item }}
-                            </span>
-                        </div>
+                    <div style="display: flex; flex-wrap: wrap;">
+                        <span
+                            v-for="(item, index) in idea.stack"
+                            :key="index"
+                            class="word-background-mainwindow"
+                            :class="getBackgroundClass(item)"
+                            :style="getBackgroundStyle(item, index, idea)"
+                            :ref="el => {
+                                if (!stackRefs[idea.id]) stackRefs[idea.id] = [];
+                                stackRefs[idea.id][index] = el as HTMLSpanElement;
+                            }"
+                        >
+                            {{ item }}
+                        </span>
                     </div>
                 </div>
 
                 <q-card-section style="margin-top: auto">
                     <span class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text bold-text">Инициатор</span>: 
-                    <span class="q-mb-md semi-bold">
-                        {{ getAuthor(idea.initiator) }}
+                    <span
+                     class="q-mb-md semi-bold"
+                     @click.stop="openUserModal(idea.initiator || null)"
+                     style="cursor: pointer;"
+                    >
+                     {{ getAuthor(idea.initiator) }}
                     </span>
                         //
                     <span class="text-subtitle2 text-weight-medium q-mb-sm text-blue bold-text">
@@ -84,7 +86,7 @@
             </q-card>
         </div>
     </div>
-  
+
     <!-- Модальное окно для просмотра идеи -->
     <q-dialog v-model="showIdeaDetailsModal" full-width @hide="hidingIdeaDetailsModal">
         <q-card style="min-width: 800px; max-width: 1000px">
@@ -103,20 +105,26 @@
 
             <q-card-section class="q-pt-lg">
                 <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text bold-text">Инициатор</div>
-                <div class="q-mb-md semi-bold perenos-text">{{ viewedIdea.initiator?((viewedIdea.initiator.firstname || viewedIdea.initiator.lastname)? (viewedIdea.initiator.firstname || '') + ' ' + (viewedIdea.initiator.lastname || ''): '—'): '—' }}</div>
+                <div
+                  class="q-mb-md semi-bold perenos-text"
+                  @click.stop="openUserModal(viewedIdea.initiator || null)"
+                  style="cursor: pointer;"
+                >
+                  {{ viewedIdea.initiator?((viewedIdea.initiator.firstname || viewedIdea.initiator.lastname)? (viewedIdea.initiator.firstname || '') + ' ' + (viewedIdea.initiator.lastname || ''): '—'): '—' }}
+                </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
                 <div class="q-mb-md perenos-text"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Проблема</div>
                 <div class="q-mb-md perenos-text">{{ viewedIdea.problem || '—' }}</div>
-                
+
                 <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Решение</div>
                 <div class="q-mb-md perenos-text">{{ viewedIdea.solution || '—' }}</div>
-                
+
                 <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Ожидаемый результат</div>
                 <div class="q-mb-md perenos-text">{{ viewedIdea.result || '—' }}</div>
-                
+
                 <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Необходимые ресурсы</div>
                 <div class="q-mb-md perenos-text">{{ viewedIdea.resource || '—' }}</div>
 
@@ -148,7 +156,13 @@
             </div>
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
-                <div v-for="team in filteredTeams" :key="team.id" class="team-block row items-center no-wrap">
+                <div
+                  v-for="team in filteredTeams"
+                  :key="team.id"
+                  class="team-block row items-center no-wrap"
+                  @click.stop="teamModalRef?.open(team)"
+                  style="cursor: pointer;"
+                >
                     <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckSendingModal(team)" />
                     <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal('Ошибка: данная команда уже в списке кандидатов')" />
                     <div style="height: 140px" class="perenos-text">
@@ -181,31 +195,30 @@
             </q-card-section>
 
             <div class="header q-mb-md row items-center">
-            <q-input 
-                v-model="invitesSearchText"
-                outlined
-                dense
-                placeholder="Поиск команд..."
-                class="search-input"
-                style="width: max; padding: 0px 16px;"
-                >
-            <template v-slot:append>
-                <q-icon name="search" color="indigo" />
-                </template>
-            </q-input>
-        </div>
+                <q-input 
+                    v-model="invitesSearchText"
+                    outlined
+                    dense
+                    placeholder="Поиск команд..."
+                    class="search-input"
+                    style="width: max; padding: 0px 16px;"
+                    >
+                <template v-slot:append>
+                    <q-icon name="search" color="indigo" />
+                    </template>
+                </q-input>
+            </div>
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="invite in filteredInvites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
-                    <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click="ShowCheckCancelingModal(invite)"/>
-                    <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" style="cursor: not-allowed;" @click="showERRORmodal('Ошибка: это не приглашение')"></q-btn>
-                    <div>
+                    <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click.stop="ShowCheckCancelingModal(invite)"/>
+                    <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" style="cursor: not-allowed;" @click.stop="showERRORmodal('Ошибка: это не приглашение')"></q-btn>
+                    <div @click.stop="teamModalRef?.open(invite.team)" style="cursor: pointer; width: 100%;">
                         <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
                         <span class="text-subtitle2 text-weight-medium q-mb-sm text-orange-14 bold-text">
                             Статус:
                         </span>
-
                         <span class="q-mb-md semi-bold">
                             {{ invite.status }}
                         </span>
@@ -299,7 +312,7 @@
           </div>
 
           <div class="text-h6">Стек технологий</div>
-          <q-input 
+          <q-input
             v-model="technologySearchText"
             outlined
             dense
@@ -324,9 +337,9 @@
                         class="styled-checkbox checkbox-left"
                         >
                         <template v-slot:default>
-                            <span class="word-background languages-background" style="background-size: 75% 100%;">{{ item.name }}</span>
-                        </template>
-                        </q-checkbox>
+                         <span class="word-background languages-background" style="background-size: 75% 100%;">{{ item.name }}</span>
+                          </template>
+                         </q-checkbox>
                     </div>
                 </div>
                 <div v-if="getCategoryName(name) == 'Фреймворки'">
@@ -414,9 +427,19 @@
             </div>
         </q-card-section>
     </q-dialog>
+
+    <!-- Компоненты модальных окон -->
+    <UserModal ref="userModalRef" />
+    <TeamModal ref="teamModalRef" />
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
+import { QCard } from 'quasar';
+import * as api from '../api/acceptedideas.api';
+import { StatusIdea } from '../../../backend/src/common/types';
+import TeamModal from '../components/TeamModal.vue';
+import UserModal from '../components/UserModal.vue';
 
 async function acceptOffer() {
     if (!viewedIdea.value || !viewedIdea.value.id || !viewedTeam.value || !viewedTeam.value.id) {
@@ -533,7 +556,6 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
             }
         }
     }
-    
 
     return {
         paddingLeft: `${padding}px`,
@@ -582,7 +604,7 @@ async function loadIdeaStack() {
     if (!response) {
         return null;
     }
-    
+
     Object.values(techStack.value).forEach(items => {
         items.forEach(item => {
             item.selected = response.includes(item.name) || false;
@@ -601,11 +623,26 @@ async function updateTechStack() {
             if (item.selected) selectedStack.value.push(item.name);
         });
     });
-    
-    await api.updateStack(viewedIdea.value.id, selectedStack.value);
-}
 
+    const response = await api.updateStack(viewedIdea.value.id, selectedStack.value);
+
+    if (response) {
+        // Обновляем стек текущей идеи
+        if (viewedIdea.value.stack) {
+            viewedIdea.value.stack = [...selectedStack.value];
+        }
+        
+        // Обновляем список идей
+        const index = ideas.value.findIndex(i => i.id === viewedIdea.value.id);
+        if (index !== -1) {
+            ideas.value[index].stack = [...selectedStack.value];
+        }
+        
+        await showOKmodal('Стек технологий успешно обновлен!');
+    }
+}
 async function ShowTechStackModal() {
+    await loadIdeaStack();
     showTechStack.value = true;
 }
 
@@ -832,7 +869,7 @@ async function cancelInvite() {
     if (!viewedInvite.value || !viewedInvite.value.isInitiatorInviter || !viewedInvite.value.id || !viewedInvite.value.team || !viewedInvite.value.team.name) {
         return null;
     }
-    
+
     const response = await api.cancelInvite(viewedInvite.value.id);
 
     if (response) {
@@ -869,9 +906,8 @@ async function getInvitesBy() {
                 invitesIs.push(invite);
                 continue;
             }
-            invitesIsNot.push(invite);            
+            invitesIsNot.push(invite);
         }
-
 
         invites.value = [ ...invitesIs, ...invitesIsNot ];
 
@@ -920,16 +956,14 @@ function ShowCheckSendingModal(team: Team) {
 
 async function canInviteCheck() {
     await getInvitesBy();
-    
+
     teams.value.forEach(team => {
         team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
     });
 }
 
 async function ShowSendInviteModal() {
-
     await canInviteCheck();
-    
     showSendInviteModal.value = true;
 }
 
@@ -954,10 +988,49 @@ function getAuthor(author: {firstname: string, lastname: string}) {
     return((author.firstname?author.firstname+' ':'') + (author.lastname?author.lastname:' '));
 }
 
-import { QCard } from 'quasar';
-import * as api from '../api/acceptedideas.api';
-import { ref, onMounted, computed } from 'vue';
-import { StatusIdea } from '../../../backend/src/common/types';
+async function isUserTeamOwner() {
+  const tempSession = localStorage.getItem('ttm-session')
+  if (!tempSession) {
+    return false;
+  }
+  const parsedSession = JSON.parse(tempSession);
+
+  if (!parsedSession) {
+    console.error('Ошибка при получении информации о сессии');
+    return false;
+  }
+
+  console.log(parsedSession.roles);
+
+  userIsTeamOwner.value = parsedSession.roles.includes('teamowner');
+}
+
+async function getAllTeams() {
+    const response = await api.getAllTeams();
+
+    if (response) {
+        teams.value = [ ...response ];
+    }
+
+    return null;
+}
+
+async function loadIdeas() {
+    const response = await api.getAll();
+
+    if (response) {
+        ideas.value = [ ...response ];
+        return true;
+    }
+
+    return false;
+}
+
+onMounted(() => {
+    loadIdeas();
+    getAllTeams();
+    isUserTeamOwner();
+});
 
 interface Idea {
     id: number;
@@ -993,7 +1066,7 @@ const showIdeaDetailsModal = ref(false);
 const viewedIdea = ref<Partial<Idea>>({});
 const showSendInviteModal = ref(false);
 const teams = ref<Team[]>([]);
-const viewedTeam =  ref<Partial<Team>>({});
+const viewedTeam = ref<Partial<Team>>({});
 const showCheckSendingModal = ref(false);
 const invites = ref<InviteList[]>([]);
 const showInvitesModal = ref(false);
@@ -1020,8 +1093,21 @@ const isTeamowner = ref(false);
 const showSendOfferModal = ref(false);
 const showCheckOfferingModal = ref(false);
 
+const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
+const teamModalRef = ref<InstanceType<typeof TeamModal> | null>(null);
+
+const openUserModal = (user: {id: number, firstname: string, lastname: string} | null) => {
+  if (!user) return;
+  userModalRef.value?.open({
+    id: user.id,
+    firstname: user.firstname,
+    lastname: user.lastname,
+    // другие поля пользователя
+  });
+};
+
 const techStack = ref({
-  'languages': [
+    'languages': [
     { name: 'Ada', selected: false },
     { name: 'Assembly', selected: false },
     { name: 'Blueprint', selected: false },
@@ -1409,5 +1495,4 @@ onMounted(() => {
 .semi-bold {
   font-weight: 600;
 }
-
 </style>
