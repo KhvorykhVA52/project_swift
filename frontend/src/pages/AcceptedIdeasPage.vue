@@ -776,6 +776,7 @@ const filteredIdeas = computed(() => {
         const status = (idea.status || '').toLowerCase();
         const initiatorFirstname = (idea.initiator.firstname || '').toLowerCase();
         const initiatorLastname = (idea.initiator.lastname || '').toLowerCase();
+        
 
         return (
             name.includes(term) ||
@@ -812,7 +813,14 @@ async function acceptTeam() {
     if (response) {
         await showOKmodal('Команда принята: ' + viewedInvite.value.team?.name);
         await getInvitesBy();
-        await loadIdeas();
+
+        const indexInvite = invites.value.findIndex(i => i.id === viewedInvite.value.id);
+        invites.value[indexInvite].status = 'Принято';
+        
+        const index = ideas.value.findIndex(i => i.id === viewedIdea.value.id);
+        ideas.value[index].status = 'Команда найдена';
+        
+        viewedIdea.value.status = 'Команда найдена';
         showCheckAcceptingTeamModal.value = false;
     }
 }
@@ -1038,6 +1046,7 @@ interface Idea {
     initiator: {id: number, firstname: string, lastname: string};
     createdAt: string;
     stack: string[];
+    team: Team;
 }
 
 interface InviteList {
