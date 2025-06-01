@@ -487,7 +487,7 @@ async function ShowSendOfferModal() {
 
             const response2 = await api.searchInvite(viewedIdea.value.id, i.id);
 
-            team.canInvite = response2;
+            team.canInvite = !response2;
 
             myTeams.value.push(team);
         }
