@@ -407,7 +407,7 @@
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="team in myTeams" :key="team.id" class="team-block row items-center no-wrap">
                     <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckOfferingModal(team)" />
-                    <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal('Ошибка: данная команда уже в списке кандидатов')" />
+                    <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal(team.situation)" />
                     <div style="height: 140px" class="perenos-text">
                         <div class="text-subtitle1" style="width: 500px; height: 20px; overflow: hidden;">Название: {{ team.name }}</div>
                         <div class="text-caption" style="margin-top: 5px;">Описание: {{ team.description }}</div>
@@ -447,6 +447,11 @@ async function acceptOffer() {
     }
 
     await createInvite(false);
+
+    const index = myTeams.value.findIndex(team => team.id === viewedTeam.value.id);
+    myTeams.value[index].canInvite = false;
+    myTeams.value[index].situation = 'Ошибка: данная команда уже в списке кандидатов';
+
     showCheckOfferingModal.value = false;
 }
 
@@ -482,11 +487,21 @@ async function ShowSendOfferModal() {
                 id: i.id,
                 name: i.name,
                 description: i.description,
-                canInvite: i.idea ? false : true
+                canInvite: i.idea ? false : true,
+                situation: ''
             };
+
+            if (i.idea) {
+                team.situation = 'Ошибка: данная команда уже занята';
+                myTeams.value.push(team);
+                continue;
+            }
 
             const response2 = await api.searchInvite(viewedIdea.value.id, i.id);
 
+            if (response2) {
+                team.situation = 'Ошибка: данная команда уже в списке кандидатов';
+            }
             team.canInvite = !response2;
 
             myTeams.value.push(team);
@@ -959,6 +974,9 @@ async function canInviteCheck() {
 
     teams.value.forEach(team => {
         team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
+        if (!team.canInvite) {
+            team.situation = 'Ошибка: данная команда уже в списке кандидатов';
+        }
     });
 }
 
@@ -1035,6 +1053,7 @@ interface Team {
     name: string;
     description: string;
     canInvite: boolean;
+    situation: string;
 }
 
 
