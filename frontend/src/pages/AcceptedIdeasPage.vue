@@ -974,6 +974,7 @@ async function getInvitesBy() {
     const response = await api.getInvitesBy(viewedIdea.value.id);
 
     if (response) {
+
         const invitesIs: InviteList[] = [];
         const invitesIsNot: InviteList[] = [];
 
@@ -986,6 +987,7 @@ async function getInvitesBy() {
         }
 
         invites.value = [ ...invitesIs, ...invitesIsNot ];
+        invites.value.sort((a, b) => a.team.name.localeCompare(b.team.name));
 
         await toggleInvitesSorting();
 
@@ -1076,6 +1078,9 @@ async function getAllTeams() {
     const response: {id: number, name: string, description: string, idea: Idea}[] = await api.getAllTeams();
 
     if (response) {
+
+        response.sort((a, b) => a.name.localeCompare(b.name));
+
         response.forEach((team) => {
             const Team: Team = {
                 id: team.id,
