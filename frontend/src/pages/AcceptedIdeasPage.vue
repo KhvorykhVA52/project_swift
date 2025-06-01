@@ -79,9 +79,24 @@
                         Статус:
                     </span>
 
-                    <span class="q-mb-md semi-bold">
-                        {{ idea.status }}
-                    </span>
+                    <div v-if="idea.status == 'Команда найдена'">
+                        <span class="q-mb-md perenos-text">Команда найдена: </span>
+                        <span v-if="idea.team" class="q-mb-md perenos-text dark-blue-text" style="cursor: pointer; text-decoration: underline; marginLeft: 8px;">
+                            <span style="
+                                 
+                                display: inline-block; 
+                                padding: 2px 6px;
+                                border-radius: 6px;
+                                background-color:rgb(190, 203, 245);
+                                border: 1px solid rgb(0, 50, 129);"
+                                @click.stop="teamModalRef?.open(idea.team)"> {{ idea.team.name.length > 50 ? idea.team.name.slice(0, 50) + '…' : idea.team.name }}
+                            </span>
+                        </span>
+                    </div>
+
+                    <div v-if="!(idea.status == 'Команда найдена')">
+                        <div class="q-mb-md perenos-text"> {{idea.status?idea.status:'Ошибка'}} </div>
+                    </div>
                 </q-card-section>
             </q-card>
         </div>
@@ -114,7 +129,24 @@
                 </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
-                <div class="q-mb-md perenos-text"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
+                <div v-if="viewedIdea.status == 'Команда найдена'">
+                    <span class="q-mb-md perenos-text">Команда найдена: </span>
+                    <span v-if="viewedIdea.team" class="q-mb-md perenos-text dark-blue-text" style="cursor: pointer; text-decoration: underline; marginLeft: 8px;">
+                        <span style="
+                                
+                            display: inline-block; 
+                            padding: 2px 6px;
+                            border-radius: 6px;
+                            background-color:rgb(190, 203, 245);
+                            border: 1px solid rgb(0, 50, 129);"
+                            @click.stop="teamModalRef?.open(viewedIdea.team)"> {{ viewedIdea.team.name.length > 50 ? viewedIdea.team.name.slice(0, 50) + '…' : viewedIdea.team.name }}
+                        </span>
+                    </span>                    
+                </div>
+
+                <div v-if="!(viewedIdea.status == 'Команда найдена')">
+                    <div class="q-mb-md perenos-text"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
+                </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Проблема</div>
                 <div class="q-mb-md perenos-text">{{ viewedIdea.problem || '—' }}</div>
@@ -134,7 +166,7 @@
     </q-dialog>
 
     <!-- Модальное окно отправки приглашения -->
-    <q-dialog v-model="showSendInviteModal">
+    <q-dialog v-model="showSendInviteModal" @hide="filterTeams('undo')">
         <q-card style="width: 800px; max-width: 80vw;">
             <q-card-section>
                 <div class="text-h6 text-blue-14">Команды</div>
@@ -153,6 +185,16 @@
                     <q-icon name="search" color="indigo" />
                     </template>
                 </q-input>
+
+                <div style="padding: 0px 16px; marginTop: 4px;">
+                    <div class="cool-border" style="min-width: auto; ">
+                        <q-checkbox
+                            v-model="checkboxSendInvite"
+                            label="Только доступные"
+                            @click="filterTeams('SendInvite')"
+                        />
+                    </div>
+                </div>
             </div>
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
@@ -207,13 +249,28 @@
                     <q-icon name="search" color="indigo" />
                     </template>
                 </q-input>
+
+                <div style="padding: 0px 16px; marginTop: 4px;">
+                    <div class="cool-border" style="min-width: auto; ">
+                        <div>Сначала подавшие заявку</div>
+                            <q-toggle
+                                v-model="invitesSorting"
+                                color="grey-6"
+                                keep-color
+                                @click="toggleInvitesSorting"
+                            />
+                        <div>Сначала приглашённые</div>
+                    </div>
+                </div>
             </div>
+
+            
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="invite in filteredInvites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
                     <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click.stop="ShowCheckCancelingModal(invite)"/>
                     <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" style="cursor: not-allowed;" @click.stop="showERRORmodal('Ошибка: это не приглашение')"></q-btn>
-                    <div @click.stop="teamModalRef?.open(invite.team)" style="cursor: pointer; width: 100%;">
+                    <div @click.stop="teamModalRef?.open(invite.team)" style="cursor: pointer; width: 100%; padding-right: 90px;">
                         <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
                         <span class="text-subtitle2 text-weight-medium q-mb-sm text-orange-14 bold-text">
@@ -440,6 +497,34 @@ import * as api from '../api/acceptedideas.api';
 import { StatusIdea } from '../../../backend/src/common/types';
 import TeamModal from '../components/TeamModal.vue';
 import UserModal from '../components/UserModal.vue';
+
+async function toggleInvitesSorting() {
+    if (invitesSorting.value == true) {
+        invites.value.sort((a, b) => {
+            return (b.isInitiatorInviter ? 1 : 0) - (a.isInitiatorInviter ? 1 : 0);
+        });
+    } else {
+        invites.value.sort((a, b) => {
+            return (a.isInitiatorInviter ? 1 : 0) - (b.isInitiatorInviter ? 1 : 0);
+        });
+    }
+}
+
+async function filterTeams(option: string) {
+    if (option == 'undo') {
+        teams.value = unfilteredTeams.value;
+        return;
+    }
+
+    if (option == 'SendInvite') {
+        if (checkboxSendInvite.value) {
+            const filtered = unfilteredTeams.value.filter(team => team.canInvite);
+            teams.value = filtered; 
+        } else {
+            teams.value = unfilteredTeams.value;
+        }
+    }
+}
 
 async function acceptOffer() {
     if (!viewedIdea.value || !viewedIdea.value.id || !viewedTeam.value || !viewedTeam.value.id) {
@@ -921,6 +1006,7 @@ async function getInvitesBy() {
     const response = await api.getInvitesBy(viewedIdea.value.id);
 
     if (response) {
+
         const invitesIs: InviteList[] = [];
         const invitesIsNot: InviteList[] = [];
 
@@ -933,6 +1019,9 @@ async function getInvitesBy() {
         }
 
         invites.value = [ ...invitesIs, ...invitesIsNot ];
+        invites.value.sort((a, b) => a.team.name.localeCompare(b.team.name));
+
+        await toggleInvitesSorting();
 
         if (viewedIdea.value.status == StatusIdea.teamIsFinded) {
             ideaGotTeam.value = true;
@@ -981,15 +1070,18 @@ async function canInviteCheck() {
     await getInvitesBy();
 
     teams.value.forEach(team => {
-        team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
-        if (!team.canInvite) {
-            team.situation = 'Ошибка: данная команда уже в списке кандидатов';
+        if (team.canInvite) {
+            team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
+            if (!team.canInvite) {
+                team.situation = 'Ошибка: данная команда уже в списке кандидатов';
+            }
         }
     });
 }
 
 async function ShowSendInviteModal() {
     await canInviteCheck();
+    await filterTeams('SendInvite');
     showSendInviteModal.value = true;
 }
 
@@ -1015,10 +1107,24 @@ function getAuthor(author: {firstname: string, lastname: string}) {
 }
 
 async function getAllTeams() {
-    const response = await api.getAllTeams();
+    const response: {id: number, name: string, description: string, idea: Idea}[] = await api.getAllTeams();
 
     if (response) {
-        teams.value = [ ...response ];
+
+        response.sort((a, b) => a.name.localeCompare(b.name));
+
+        response.forEach((team) => {
+            const Team: Team = {
+                id: team.id,
+                name: team.name,
+                description: team.description,
+                canInvite: !team.idea,
+                situation: team.idea ? 'Ошибка: данная команда уже занята' : '',
+            }
+            teams.value.push(Team);
+        });
+
+        unfilteredTeams.value = teams.value;
     }
 
     return null;
@@ -1098,6 +1204,9 @@ const myTeams = ref<Team[]>([]);
 const isTeamowner = ref(false);
 const showSendOfferModal = ref(false);
 const showCheckOfferingModal = ref(false);
+const checkboxSendInvite = ref(false);
+const unfilteredTeams = ref<Team[]>([]);
+const invitesSorting = ref(false);
 
 const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
 const teamModalRef = ref<InstanceType<typeof TeamModal> | null>(null);

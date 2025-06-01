@@ -377,7 +377,9 @@ export class TeamsService {
   }
 
   async getAllTeams() {
-    const teams = this.teamRepository.find();
+    const teams = this.teamRepository.find({
+      relations: ['idea'],
+    });
 
     if (!teams) {
       console.log(`ERROR: teams.service.getAllTeams(): не удалось найти Team[]`);
