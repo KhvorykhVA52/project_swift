@@ -46,7 +46,8 @@
                 <q-card-section class="q-pt-none perenos-text">
                     {{ slicedStr({str: idea.solution, length: 300}) }}
                 </q-card-section>
-
+                
+                <!--
                 <div v-if="idea && idea.stack && idea.stack.length > 0">
                     <div style="display: flex; flex-wrap: wrap;">
                         <span
@@ -60,6 +61,21 @@
                                 stackRefs[idea.id][index] = el as HTMLSpanElement;
                             }"
                         >
+                            {{ item }}
+                        </span>
+                    </div>
+                </div>
+                -->
+
+                <div v-if="idea && idea.stack && idea.stack.length > 0">
+                    <div style="display: flex; flex-wrap: wrap; marginLeft: 32px;">
+                        <span
+                            v-for="(item, index) in idea.stack"
+                            :key="index"
+                            class="word-background-mainwindow"
+                            :class="getBackgroundClass(item)"
+                            :style="getBackgroundStyle(item, index, idea)"
+                            >
                             {{ item }}
                         </span>
                     </div>
@@ -161,6 +177,21 @@
                 <div class="q-mb-md perenos-text">{{ viewedIdea.resource || '—' }}</div>
 
                 <q-separator class="q-my-md" />
+
+                <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Стек</div>
+                <div v-if="viewedIdea && viewedIdea.stack && viewedIdea.stack.length > 0">
+                    <div style="display: flex; flex-wrap: wrap; marginLeft: 20px;">
+                        <span
+                            v-for="(item, index) in viewedIdea.stack"
+                            :key="index"
+                            class="word-background-mainwindow"
+                            :class="getBackgroundClass(item)"
+                            :style="getBackgroundStyle(item, index, viewedIdea as Idea)"
+                            >
+                            {{ item }}
+                        </span>
+                    </div>
+                </div>
             </q-card-section>
         </q-card>
     </q-dialog>
@@ -620,6 +651,22 @@ async function toggleIdeasSorting() {
     }
 }
 
+function getBackgroundClass(item: string) {
+    const category = getCategoryByName(item);
+    switch (category) {
+        case 'languages':
+            return 'languages-background';
+        case 'frameworks':
+            return 'frameworks-background';
+        case 'databases':
+            return 'databases-background';
+        case 'devops':
+            return 'devops-background';
+        default:
+            return '';
+    }
+}
+
 function getBackgroundStyle(item: string, index: number, idea: Idea) {
     const category = getCategoryByName(item);
     const extraPadding: Record<string, number> = {
@@ -636,19 +683,10 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
     const padding = extraPadding[category] ?? 40;
 
     let marginLeft = '1px';
-    let marginTop = '2px';
 
     if (index > 0) {
-        const currentEl = stackRefs.value[idea.id]?.[index];
-        const prevEl = stackRefs.value[idea.id]?.[index - 1];
-
         let flag = true;
 
-        if (currentEl && prevEl) {
-            if (currentEl.offsetTop !== prevEl.offsetTop) {
-                flag = false;
-            }
-        }
         if (flag && category == 'frameworks') {
             const prevCategory = getCategoryByName(idea.stack[index - 1]);
             if (prevCategory == 'frameworks') {
@@ -660,25 +698,8 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
     return {
         paddingLeft: `${padding}px`,
         paddingRight: `${padding}px`,
-        marginLeft,
-        marginTop
+        marginLeft
     };
-}
-
-function getBackgroundClass(item: string) {
-    const category = getCategoryByName(item);
-    switch (category) {
-        case 'languages':
-            return 'languages-background';
-        case 'frameworks':
-            return 'frameworks-background';
-        case 'databases':
-            return 'databases-background';
-        case 'devops':
-            return 'devops-background';
-        default:
-            return '';
-    }
 }
 
 function getCategoryByName(name: string) {
@@ -1198,7 +1219,6 @@ const sendingInviteSearchText = ref('');
 const showTechStack = ref(false);
 const technologySearchText = ref('');
 const selectedStack = ref<string[]>([]);
-const stackRefs = ref<Record<number, HTMLSpanElement[]>>({});
 const ideasSorting = ref(false);
 const myTeams = ref<Team[]>([]);
 const isTeamowner = ref(false);
