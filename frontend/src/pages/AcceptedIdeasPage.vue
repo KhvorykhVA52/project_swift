@@ -1036,9 +1036,11 @@ async function canInviteCheck() {
     await getInvitesBy();
 
     teams.value.forEach(team => {
-        team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
-        if (!team.canInvite) {
-            team.situation = 'Ошибка: данная команда уже в списке кандидатов';
+        if (team.canInvite) {
+            team.canInvite = invites.value.some(invite => invite.team.id === team.id) ? false : true;
+            if (!team.canInvite) {
+                team.situation = 'Ошибка: данная команда уже в списке кандидатов';
+            }
         }
     });
 }
@@ -1071,10 +1073,20 @@ function getAuthor(author: {firstname: string, lastname: string}) {
 }
 
 async function getAllTeams() {
-    const response = await api.getAllTeams();
+    const response: {id: number, name: string, description: string, idea: Idea}[] = await api.getAllTeams();
 
     if (response) {
-        teams.value = [ ...response ];
+        response.forEach((team) => {
+            const Team: Team = {
+                id: team.id,
+                name: team.name,
+                description: team.description,
+                canInvite: !team.idea,
+                situation: team.idea ? 'Ошибка: данная команда уже занята' : '',
+            }
+            teams.value.push(Team);
+        });
+
         unfilteredTeams.value = teams.value;
     }
 
