@@ -36,7 +36,7 @@
                 :ref="(el: QCard | null) => ideaCards[index] = el"
                 :id="'idea-' + index"
                 class="my-card"
-                style="min-height: 250px; display: flex; flex-direction: column;"
+                style="min-height: 250px; display: flex; flex-direction: column; border: 1px solidrgb(92, 139, 180); border-radius: 8px;"
                 @click="ShowIdeaDetailsModal(idea)"
             >
                 <q-card-section class="q-mb-md">
