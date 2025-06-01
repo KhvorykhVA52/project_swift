@@ -238,7 +238,7 @@
                 <div v-for="invite in filteredInvites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
                     <q-btn v-if="invite.isInitiatorInviter" icon="close" size="sm" color="negative" class="send-invite-button" @click.stop="ShowCheckCancelingModal(invite)"/>
                     <q-btn v-if="!invite.isInitiatorInviter" icon="remove" size="sm" class="send-invite-button bg-grey-6" style="cursor: not-allowed;" @click.stop="showERRORmodal('Ошибка: это не приглашение')"></q-btn>
-                    <div @click.stop="teamModalRef?.open(invite.team)" style="cursor: pointer; width: 100%;">
+                    <div @click.stop="teamModalRef?.open(invite.team)" style="cursor: pointer; width: 100%; padding-right: 90px;">
                         <div class="text-subtitle1 perenos-text">Название: {{ invite.team.name }}</div>
                         <div class="text-caption perenos-text">Описание: {{ invite.team.description }}</div>
                         <span class="text-subtitle2 text-weight-medium q-mb-sm text-orange-14 bold-text">
