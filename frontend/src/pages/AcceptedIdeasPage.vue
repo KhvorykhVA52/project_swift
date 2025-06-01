@@ -79,9 +79,24 @@
                         Статус:
                     </span>
 
-                    <span class="q-mb-md semi-bold">
-                        {{ idea.status }}
-                    </span>
+                    <div v-if="idea.status == 'Команда найдена'">
+                        <span class="q-mb-md perenos-text">Команда найдена: </span>
+                        <span v-if="idea.team" class="q-mb-md perenos-text dark-blue-text" style="cursor: pointer; text-decoration: underline; marginLeft: 8px;">
+                            <span style="
+                                 
+                                display: inline-block; 
+                                padding: 2px 6px;
+                                border-radius: 6px;
+                                background-color:rgb(190, 203, 245);
+                                border: 1px solid rgb(0, 50, 129);"
+                                @click.stop="teamModalRef?.open(idea.team)"> {{ idea.team.name.length > 50 ? idea.team.name.slice(0, 50) + '…' : idea.team.name }}
+                            </span>
+                        </span>
+                    </div>
+
+                    <div v-if="!(idea.status == 'Команда найдена')">
+                        <div class="q-mb-md perenos-text"> {{idea.status?idea.status:'Ошибка'}} </div>
+                    </div>
                 </q-card-section>
             </q-card>
         </div>
@@ -114,7 +129,24 @@
                 </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
-                <div class="q-mb-md perenos-text"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
+                <div v-if="viewedIdea.status == 'Команда найдена'">
+                    <span class="q-mb-md perenos-text">Команда найдена: </span>
+                    <span v-if="viewedIdea.team" class="q-mb-md perenos-text dark-blue-text" style="cursor: pointer; text-decoration: underline; marginLeft: 8px;">
+                        <span style="
+                                
+                            display: inline-block; 
+                            padding: 2px 6px;
+                            border-radius: 6px;
+                            background-color:rgb(190, 203, 245);
+                            border: 1px solid rgb(0, 50, 129);"
+                            @click.stop="teamModalRef?.open(viewedIdea.team)"> {{ viewedIdea.team.name.length > 50 ? viewedIdea.team.name.slice(0, 50) + '…' : viewedIdea.team.name }}
+                        </span>
+                    </span>                    
+                </div>
+
+                <div v-if="!(viewedIdea.status == 'Команда найдена')">
+                    <div class="q-mb-md perenos-text"> {{viewedIdea.status?viewedIdea.status:'Ошибка'}} </div>
+                </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm text-blue-8">Проблема</div>
                 <div class="q-mb-md perenos-text">{{ viewedIdea.problem || '—' }}</div>
