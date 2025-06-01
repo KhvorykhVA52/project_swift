@@ -134,7 +134,7 @@
     </q-dialog>
 
     <!-- Модальное окно отправки приглашения -->
-    <q-dialog v-model="showSendInviteModal">
+    <q-dialog v-model="showSendInviteModal" @hide="filterTeams('undo')">
         <q-card style="width: 800px; max-width: 80vw;">
             <q-card-section>
                 <div class="text-h6 text-blue-14">Команды</div>
@@ -153,6 +153,16 @@
                     <q-icon name="search" color="indigo" />
                     </template>
                 </q-input>
+
+                <div style="padding: 0px 16px; marginTop: 4px;">
+                    <div class="cool-border" style="min-width: auto; ">
+                        <q-checkbox
+                            v-model="checkboxSendInvite"
+                            label="Только доступные"
+                            @click="filterTeams('SendInvite')"
+                        />
+                    </div>
+                </div>
             </div>
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
@@ -207,7 +217,22 @@
                     <q-icon name="search" color="indigo" />
                     </template>
                 </q-input>
+
+                <div style="padding: 0px 16px; marginTop: 4px;">
+                    <div class="cool-border" style="min-width: auto; ">
+                        <div>Сначала подавшие заявку</div>
+                            <q-toggle
+                                v-model="invitesSorting"
+                                color="grey-6"
+                                keep-color
+                                @click="toggleInvitesSorting"
+                            />
+                        <div>Сначала приглашённые</div>
+                    </div>
+                </div>
             </div>
+
+            
 
             <q-card-section style="max-height: 500px; overflow-y: auto;">
                 <div v-for="invite in filteredInvites" :key="invite.team.id" class="team-block row items-center no-wrap" style="position: relative">
@@ -440,6 +465,34 @@ import * as api from '../api/acceptedideas.api';
 import { StatusIdea } from '../../../backend/src/common/types';
 import TeamModal from '../components/TeamModal.vue';
 import UserModal from '../components/UserModal.vue';
+
+async function toggleInvitesSorting() {
+    if (invitesSorting.value == true) {
+        invites.value.sort((a, b) => {
+            return (b.isInitiatorInviter ? 1 : 0) - (a.isInitiatorInviter ? 1 : 0);
+        });
+    } else {
+        invites.value.sort((a, b) => {
+            return (a.isInitiatorInviter ? 1 : 0) - (b.isInitiatorInviter ? 1 : 0);
+        });
+    }
+}
+
+async function filterTeams(option: string) {
+    if (option == 'undo') {
+        teams.value = unfilteredTeams.value;
+        return;
+    }
+
+    if (option == 'SendInvite') {
+        if (checkboxSendInvite.value) {
+            const filtered = unfilteredTeams.value.filter(team => team.canInvite);
+            teams.value = filtered; 
+        } else {
+            teams.value = unfilteredTeams.value;
+        }
+    }
+}
 
 async function acceptOffer() {
     if (!viewedIdea.value || !viewedIdea.value.id || !viewedTeam.value || !viewedTeam.value.id) {
@@ -934,6 +987,8 @@ async function getInvitesBy() {
 
         invites.value = [ ...invitesIs, ...invitesIsNot ];
 
+        await toggleInvitesSorting();
+
         if (viewedIdea.value.status == StatusIdea.teamIsFinded) {
             ideaGotTeam.value = true;
         } else {
@@ -990,6 +1045,7 @@ async function canInviteCheck() {
 
 async function ShowSendInviteModal() {
     await canInviteCheck();
+    await filterTeams('SendInvite');
     showSendInviteModal.value = true;
 }
 
@@ -1019,6 +1075,7 @@ async function getAllTeams() {
 
     if (response) {
         teams.value = [ ...response ];
+        unfilteredTeams.value = teams.value;
     }
 
     return null;
@@ -1098,6 +1155,9 @@ const myTeams = ref<Team[]>([]);
 const isTeamowner = ref(false);
 const showSendOfferModal = ref(false);
 const showCheckOfferingModal = ref(false);
+const checkboxSendInvite = ref(false);
+const unfilteredTeams = ref<Team[]>([]);
+const invitesSorting = ref(false);
 
 const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
 const teamModalRef = ref<InstanceType<typeof TeamModal> | null>(null);
