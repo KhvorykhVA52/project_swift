@@ -346,8 +346,22 @@ export class IdeaService {
                 return false;
             }
 
+            const team = await this.teamRepository.findOne({
+                where: {id: invite.team.id}
+            });
+
+            if (!team) {
+                console.log(`!!!CRITICAL ERROR!!!: idea.service.responseInvite(): не найден Team при Invite.id=${id}`);
+                return false;
+            }
+
             idea.status = StatusIdea.teamIsFinded;
+            idea.team = team;
+
+            team.idea = idea;
+
             await this.ideaRepository.save(idea);
+            await this.teamRepository.save(team);
         }
 
         await this.ideaInviteRepository.save(invite);
