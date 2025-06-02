@@ -64,7 +64,7 @@ export async function uploadAvatar(file: File): Promise<string | undefined> {
       transformRequest: (data) => data,
     });
 
-    if (response.status === 200) {
+    if (response.status === 201) {
       // Обрабатываем разные возможные форматы ответа
       return response.data?.avatarUrl || 
              response.data?.url || 

@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Delete,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -21,6 +22,8 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { existsSync } from 'fs';
+import { Response } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -45,7 +48,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('avatar', {
     storage: diskStorage({
-      destination: join(__dirname, '..', '..', 'uploads', 'avatars'),
+      destination: join(process.cwd(), 'uploads', 'avatars'),
       filename: (req, file, cb) => {
         const randomName = uuidv4();
         const ext = extname(file.originalname).toLowerCase();
@@ -80,6 +83,18 @@ export class UsersController {
     this.logger.log(`Removing avatar for user ${req.user.userId}`);
     await this.usersService.updateAvatar(req.user.userId, '');
     return { success: true };
+  }
+
+  @Get('me/getavatar/:name')
+  async getAvatar(@Param('name') name, @Res() res: Response) {
+    const filepath = join(process.cwd(), 'uploads', 'avatars', name);
+
+    if (!existsSync(filepath)) {
+      console.log(`ERROR: users.service.getAvatar: не найден файл при name=${name}`);
+      return res.status(404).json(null);
+    }
+
+    return res.sendFile(filepath);
   }
 
   @Get()

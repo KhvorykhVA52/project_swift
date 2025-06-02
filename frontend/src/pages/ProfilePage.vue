@@ -597,29 +597,22 @@ export default {
       try {
         this.isLoading = true;
         const response = await uploadAvatar(file);
+              
         if (response?.avatarUrl) {
           // Обновляем URL аватара с временной меткой
           this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
-
-          // Сохраняем в userProfile
+          
+          // Сохраняем в localStorage
           localStorage.setItem('userProfile', JSON.stringify(this.user));
-
-          // Обновляем сессию
-          const session = JSON.parse(localStorage.getItem('ttm-session')) || {};
-          session.avatarUrl = this.user.avatarUrl;
-          localStorage.setItem('ttm-session', JSON.stringify(session));
-
-          // Для мгновенного обновления верхней панели:
-          window.dispatchEvent(new Event('storage'));
-
+          
           this.$q.notify({
             type: 'positive',
             message: 'Аватар успешно обновлен',
             timeout: 2000
-          });
+            });
+          }
           this.loadUserProfile();
-        }
-      } catch (error) {
+        } catch (error) {
         console.error('Upload error:', error);
         this.$q.notify({
           type: 'negative',
