@@ -5,7 +5,7 @@
         <div class="avatar" :style="avatarStyle">
           <img
             v-if="user.avatarUrl"
-            :src="getFullAvatarUrl(user.avatarUrl)"
+            :src="`http://localhost:3000/users/me/getavatar/${user.avatarUrl}`"
             alt="Аватар"
             class="avatar-image"
             @error="handleImageError"
@@ -187,6 +187,7 @@
 
 <script>
 import { getCurrentUser, updateProfile, uploadAvatar, deleteAvatar } from '../api/users.api';
+import eventBus from 'src/eventBus';
 
 export default {
   data() {
@@ -420,10 +421,6 @@ export default {
       return;
     }
 
-    // Попробуем загрузить без параметров кеширования
-    const cleanUrl = this.user.avatarUrl.split('?')[0];
-    this.user.avatarUrl = `${cleanUrl}?retry=${Date.now()}`;
-
     // Даем небольшой таймаут перед проверкой
     setTimeout(() => {
       const img = this.$refs.avatarImage;
@@ -439,10 +436,7 @@ export default {
 
   isValidAvatarUrl(url) {
     if (!url) return false;
-    // Проверяем, что URL выглядит корректно
-    return url.startsWith('/uploads/avatars/') || 
-           url.startsWith('http://') || 
-           url.startsWith('https://');
+    return(url);
   },
 
   fallbackToDefaultAvatar() {
@@ -597,29 +591,26 @@ export default {
       try {
         this.isLoading = true;
         const response = await uploadAvatar(file);
-        if (response?.avatarUrl) {
-          // Обновляем URL аватара с временной меткой
-          this.user.avatarUrl = `${response.avatarUrl}?t=${Date.now()}`;
-
-          // Сохраняем в userProfile
+              
+        if (response) {
+          this.user.avatarUrl = response;
+          
+          // Сохраняем в localStorage
           localStorage.setItem('userProfile', JSON.stringify(this.user));
-
-          // Обновляем сессию
+          
           const session = JSON.parse(localStorage.getItem('ttm-session')) || {};
-          session.avatarUrl = this.user.avatarUrl;
+          session.avatarUrl = response;
           localStorage.setItem('ttm-session', JSON.stringify(session));
-
-          // Для мгновенного обновления верхней панели:
-          window.dispatchEvent(new Event('storage'));
-
+          eventBus.emit('update-avatar');
+          
           this.$q.notify({
             type: 'positive',
             message: 'Аватар успешно обновлен',
             timeout: 2000
-          });
+            });
+          }
           this.loadUserProfile();
-        }
-      } catch (error) {
+        } catch (error) {
         console.error('Upload error:', error);
         this.$q.notify({
           type: 'negative',

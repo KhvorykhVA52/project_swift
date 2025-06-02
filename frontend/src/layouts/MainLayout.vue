@@ -38,7 +38,7 @@
         <div class="profile-dropdown">
     <button class="profile-btn" @click="toggleProfileDropdown">
       <span class="profile-avatar">
-        <img v-if="avatarUrl" :src="avatarUrl" alt="Аватар" class="avatar-image" @error="handleImageError" />
+        <img v-if="avatarUrl" :src="`http://localhost:3000/users/me/getavatar/${avatarUrl}`" alt="Аватар" class="avatar-image" @error="handleImageError" />
         <span v-else>{{ userName.charAt(0) }}</span>
       </span>
       <span>{{ userName }}</span>
@@ -82,6 +82,8 @@
 </template>
 
 <script>
+import eventBus from 'src/eventBus';
+
 export default {
   name: 'MainLayout',
   data() {
@@ -128,7 +130,7 @@ export default {
     }
   },
 
-   methods: {
+  methods: {
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       document.documentElement.classList.toggle('dark', this.darkMode);
@@ -178,6 +180,8 @@ export default {
     }
   },
  async mounted() {
+    eventBus.on('update-avatar', this.setName);
+
     if (this.darkMode) {
       document.documentElement.classList.add('dark');
     }
@@ -187,6 +191,7 @@ export default {
     window.addEventListener('storage', this.setName);
   },
   beforeUnmount() {
+    eventBus.off('update-avatar', this.setName);
     window.removeEventListener('storage', this.setName);
   }
 }

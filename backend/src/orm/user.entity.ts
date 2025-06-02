@@ -97,6 +97,7 @@ telephone: string;
       id: this.id,
       email: this.email,
       firstname: this.firstname,
+      avatarUrl: this.avatarUrl,
       lastname: this.lastname,
       roles: this.roles,
       status: this.status,
