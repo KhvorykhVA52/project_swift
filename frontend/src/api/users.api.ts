@@ -66,10 +66,7 @@ export async function uploadAvatar(file: File): Promise<string | undefined> {
 
     if (response.status === 201) {
       // Обрабатываем разные возможные форматы ответа
-      return response.data?.avatarUrl || 
-             response.data?.url || 
-             response.data?.path || 
-             `/uploads/avatars/${response.data?.filename}`;
+      return response.data?.avatarUrl;
     }
     return undefined;
   } catch (error: unknown) {

@@ -72,7 +72,7 @@ export class UsersController {
     if (!file) {
       throw new Error('File upload failed');
     }
-    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    const avatarUrl = `${file.filename}`;
     await this.usersService.updateAvatar(req.user.userId, avatarUrl);
     return { avatarUrl };
   }

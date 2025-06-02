@@ -19,6 +19,7 @@ onMounted(async () => {
         access_token: savedSession.access_token,
         roles: savedSession.roles,
         userId: savedSession.userId,
+        avatarUrl: savedSession.avatarUrl,
         // Добавляем обязательные поля с fallback-значениями
         username: savedSession.username || '',
         firstname: savedSession.firstname || '',

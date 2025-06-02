@@ -32,7 +32,7 @@ export class UsersService {
   async findOne(email: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'firstname', 'lastname', 'passwordHash', 'roles', 'status', 'competence']
+      select: ['id', 'email', 'firstname', 'lastname', 'passwordHash', 'roles', 'status', 'competence', 'avatarUrl']
     });
   }
 
@@ -91,7 +91,8 @@ export class UsersService {
   }
 
   async updateAvatar(userId: number, avatarUrl: string): Promise<void> {
-    await this.userRepository.update(userId, { avatarUrl });
+    const updateUserDto: UpdateUserDto = { avatarUrl: avatarUrl };
+    await this.userRepository.update(userId, updateUserDto);
   }
 
   async getFullUserInfo(id: number): Promise<User | null> {

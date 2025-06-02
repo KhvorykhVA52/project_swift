@@ -42,6 +42,7 @@ export interface SecuredUser {
   id: number;
   email: string;
   firstname: string;
+  avatarUrl: string;
   lastname: string;
   roles: Role[];
   status: UserAccountStatus;
@@ -53,7 +54,6 @@ export interface ExtendedUser extends SecuredUser {
 }
 
 export interface FullUserInfo extends ExtendedUser {
-  avatarUrl: string;
   createdAt: Date;
 }
 
@@ -62,6 +62,7 @@ export interface LoginResponseDto {
   access_token: string;
   username: string;
   firstname: string;
+  avatarUrl: string;
   lastname: string;
   roles: Role[];
 }
@@ -91,6 +92,7 @@ export interface CreateUserDto {
 export interface UpdateUserDto {
   email?: string;
   firstname?: string;
+  avatarUrl?: string;
   lastname?: string;
   roles?: Role[];
   status?: UserAccountStatus;
