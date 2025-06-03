@@ -14,6 +14,7 @@
         <q-input 
             v-model="ideaSearchText"
             outlined
+        
             dense
             placeholder="Поиск идей..."
             class="search-input-main"
