@@ -685,6 +685,7 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
     const padding = extraPadding[category] ?? 40;
 
     let marginLeft = '1px';
+    let marginTop = '2px';
 
     if (index > 0) {
         let flag = true;
@@ -700,7 +701,8 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
     return {
         paddingLeft: `${padding}px`,
         paddingRight: `${padding}px`,
-        marginLeft
+        marginLeft,
+        marginTop
     };
 }
 
