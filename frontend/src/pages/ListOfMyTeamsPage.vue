@@ -175,10 +175,10 @@
   </div>
 </div>
 
-<!-- Модальное окно подтверждения смены тимлида -->
+<!-- Модальное окно подтверждения смены тимлидера -->
 <div v-if="showChangeLeaderCheck" class="change-leader-check-modal">
   <div class="change-leader-check-content">
-    <h3>Назначить нового тимлида?</h3>
+    <h3>Назначить нового тимлидера?</h3>
     <p>Имя: {{ selectedNewLeader.firstname }}</p>
     <p>Фамилия: {{ selectedNewLeader.lastname }}</p>
     <div>
@@ -188,14 +188,14 @@
   </div>
 </div>
 
-<!-- Модальное временное окно по показу успешной смены тимлида -->
+<!-- Модальное временное окно по показу успешной смены тимлидера -->
 <div v-if="showLeaderChangeOK" :class="['leader-change-ok-message', { 'hidden': !showLeaderChangeOK }]">
-  Тимлид изменен!
+  Тимлидер изменен!
 </div>
 
-<!-- Модальное временное окно по показу ошибки смены тимлида -->
+<!-- Модальное временное окно по показу ошибки смены тимлидера -->
 <div v-if="showLeaderChangeERROR" :class="['leader-change-error-message', { 'hidden': !showLeaderChangeERROR }]">
-  Ошибка при изменении тимлида
+  Ошибка при изменении тимлидера
 </div>
 
   <div v-if="!isTeamowner">
