@@ -17,4 +17,5 @@ api.interceptors.response.use(
   }
 );
 
+
 export { api }; // Явный экспорт именованного объекта
