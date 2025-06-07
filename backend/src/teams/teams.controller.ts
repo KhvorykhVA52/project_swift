@@ -93,4 +93,9 @@ export class TeamsController {
   getTeamAsMember(@Param('id') id) {
     return this.teamsService.getTeamAsMember(id);
   }
+
+  @Get('getteambyid/:id')
+  getTeamById(@Param('id') id) {
+    return this.teamsService.getTeamById(id);
+  }
 }

@@ -389,4 +389,19 @@ export class TeamsService {
     console.log(`OK: teams.service.getAllTeams()`);
     return teams;
   }
+
+  async getTeamById(id: number) {
+    const team = await this.teamRepository.findOne({
+      where: {id: id},
+      relations: ['members'],
+    });
+
+    if (!team) {
+      console.log(`ERROR: teams.service.getTeamById(): не удалось найти Team при Team.id=${id}`);
+      return null;
+    }
+
+    console.log(`OK: teams.service.getTeamById(id=${id})`);
+    return team;
+  }
 }
