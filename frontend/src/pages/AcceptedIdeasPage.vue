@@ -82,23 +82,36 @@
                     </div>
                 </div>
 
-                <q-card-section style="margin-top: auto">
-                    <span class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text bold-text">Инициатор</span>: 
+                <q-card-section style="margin-top: auto;" class="row items-center q-gutter-sm">
+                    <span class="text-subtitle1 text-weight-medium  dark-blue-text bold-text">Инициатор:</span>
+
                     <span
-                     class="q-mb-md semi-bold"
+                     class="semi-bold"
                      @click.stop="openUserModal(idea.initiator || null)"
                      style="cursor: pointer;"
                     >
                      {{ getAuthor(idea.initiator) }}
                     </span>
-                        //
-                    <span class="text-subtitle2 text-weight-medium q-mb-sm text-blue bold-text">
+
+                    <span style="margin-left: 4px !important; margin-right: 0 !important;">//</span>
+
+                    <span class="text-subtitle2 text-weight-medium text-blue bold-text" style="margin-left: 4px !important;">
+                        Создан:
+                    </span>
+
+                    <span class="text-subtitle2 text-weight-medium bold-text">
+                        {{formatDate(idea.createdAt)}}
+                    </span>
+
+                    <span style="margin-left: 4px !important; margin-right: 0 !important;">//</span>
+                    
+                    <span class="text-subtitle2 text-weight-medium text-blue bold-text" style="margin-left: 4px !important;">
                         Статус:
                     </span>
 
-                    <div v-if="idea.status == 'Команда найдена'">
-                        <span class="q-mb-md perenos-text">Команда найдена: </span>
-                        <span v-if="idea.team" class="q-mb-md perenos-text dark-blue-text" style="cursor: pointer; text-decoration: underline; marginLeft: 8px;">
+                    <span v-if="idea.status == 'Команда найдена'">
+                        <span class="perenos-text">Команда найдена: </span>
+                        <span v-if="idea.team" class="perenos-text dark-blue-text" style="cursor: pointer; text-decoration: underline; marginLeft: 8px;">
                             <span style="
                                  
                                 display: inline-block; 
@@ -109,11 +122,11 @@
                                 @click.stop="teamModalRef?.open(idea.team)"> {{ idea.team.name.length > 50 ? idea.team.name.slice(0, 50) + '…' : idea.team.name }}
                             </span>
                         </span>
-                    </div>
+                    </span>
 
-                    <div v-if="!(idea.status == 'Команда найдена')">
-                        <div class="q-mb-md perenos-text"> {{idea.status?idea.status:'Ошибка'}} </div>
-                    </div>
+                    <span v-if="!(idea.status == 'Команда найдена')">
+                        <span class="perenos-text"> {{idea.status?idea.status:'Ошибка'}} </span>
+                    </span>
                 </q-card-section>
             </q-card>
         </div>
@@ -143,6 +156,14 @@
                   style="cursor: pointer;"
                 >
                   {{ viewedIdea.initiator?((viewedIdea.initiator.firstname || viewedIdea.initiator.lastname)? (viewedIdea.initiator.firstname || '') + ' ' + (viewedIdea.initiator.lastname || ''): '—'): '—' }}
+                </div>
+
+                <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">
+                    Создан:
+                </div>
+
+                <div v-if="viewedIdea.createdAt" class="q-mb-md">
+                    {{formatDate(viewedIdea.createdAt)}}
                 </div>
 
                 <div class="text-subtitle1 text-weight-medium q-mb-sm dark-blue-text">Статус</div>
@@ -531,6 +552,18 @@ import { StatusIdea } from '../../../backend/src/common/types';
 import TeamModal from '../components/TeamModal.vue';
 import UserModal from '../components/UserModal.vue';
 
+function formatDate(createdAt: string) {
+  const date = new Date(createdAt);
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 async function toggleInvitesSorting() {
     if (invitesSorting.value == true) {
         invites.value.sort((a, b) => {
@@ -685,6 +718,7 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
     const padding = extraPadding[category] ?? 40;
 
     let marginLeft = '1px';
+    let marginTop = '2px';
 
     if (index > 0) {
         let flag = true;
@@ -700,7 +734,8 @@ function getBackgroundStyle(item: string, index: number, idea: Idea) {
     return {
         paddingLeft: `${padding}px`,
         paddingRight: `${padding}px`,
-        marginLeft
+        marginLeft,
+        marginTop
     };
 }
 
@@ -764,6 +799,7 @@ async function updateTechStack() {
         await showOKmodal('Стек технологий успешно обновлен!');
     }
 }
+
 async function ShowTechStackModal() {
     await loadIdeaStack();
     showTechStack.value = true;
