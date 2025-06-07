@@ -137,14 +137,7 @@
        </div>
      </div>
   </div>
-  <!-- В модальном окне с информацией о команде (внутри team-details-modal-content) -->
-<button 
-  v-if="isTeamowner" 
-  @click="showChangeLeaderDialog = true" 
-  class="team-change-leader-button"
->
-  Сменить тимлида
-</button>
+
 <!-- После invite-check-modal добавим: -->
 
 <!-- Модальное окно смены тимлида -->
@@ -163,7 +156,7 @@
       </div>
       <button 
         v-if="selectedTeam.leader" 
-        @click="showRemoveLeaderCheck = true" 
+        @click="removeLeader" 
         class="remove-leader-btn"
       >
         Снять тимлидера
@@ -441,7 +434,7 @@ async removeLeader() {
       this.timerId = null;
     }, 2000);
   }
-}
+},
     async sendInvitation() {
       const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
       if (!parsedSession) {
@@ -998,15 +991,6 @@ async removeLeader() {
 }
 
 .change-leader-check-modal {
-  <div v-if="showRemoveLeaderCheck" class="remove-leader-check-modal">
-    <div class="remove-leader-check-content">
-      <h3>Снять текущего тимлидера?</h3>
-      <div>
-        <button @click="removeLeader()" class="remove-leader-confirm-btn">Подтвердить</button>
-        <button @click="showRemoveLeaderCheck = false" class="remove-leader-cancel-btn">Отмена</button>
-      </div>
-    </div>
-  </div>
   position: fixed;
   top: 50%;
   left: 50%;

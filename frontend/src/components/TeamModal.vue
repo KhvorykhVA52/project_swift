@@ -71,13 +71,16 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+  
+  <UserModal ref="userModalRef" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import UserModal from './UserModal.vue';
+import * as api from '../api/teams.api';
 
-interface Member {
+interface User {
   id: number;
   firstname: string;
   lastname: string;
@@ -92,7 +95,7 @@ interface Team {
   name: string;
   description?: string;
   stack?: string[];
-  members?: Member[];
+  members?: User[];
 }
 
 const showModal = ref(false);
@@ -101,12 +104,24 @@ const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
 
 const emit = defineEmits(['close']);
 
-const memberInitials = (member: Member) => {
+const memberInitials = (member: User) => {
   return `${member.firstname?.charAt(0) || ''}${member.lastname?.charAt(0) || ''}`;
 };
 
-const open = (teamData: Partial<Team>) => {
-  team.value = { ...teamData };
+async function open(teamData: Partial<Team>) {
+  console.log(teamData);
+  const teamId = teamData.id;
+  if (!teamId) {
+    return null;
+  }
+
+  const response = await api.getTeamById(teamId) as Team;
+
+  console.log(response);
+
+  if (response) {
+    team.value = response;
+  }
   showModal.value = true;
 };
 

@@ -78,6 +78,17 @@ export async function getTeamAsMember(id: number) {
 
   return null;
 }
+
+export async function getTeamById(id: number) {
+  const response = await api.get('/teams/getteambyid/' + id);
+
+  if (response) {
+    return response.data;
+  }
+
+  return null;
+}
+
 export async function changeTeamLeader(dto: ChangeTeamleaderDto): Promise<string> {
   if (!dto || dto.memberId === undefined || dto.teamId === undefined) {
       console.error('Invalid DTO for changeTeamLeader');
