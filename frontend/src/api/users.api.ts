@@ -15,6 +15,11 @@ export async function getAll(): Promise<ExtendedUser[]> {
   return [];
 }
 
+export const getUserById = async (userId: number): Promise<FullUserInfo> => {
+  const response = await api.get(`/users/${userId}`);
+  return response.data;
+};
+
 export async function create(newUser: CreateUserDto): Promise<ExtendedUser | undefined> {
   const response = await api.post('/users/', newUser);
   if (response.status === 201) {
@@ -65,7 +70,6 @@ export async function uploadAvatar(file: File): Promise<string | undefined> {
     });
 
     if (response.status === 201) {
-      // Обрабатываем разные возможные форматы ответа
       return response.data?.avatarUrl;
     }
     return undefined;

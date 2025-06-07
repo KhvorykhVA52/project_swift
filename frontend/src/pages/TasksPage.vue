@@ -214,58 +214,51 @@
         </q-card-section>
 
         <q-dialog v-model="showEditStatus" persistent position="right" full-height>
-          <q-card style="width: 300px;">
-            <q-card-section>
-              <div class="text-h6">Изменить статус</div>
-            </q-card-section>
-
-            <q-card-section>
-              <q-list>
-                <div v-if="userIsAdmin">
-                  <q-item clickable v-ripple>
-                    <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Отклонено" label="Отклонить" />
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item clickable v-ripple>
-                    <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Дорабатывается" label="На переработку" />
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item clickable v-ripple>
-                    <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Обсуждается" label="На обсуждении" />
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item clickable v-ripple>
-                    <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Поиск команды" label="Утвердить" />
-                    </q-item-section>
-                  </q-item>
-                </div>
-
-                <div v-if="userIsInitiator">
-                  <q-item clickable v-ripple>
-                    <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Дорабатывается" label="На переработку" />
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item clickable v-ripple>
-                    <q-item-section>
-                      <q-radio v-model="selectedStatus" val="Ожидает проверки" label="Ожидает проверки" />
-                    </q-item-section>
-                  </q-item>
-                </div>
-              </q-list>
-            </q-card-section>
-
-            <q-card-actions align="right">
-              <q-btn flat label="Отмена" color="primary" v-close-popup />
-              <q-btn flat label="Применить" color="primary" @click="SetStatus" />
+        <q-card style="width: 300px;">
+          <q-card-section>
+             <div class="text-h6">Изменить статус</div>
+          </q-card-section>
+          <q-card-section>
+            <q-list>
+              <div v-if="userIsAdmin">
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <q-radio v-model="selectedStatus" val="Отклонено" label="Отклонить" />
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <q-radio v-model="selectedStatus" val="Дорабатывается" label="На переработку" />
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <q-radio v-model="selectedStatus" val="Обсуждается" label="На обсуждении" />
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <q-radio v-model="selectedStatus" val="Поиск команды" label="Утвердить" />
+                  </q-item-section>
+                </q-item>
+              </div>
+              <div v-if="userIsInitiator">
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <q-radio v-model="selectedStatus" val="Дорабатывается" label="На переработку" />
+                  </q-item-section>
+                </q-item>
+                <q-item clickable v-ripple>
+                  <q-item-section>
+                    <q-radio v-model="selectedStatus" val="Ожидает проверки" label="Ожидает проверки" />
+                  </q-item-section>
+                </q-item>
+              </div>
+            </q-list>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat label="Отмена" color="primary" v-close-popup />
+            <q-btn flat label="Применить" color="primary" @click="SetStatus" />
             </q-card-actions>
           </q-card>
         </q-dialog>
@@ -417,7 +410,7 @@ const showEditStatus = ref(false);
 const selectedStatus = ref<StatusIdea>();
 const userIsAdmin = ref(false);
 const userIsInitiator = ref(false);
-const statusErrorMessage = ref(' ');
+const statusErrorMessage = ref('');
 const checkIfCantSetStatus = ref(false);
 const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
 
@@ -453,13 +446,12 @@ function CheckIfCantSetStatus() {
 }
 
 function ifCantSetStatus() {
-  console.log('there');
   if (!viewedIdea.value.status || !viewedIdea.value.id) {
     return;
   }
 
   if (viewedIdea.value.status === StatusIdea.underDiscussion) {
-    statusErrorMessage.value =  'Идея на обсуждении';
+    statusErrorMessage.value = 'Идея на обсуждении';
   } else if (viewedIdea.value.status === StatusIdea.deny) {
     statusErrorMessage.value = 'Идея была отклонена';
   } else if (viewedIdea.value.status === StatusIdea.searchTeam) {
@@ -475,8 +467,6 @@ function ifCantSetStatus() {
     timerId.value = null;
   }, 2000);
   showStatusOK.value = false;
-
-  return;
 }
 
 async function SetStatus() {
@@ -486,7 +476,7 @@ async function SetStatus() {
 
   if (!userIsAdmin.value && (viewedIdea.value.status === StatusIdea.underDiscussion || viewedIdea.value.status === StatusIdea.deny || viewedIdea.value.status === StatusIdea.searchTeam)) {
     if (viewedIdea.value.status === StatusIdea.underDiscussion) {
-      statusErrorMessage.value =  'Идея на обсуждении';
+      statusErrorMessage.value = 'Идея на обсуждении';
     } else if (viewedIdea.value.status === StatusIdea.deny) {
       statusErrorMessage.value = 'Идея была отклонена';
     } else if (viewedIdea.value.status === StatusIdea.searchTeam) {
@@ -501,7 +491,7 @@ async function SetStatus() {
       showStatusERROR.value = false;
       timerId.value = null;
     }, 2000);
-    showStatusOK.value = false
+    showStatusOK.value = false;
     return;
   }
 
@@ -533,7 +523,7 @@ async function SetStatus() {
 }
 
 async function GetUserRoles(): Promise<string[] | string> {
-  const tempSession = localStorage.getItem('ttm-session')
+  const tempSession = localStorage.getItem('ttm-session');
   if (!tempSession) {
     return 'error';
   }
@@ -546,8 +536,7 @@ async function GetUserRoles(): Promise<string[] | string> {
 }
 
 async function isUserInitiator() {
-  console.log(viewedIdea.value);
-  const tempSession = localStorage.getItem('ttm-session')
+  const tempSession = localStorage.getItem('ttm-session');
   if (!tempSession) {
     return false;
   }
@@ -562,7 +551,7 @@ async function isUserInitiator() {
   userIsInitiator.value = parsedSession.userId == viewedIdea.value.initiator.id;
 }
 
-const checkEditStatus = ref<boolean>();
+const checkEditStatus = ref<boolean>(false);
 checkEditStatus.value = false;
 
 async function checkEditStatusFunction() {
@@ -582,7 +571,7 @@ const ideas = ref<Idea[]>([]);
 
 async function getIdeasBy() {
   try {
-    const tempSession = localStorage.getItem('ttm-session')
+    const tempSession = localStorage.getItem('ttm-session');
     if (!tempSession) {
       return;
     }
@@ -593,11 +582,10 @@ async function getIdeasBy() {
 
     if (parsedSession.roles.includes('admin')) {
       const response = await api.getAll2();
-      ideas.value = [ ...response ];
-    }
-    else {
+      ideas.value = [...response];
+    } else {
       const response = await api.getBy(parsedSession.userId);
-      ideas.value = [ ...response ];
+      ideas.value = [...response];
     }
   } catch {
     return;
@@ -635,7 +623,7 @@ const filteredIdeas = computed(() => {
 });
 
 async function addIdea() {
-  const tempSession = localStorage.getItem('ttm-session')
+  const tempSession = localStorage.getItem('ttm-session');
   if (!tempSession) {
     return;
   }
@@ -652,23 +640,22 @@ async function addIdea() {
     solution: '',
     result: '',
     resource: '',
-    initiator: {id: parsedSession.userId, firstname: parsedSession.firstname, lastname: parsedSession.lastname},
+    initiator: { id: parsedSession.userId, firstname: parsedSession.firstname, lastname: parsedSession.lastname },
     createdAt: '',
     status: StatusIdea.new,
   };
 
   editingIdea.value = false;
   showAddIdeaModal.value = true;
-};
+}
 
 async function editIdea(idea: Idea) {
   currentIdea.value = { ...idea };
   editingIdea.value = true;
   showAddIdeaModal.value = true;
-};
+}
 
 async function showIdeaDetails(idea: Idea) {
-
   viewedIdea.value = { ...idea };
   showIdeaDetailsModal.value = true;
   await isUserInitiator();
@@ -676,7 +663,7 @@ async function showIdeaDetails(idea: Idea) {
     checkEditStatus.value = true;
   }
   CheckIfCantSetStatus();
-};
+}
 
 async function saveIdea() {
   if (editingIdea.value) {
@@ -685,16 +672,16 @@ async function saveIdea() {
       if (!(currentIdea.value.id && currentIdea.value.name && currentIdea.value.problem && currentIdea.value.solution && currentIdea.value.result && currentIdea.value.resource)) {
         return;
       }
-      if (ideas.value[index].name !==  currentIdea.value.name) {
+      if (ideas.value[index].name !== currentIdea.value.name) {
         await api.editIdeaname(currentIdea.value.id, currentIdea.value.name);
       }
-      if (ideas.value[index].problem !==  currentIdea.value.problem) {
+      if (ideas.value[index].problem !== currentIdea.value.problem) {
         await api.editIdeaproblem(currentIdea.value.id, currentIdea.value.problem);
       }
-      if (ideas.value[index].solution !==  currentIdea.value.solution) {
+      if (ideas.value[index].solution !== currentIdea.value.solution) {
         await api.editIdeasolution(currentIdea.value.id, currentIdea.value.solution);
       }
-      if (ideas.value[index].result !==  currentIdea.value.result) {
+      if (ideas.value[index].result !== currentIdea.value.result) {
         await api.editIdearesult(currentIdea.value.id, currentIdea.value.result);
       }
       if (ideas.value[index].resource !== currentIdea.value.resource) {
@@ -706,7 +693,7 @@ async function saveIdea() {
       });
     }
   } else {
-    const tempSession = localStorage.getItem('ttm-session')
+    const tempSession = localStorage.getItem('ttm-session');
     if (!tempSession) {
       return;
     }
@@ -729,23 +716,21 @@ async function saveIdea() {
     const response = await api.createIdea(createIdeaDto);
 
     if (response) {
-      // Создаем полный объект идеи вручную
       const fullIdea: Idea = {
-      ...response,
-      initiator: {
-        id: parsedSession.userId,
-        firstname: parsedSession.firstname,
-        lastname: parsedSession.lastname
-      },
-      comments: [],
-      createdAt: new Date().toISOString(),
-      status: StatusIdea.new,
-      customer: ''
+        ...response,
+        initiator: {
+          id: parsedSession.userId,
+          firstname: parsedSession.firstname,
+          lastname: parsedSession.lastname
+        },
+        comments: [],
+        createdAt: new Date().toISOString(),
+        status: StatusIdea.new,
+        customer: ''
       };
 
       ideas.value = [fullIdea, ...ideas.value];
 
-      // Если открыто модальное окно просмотра
       if (showIdeaDetailsModal.value) {
         viewedIdea.value = { ...fullIdea };
       }
@@ -754,7 +739,7 @@ async function saveIdea() {
     }
   }
   showAddIdeaModal.value = false;
-};
+}
 
 const closeModal = () => {
   showAddIdeaModal.value = false;
@@ -773,7 +758,7 @@ async function deleteIdea(id: number) {
       getIdeasBy();
     }
   });
-};
+}
 
 const convertToProject = (idea: Idea) => {
   $q.dialog({
@@ -792,7 +777,7 @@ const convertToProject = (idea: Idea) => {
 async function addComment(ideaId: number) {
   const idea = ideas.value.find(i => i.id === ideaId);
   if (idea && newComments.value[ideaId] && newComments.value[ideaId].trim() !== '') {
-    const tempSession = localStorage.getItem('ttm-session')
+    const tempSession = localStorage.getItem('ttm-session');
     if (!tempSession) {
       return;
     }
@@ -821,7 +806,7 @@ async function addComment(ideaId: number) {
 
     newComments.value[ideaId] = '';
   }
-};
+}
 
 const handleEnter = (event: KeyboardEvent, ideaId: number) => {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -833,7 +818,6 @@ const handleEnter = (event: KeyboardEvent, ideaId: number) => {
 
     newComments.value[ideaId] = value.substring(0, start) + '\n' + value.substring(end);
 
-    // Обновляем позицию курсора
     setTimeout(() => {
       textarea.selectionStart = textarea.selectionEnd = start + 1;
     }, 0);
@@ -850,7 +834,6 @@ const handleIdeaEnter = (event: KeyboardEvent) => {
 
     textarea.value = value.substring(0, start) + '\n' + value.substring(end);
 
-    // Обновляем позицию курсора
     setTimeout(() => {
       textarea.selectionStart = textarea.selectionEnd = start + 1;
     }, 0);
@@ -868,9 +851,7 @@ async function editComment(comment: Comment) {
     persistent: true
   }).onOk(async (text) => {
     if (text !== null) {
-
       const updateCommentDto = new UpdateCommentDto();
-
       updateCommentDto.comment = text;
       updateCommentDto.grade = comment.grade;
 
@@ -883,7 +864,7 @@ async function editComment(comment: Comment) {
       comment.comment = text;
     }
   });
-};
+}
 
 async function deleteComment(commentId: number, ideaId: number) {
   $q.dialog({
@@ -894,7 +875,6 @@ async function deleteComment(commentId: number, ideaId: number) {
   }).onOk(async () => {
     const idea = ideas.value.find(i => i.id === ideaId);
     if (idea) {
-
       const response = await api.deleteComment(commentId);
 
       if (!response) {
@@ -905,7 +885,7 @@ async function deleteComment(commentId: number, ideaId: number) {
       viewedIdea.value = { ...ideas.value.find(i => i.id === ideaId) };
     }
   });
-};
+}
 
 const truncateText = (text: string, length: number) => {
   return text.length > length ? text.substring(0, length) + '...' : text;
@@ -919,7 +899,7 @@ const formatDate = (createdAt: string) => {
   const date = new Date(createdAt);
 
   const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Месяцы начинаются с 0
+  const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');

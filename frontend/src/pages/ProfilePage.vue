@@ -650,7 +650,7 @@ export default {
         });
       }
     },
-    async loadUserProfile() {
+   async loadUserProfile() {
   try {
     const userData = await getCurrentUser();
     if (userData) {
@@ -659,44 +659,43 @@ export default {
         lastname: userData.lastname || '',
         email: userData.email || '',
         group: userData.group || '',
-        phone: userData.telephone || '',
+        phone: userData.telephone || '', // Убедитесь, что телефон загружается
         createdAt: userData.createdAt,
         avatarUrl: userData.avatarUrl || null,
         competence: userData.competence || [],
         roles: Array.isArray(userData.roles) ? userData.roles : [userData.roles]
       };
 
-      // Сохраняем оригинальные данные
       this.isAdmin = this.user.roles.some(role => role.toLowerCase() === 'admin');
       this.originalUser = { ...this.user };
       localStorage.setItem('userProfile', JSON.stringify(this.user));
 
-      // --- Сохраняем в ttm-session для MainLayout ---
       const session = JSON.parse(localStorage.getItem('ttm-session')) || {};
       session.avatarUrl = this.user.avatarUrl;
       session.firstname = this.user.firstname;
       session.lastname = this.user.lastname;
+      session.phone = this.user.phone; // Сохраните телефон в сессии
       localStorage.setItem('ttm-session', JSON.stringify(session));
-      // ---------------------------------------------
 
-      // Обновляем чекбоксы технологий
       Object.values(this.techStack).forEach(items => {
         items.forEach(item => {
           item.selected = this.user.competence.includes(item.name);
-          this.updateTechStackCheckboxes();
         });
       });
 
       this.$emit('user-updated', {
         firstname: this.user.firstname,
         lastname: this.user.lastname,
-        avatarUrl: this.user.avatarUrl
+        avatarUrl: this.user.avatarUrl,
+        phone: this.user.phone // Передача телефона
       });
     }
   } catch (error) {
     console.error('Ошибка загрузки профиля:', error);
   }
 },
+
+
 
       async loadSavedProfile() {
       const savedProfile = localStorage.getItem('userProfile');

@@ -14,6 +14,7 @@
         <q-input 
             v-model="ideaSearchText"
             outlined
+        
             dense
             placeholder="Поиск идей..."
             class="search-input-main"
@@ -516,6 +517,7 @@
                 <div class="text-subtitle1 perenos-text"> данной командой? </div>
                 <div v-if="viewedTeam.name" class="text-subtitle1 perenos-text">Название: {{ viewedTeam.name }}</div>
                 <div v-if="viewedTeam.description" class="text-caption perenos-text">Описание: {{ viewedTeam.description }}</div>
+                    <UserModal ref="userModalRef" />
             </div>
         </q-card-section>
     </q-dialog>
@@ -1231,13 +1233,14 @@ const invitesSorting = ref(false);
 const userModalRef = ref<InstanceType<typeof UserModal> | null>(null);
 const teamModalRef = ref<InstanceType<typeof TeamModal> | null>(null);
 
-const openUserModal = (user: {id: number, firstname: string, lastname: string} | null) => {
+const openUserModal = (user: { id: number, firstname: string, lastname: string, email?: string, phone?: string } | null) => {
   if (!user) return;
   userModalRef.value?.open({
     id: user.id,
     firstname: user.firstname,
     lastname: user.lastname,
-    // другие поля пользователя
+    email: user.email,
+    phone: user.phone
   });
 };
 

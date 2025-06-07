@@ -28,7 +28,6 @@
           </q-avatar>
           <div>
             <div class="text-h6">{{ user.firstname }} {{ user.lastname }}</div>
-            <div class="text-caption position-text">{{ user.position || 'Должность не указана' }}</div>
           </div>
         </div>
 
@@ -41,24 +40,8 @@
         </div>
         <div class="q-mb-sm row items-center">
           <q-icon name="phone" size="sm" class="q-mr-sm" />
-          {{ user.phone || 'Не указан' }}
+          {{ user.phone || user.telephone || 'Не указан' }}
         </div>
-
-        <q-separator class="q-my-md" />
-
-        <div class="text-subtitle1 text-weight-medium q-mb-sm">Навыки</div>
-        <div v-if="user.skills && user.skills.length > 0" class="q-gutter-sm">
-          <q-chip
-            v-for="(skill, index) in user.skills"
-            :key="index"
-            color="teal"
-            text-color="white"
-            class="skill-chip"
-          >
-            {{ skill }}
-          </q-chip>
-        </div>
-        <div v-else class="text-grey-6">Навыки не указаны</div>
 
         <q-separator class="q-my-md" />
 
@@ -86,6 +69,24 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import * as api from '../api/users.api';
+
+// Локальное определение интерфейса FullUserInfo
+interface FullUserInfo {
+  id: number;
+  firstname: string;
+  lastname: string;
+  email?: string;
+  telephone?: string;
+  position?: string;
+  skills?: string[];
+  competence?: string[];
+}
+
+// Локальный интерфейс, расширяющий FullUserInfo
+interface ExtendedFullUserInfo extends FullUserInfo {
+  phone?: string;
+}
 
 interface User {
   id: number;
@@ -93,6 +94,7 @@ interface User {
   lastname: string;
   email?: string;
   phone?: string;
+  telephone?: string;
   position?: string;
   skills?: string[];
   stack?: string[];
@@ -100,7 +102,6 @@ interface User {
 
 const showModal = ref(false);
 const user = ref<Partial<User>>({});
-
 const emit = defineEmits(['close']);
 
 const userInitials = computed(() => {
@@ -108,9 +109,25 @@ const userInitials = computed(() => {
   return `${user.value.firstname.charAt(0)}${user.value.lastname.charAt(0)}`;
 });
 
-const open = (userData: Partial<User> | null | undefined) => {
-  if (!userData) return;
-  user.value = { ...userData };
+const open = async (userData: Partial<User> | null | undefined) => {
+  if (!userData || !userData.id) return;
+
+  try {
+    const fullUserData: ExtendedFullUserInfo = await api.getUserById(userData.id);
+    user.value = {
+      ...userData,
+      email: fullUserData.email || 'Не указан',
+      phone: fullUserData.phone || fullUserData.telephone || 'Не указан',
+      stack: fullUserData.competence || []
+    };
+  } catch (error) {
+    console.error('Ошибка загрузки данных пользователя:', error);
+    user.value = {
+      ...userData,
+      phone: userData.phone || userData.telephone || 'Не указан'
+    };
+  }
+
   showModal.value = true;
 };
 
@@ -120,6 +137,7 @@ const onDialogHide = () => {
 
 defineExpose({ open });
 </script>
+
 
 <style scoped>
 .skill-chip, .tech-chip {
