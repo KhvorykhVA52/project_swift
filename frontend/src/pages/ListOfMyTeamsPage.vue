@@ -37,6 +37,13 @@
       <div class="team-details-modal-content">
         <button @click="closeTeamDetails" class="team-details-close-button">Закрыть</button>
         <button @click="openInviteDialog" class="team-invite-invite-button">Пригласить в команду</button>
+        <button 
+          v-if="isTeamowner" 
+          @click="showChangeLeaderDialog = true" 
+          class="team-change-leader-button"
+          >
+        Сменить тимлидера
+        </button>
         <div class="team-details-team-info-container">
           <h3 class="team-details-team-name-header">{{ selectedTeam.name }}</h3>
           <div class="team-details-team-description-wrapper">
@@ -130,6 +137,66 @@
        </div>
      </div>
   </div>
+  <!-- В модальном окне с информацией о команде (внутри team-details-modal-content) -->
+<button 
+  v-if="isTeamowner" 
+  @click="showChangeLeaderDialog = true" 
+  class="team-change-leader-button"
+>
+  Сменить тимлида
+</button>
+<!-- После invite-check-modal добавим: -->
+
+<!-- Модальное окно смены тимлида -->
+<div v-if="showChangeLeaderDialog" class="change-leader-dialog">
+  <div class="change-leader-dialog-content">
+    <h3>Выберите нового тимлидера</h3>
+    <div class="member-list">
+      <div 
+        v-for="(member, index) in selectedTeam.members" 
+        :key="index" 
+        class="member-block" 
+        @click="selectNewLeader(member)"
+      >
+        <div class="member-name">{{ member.firstname }} {{ member.lastname }}</div>
+        <div v-if="isLeader(member, selectedTeam.leader)" class="current-leader-label">Текущий тимлидер</div>
+      </div>
+      <button 
+        v-if="selectedTeam.leader" 
+        @click="showRemoveLeaderCheck = true" 
+        class="remove-leader-btn"
+      >
+        Снять тимлидера
+      </button>
+    </div>
+    <div class="dialog-buttons">
+      <button @click="showChangeLeaderDialog = false">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения смены тимлида -->
+<div v-if="showChangeLeaderCheck" class="change-leader-check-modal">
+  <div class="change-leader-check-content">
+    <h3>Назначить нового тимлида?</h3>
+    <p>Имя: {{ selectedNewLeader.firstname }}</p>
+    <p>Фамилия: {{ selectedNewLeader.lastname }}</p>
+    <div>
+      <button @click="changeLeader(selectedNewLeader)" class="change-leader-confirm-btn">Подтвердить</button>
+      <button @click="showChangeLeaderCheck = false" class="change-leader-cancel-btn">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное временное окно по показу успешной смены тимлида -->
+<div v-if="showLeaderChangeOK" :class="['leader-change-ok-message', { 'hidden': !showLeaderChangeOK }]">
+  Тимлид изменен!
+</div>
+
+<!-- Модальное временное окно по показу ошибки смены тимлида -->
+<div v-if="showLeaderChangeERROR" :class="['leader-change-error-message', { 'hidden': !showLeaderChangeERROR }]">
+  Ошибка при изменении тимлида
+</div>
 
   <div v-if="!isTeamowner">
     <div v-if="selectedTeam" class="team-details-notowner-modal">
@@ -167,6 +234,7 @@ import * as api from '../api/teams.api';
 import { defineComponent } from 'vue';
 import { CreateTeamDto } from '../../../backend/src/teams/dto/create-team.dto';
 import { CreateInviteDto } from '../../../backend/src/teams/dto/create-invite.dto';
+import { ChangeTeamleaderDto } from '../../../backend/src/teams/dto/change-teamleader.dto';
 
 export default defineComponent({
   name: 'TeamsPage',
@@ -186,6 +254,12 @@ export default defineComponent({
       showInviteERROR: false,
       timerId: null,
       isTeamowner: false,
+      showChangeLeaderDialog: false,
+      showChangeLeaderCheck: false,
+      showRemoveLeaderCheck: false,
+      selectedNewLeader: null,
+      showLeaderChangeOK: false,
+      showLeaderChangeERROR: false,
     };
   },
   async mounted() {
@@ -251,6 +325,123 @@ export default defineComponent({
         }
       }
     },
+    selectNewLeader(member) {
+  if (!member || !member.id) {
+    console.error('Неверные данные участника');
+    return null;
+  }
+  this.selectedNewLeader = member;
+  this.showChangeLeaderCheck = true;
+},
+
+async changeLeader(newLeader) {
+  try {
+    if (!this.selectedTeam || !this.selectedTeam.id) {
+      console.error('Не выбрана команда или у команды нет ID');
+      return null;
+    }
+
+    if (!newLeader || !newLeader.id) {
+      console.error('Неверные данные нового лидера');
+      return null;
+    }
+
+    const dto = new ChangeTeamleaderDto();
+    dto.memberId = newLeader.id;
+    dto.teamId = this.selectedTeam.id;
+
+    const response = await api.changeTeamLeader(dto);
+    
+    if (response === 'OK') {
+      this.selectedTeam.leader = newLeader;
+      this.showChangeLeaderDialog = false;
+      this.showChangeLeaderCheck = false;
+      this.showLeaderChangeOK = true;
+      
+      if (this.timerId) {
+        clearTimeout(this.timerId);
+      }
+      
+      this.timerId = setTimeout(() => {
+        this.showLeaderChangeOK = false;
+        this.timerId = null;
+      }, 2000);
+    } else {
+      this.showLeaderChangeERROR = true;
+      if (this.timerId) {
+        clearTimeout(this.timerId);
+      }
+      
+      this.timerId = setTimeout(() => {
+        this.showLeaderChangeERROR = false;
+        this.timerId = null;
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Ошибка при смене лидера:', error);
+    this.showLeaderChangeERROR = true;
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+    }
+    
+    this.timerId = setTimeout(() => {
+      this.showLeaderChangeERROR = false;
+      this.timerId = null;
+    }, 2000);
+  }
+},
+
+async removeLeader() {
+  try {
+    if (!this.selectedTeam || !this.selectedTeam.id) {
+      console.error('Не выбрана команда или у команды нет ID');
+      return null;
+    }
+
+    const dto = new ChangeTeamleaderDto();
+    dto.memberId = -1; // -1 означает снятие текущего лидера
+    dto.teamId = this.selectedTeam.id;
+
+    const response = await api.changeTeamLeader(dto);
+    
+    if (response === 'OK') {
+      this.selectedTeam.leader = null;
+      this.showChangeLeaderDialog = false;
+      this.showRemoveLeaderCheck = false;
+      this.showLeaderChangeOK = true;
+      
+      if (this.timerId) {
+        clearTimeout(this.timerId);
+      }
+      
+      this.timerId = setTimeout(() => {
+        this.showLeaderChangeOK = false;
+        this.timerId = null;
+      }, 2000);
+    } else {
+      this.showLeaderChangeERROR = true;
+      if (this.timerId) {
+        clearTimeout(this.timerId);
+      }
+      
+      this.timerId = setTimeout(() => {
+        this.showLeaderChangeERROR = false;
+        this.timerId = null;
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Ошибка при снятии лидера:', error);
+    this.showLeaderChangeERROR = true;
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+    }
+    
+    this.timerId = setTimeout(() => {
+      this.showLeaderChangeERROR = false;
+      this.timerId = null;
+    }, 2000);
+  }
+}
     async sendInvitation() {
       const parsedSession = JSON.parse(localStorage.getItem('ttm-session'));
       if (!parsedSession) {
@@ -741,6 +932,162 @@ export default defineComponent({
 .bg-grey-3 {
   background-color: #d0d3d9; /* A slightly darker shade than #c1c4c9 */
 }
+/* Стили для смены тимлидера */
+.team-change-leader-button {
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+  margin-left: 10px;
+}
+
+.team-change-leader-button:hover {
+  background-color: #e0a800;
+}
+
+.change-leader-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 4;
+}
+
+.change-leader-dialog-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  width: 400px;
+  max-width: 80vw;
+}
+
+.member-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+.member-block {
+  padding: 10px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.member-block:hover {
+  background-color: #f5f5f5;
+}
+
+.member-name {
+  font-weight: bold;
+}
+
+.current-leader-label {
+  color: #ffc107;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.change-leader-check-modal {
+  <div v-if="showRemoveLeaderCheck" class="remove-leader-check-modal">
+    <div class="remove-leader-check-content">
+      <h3>Снять текущего тимлидера?</h3>
+      <div>
+        <button @click="removeLeader()" class="remove-leader-confirm-btn">Подтвердить</button>
+        <button @click="showRemoveLeaderCheck = false" class="remove-leader-cancel-btn">Отмена</button>
+      </div>
+    </div>
+  </div>
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 6;
+}
+
+.change-leader-check-content {
+  text-align: center;
+}
+
+.change-leader-confirm-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.change-leader-confirm-btn:hover {
+  background-color: #218838;
+}
+
+.change-leader-cancel-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.change-leader-cancel-btn:hover {
+  background-color: #5a6268;
+}
+
+.leader-change-ok-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(40, 167, 69, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 7;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.leader-change-ok-message.hidden {
+  opacity: 0;
+}
+
+.leader-change-error-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(220, 53, 69, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 7;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.leader-change-error-message.hidden {
+  opacity: 0;
+}
 
 /* Стили для модальных окон */
 .modal-overlay {
@@ -763,6 +1110,63 @@ export default defineComponent({
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   width: 600px;
   max-width: 90%;
+}
+.remove-leader-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.remove-leader-btn:hover {
+  background-color: #c82333;
+}
+
+.remove-leader-check-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 6;
+}
+
+.remove-leader-check-content {
+  text-align: center;
+}
+
+.remove-leader-confirm-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.remove-leader-confirm-btn:hover {
+  background-color: #c82333;
+}
+
+.remove-leader-cancel-btn {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.remove-leader-cancel-btn:hover {
+  background-color: #5a6268;
 }
 
 .create-team-modal {

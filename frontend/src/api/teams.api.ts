@@ -4,6 +4,7 @@ import { CreateTeamDto } from '../../../backend/src/common/dto/create-team.dto';
 import { AddToTeamDto } from '../../../backend/src/common/dto/add-to-team.dto';
 import { SecuredUser } from '../../../backend/src/common/types';
 import { CreateInviteDto } from '../../../backend/src/teams/dto/create-invite.dto';
+import { ChangeTeamleaderDto } from '../../../backend/src/teams/dto/change-teamleader.dto';
 
 export async function getTeams(id: number): Promise<Team[]|undefined> {
 
@@ -76,4 +77,18 @@ export async function getTeamAsMember(id: number) {
   }
 
   return null;
+}
+export async function changeTeamLeader(dto: ChangeTeamleaderDto): Promise<string> {
+  if (!dto || dto.memberId === undefined || dto.teamId === undefined) {
+      console.error('Invalid DTO for changeTeamLeader');
+      return 'Error';
+  }
+
+  const response = await api.post('/teams/changeteamleader', dto);
+
+  if (response.status === 201) {
+      return 'OK';
+  }
+
+  return 'Error';
 }
