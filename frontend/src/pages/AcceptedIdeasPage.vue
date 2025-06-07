@@ -255,12 +255,10 @@
                   v-for="team in filteredTeams"
                   :key="team.id"
                   class="team-block row items-center no-wrap"
-                  @click.stop="teamModalRef?.open(team)"
-                  style="cursor: pointer;"
                 >
                     <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckSendingModal(team)" />
                     <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal('Ошибка: данная команда уже в списке кандидатов')" />
-                    <div style="height: 140px" class="perenos-text">
+                    <div style="height: 140px; cursor: pointer;" class="perenos-text" @click.stop="teamModalRef?.open(team)">
                         <div class="text-subtitle1" style="width: 500px; height: 20px; overflow: hidden;">Название: {{ team.name }}</div>
                         <div class="text-caption" style="margin-top: 5px;">Описание: {{ team.description }}</div>
                     </div>
@@ -518,7 +516,7 @@
                 <div v-for="team in myTeams" :key="team.id" class="team-block row items-center no-wrap">
                     <q-btn v-if="team.canInvite" icon="add" size="sm" color="positive" class="send-invite-button" @click="ShowCheckOfferingModal(team)" />
                     <q-btn v-if="!team.canInvite" icon="remove" size="sm" class="send-invite-button bg-grey-6" @click="showERRORmodal(team.situation)" />
-                    <div style="height: 140px" class="perenos-text">
+                    <div style="height: 140px; cursor: pointer;" class="perenos-text" @click.stop="teamModalRef?.open(team)">
                         <div class="text-subtitle1" style="width: 500px; height: 20px; overflow: hidden;">Название: {{ team.name }}</div>
                         <div class="text-caption" style="margin-top: 5px;">Описание: {{ team.description }}</div>
                     </div>
