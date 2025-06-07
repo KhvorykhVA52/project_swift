@@ -1,7 +1,6 @@
 import { Controller, Get, Post, UseGuards, Body} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto } from 'src/common/types';
 
 @Controller('projects')
 export class ProjectsController {
@@ -10,21 +9,19 @@ export class ProjectsController {
 
     @Get()
     //@UseGuards(JwtAuthGuard)
-
     async findAll() {
-
       return this.projectsService.findAll();
-  
     }
 
-    @Post()
+    @Post('create')
     //@UseGuards(JwtAuthGuard)
-    async create(@Body() body: CreateProjectDto) {
+    async create(@Body() body) {
+      return this.projectsService.create(body.ideaId);
+    }
 
-      const createdProject = await this.projectsService.create(body)
-
-      return createdProject;
-
+    @Post('undocreate')
+    async undo_create(@Body() body) {
+      return this.projectsService.undo_create(body.projectId);
     }
 
 }

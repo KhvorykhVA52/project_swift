@@ -26,11 +26,6 @@ export enum StatusIdea {
   teamIsFinded = 'Команда найдена',
 }
 
-export enum StatusProject {
-  searchTeam = 'Search for team',
-  teamFound = 'Team found',
-}
-
 export enum Competence {
   no = 'No',
   html = 'HTML',
@@ -118,5 +113,4 @@ export interface CreateProjectDto {
 export interface SecuredProject {
   id: number;
   title: string;
-  description: string;
 }

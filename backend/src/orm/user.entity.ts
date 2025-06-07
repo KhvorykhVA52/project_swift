@@ -66,8 +66,8 @@ telephone: string;
   team: Team | null;
 
   // Связи с проектами
-  @OneToMany(() => Project, (project) => project.owner)
-  ownedProjects: Project[];
+  @OneToMany(() => Project, (project) => project.owner, { nullable: true })
+  ownedProjects: Project[] | null;
 
   // Связи с задачами
   @OneToMany(() => Task, (task) => task.author)

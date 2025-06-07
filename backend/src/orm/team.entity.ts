@@ -32,8 +32,8 @@ export class Team {
   @OneToMany(() => User, (user) => user.team)
   members: User[];
 
-  @OneToMany(() => Project, (project) => project.team)
-  projects: Project[];
+  @OneToMany(() => Project, (project) => project.team, { nullable: true })
+  projects: Project[] | null;
 
   @OneToOne(() => Idea, (idea) => idea.team, { nullable: true })
   idea: Idea;

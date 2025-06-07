@@ -12,6 +12,7 @@ import {
   import { Competence, StatusIdea } from '../common/types'; 
   import { Comments } from './comment.entity';
   import { Team } from './team.entity';
+import { Project } from './project.entity';
   
   
   @Entity()
@@ -58,4 +59,8 @@ import {
     @OneToOne(() => Team, (team) => team.idea, { eager: true, onDelete: 'CASCADE', nullable: true })
     @JoinColumn()
     team: Team;
+
+    @OneToOne(() => Project, (project) => project.idea, { nullable: true })
+    @JoinColumn()
+    project: Project | null;
   }

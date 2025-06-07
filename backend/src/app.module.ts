@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ProjectModule } from './tasks/project.module';
+import { ProjectsModule } from './projects/projects.module';
 import { User } from './orm/user.entity';
 import { Team } from './orm/team.entity';
 import { TeamInvite } from './orm/team-invite.entity';
@@ -24,7 +24,7 @@ import { IdeaInvite } from './orm/idea-invite.entity';
   imports: [
     AuthModule,
     UsersModule,
-    ProjectModule,
+    ProjectsModule,
     TeamsModule,
     CommentModule,
     ConfigModule.forRoot({ isGlobal: true }),
